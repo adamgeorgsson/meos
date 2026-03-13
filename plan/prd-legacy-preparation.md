@@ -29,6 +29,7 @@ MeOS's legacy codebase has several categories of issues that cause friction duri
 - **Win32 file APIs** (`FindFirstFile`, `GetTempPath`, `DeleteFile`, `_wfopen_s`, `MAX_PATH`) instead of `std::filesystem`
 - **Win32 threading primitives** (`CRITICAL_SECTION`, `_beginthread`, `TerminateThread`) instead of `std::thread`/`std::mutex`
 - **Win32 `Sleep()`** instead of `std::this_thread::sleep_for()`
+- **Vendored third-party libraries** — pre-built `.lib`/`.dll` files and header copies checked into the repo (`code/libharu/`, `code/mysql/`, `code/png/`, `code/minizip/`, `code/restbed/`, `code/lib64/`, `code/dll64/`) instead of using a package manager like vcpkg
 
 Fixing these in `code/` eliminates entire categories of migration errors and reduces the per-file effort when moving code to `src/`.
 
@@ -52,6 +53,7 @@ Fixing these in `code/` eliminates entire categories of migration errors and red
 - Replace Win32 file APIs with `std::filesystem` in domain code
 - Replace Win32 threading primitives with `std::thread`/`std::mutex` in domain code
 - Replace `Sleep()` with `std::this_thread::sleep_for()` in domain code
+- Migrate all vendored third-party libraries (libharu, MySQL, libpng, zlib, minizip, restbed, OpenSSL) to vcpkg package management
 
 ## User Stories
 
@@ -320,6 +322,200 @@ Fixing these in `code/` eliminates entire categories of migration errors and red
 - `MessageBox()` is blocking (modal) — a `throw` replacement changes control flow. Ensure the calling code handles the exception correctly, or use a non-throwing callback pattern
 - `SportIdent.cpp` MessageBox calls are inside hardware configuration — these may need a callback that the UI layer registers, since the user needs to see the message
 
+### US-P0l: CMake Build for Legacy Code
+
+**Description:** Add a CMake build system for the `code/` directory so the legacy codebase can be built with `cmake --build` instead of MSBuild. The existing `.vcxproj`/`.sln` files are retained for developers using Visual Studio, but CI and automated builds switch to CMake. The GitHub Actions workflow (`.github/workflows/build-legacy.yml`) is updated to use CMake.
+
+**Acceptance Criteria:**
+- [ ] `code/CMakeLists.txt` exists and builds MeOS.exe on Windows with MSVC via CMake
+- [ ] All 93 `.cpp` source files are compiled
+- [ ] Resource files (`meos.rc`, `meoslang.rc`) are compiled and linked
+- [ ] DPI manifest (`meos_dpi_manifest.xml`) is embedded
+- [ ] All external libraries are linked: libharu, libmysql, libpng, zlib, RestBed, OpenSSL
+- [ ] All Windows system libraries are linked: Msimg32, comctl32, odbc32, odbccp32, winmm, ws2_32, wininet
+- [ ] Debug and Release configurations work correctly (correct library paths: `lib64_db/` vs `lib64/`)
+- [ ] `.github/workflows/build-legacy.yml` uses CMake instead of MSBuild
+- [ ] CI artifact packaging still bundles all required DLLs (libharu, libmysql, OpenSSL, VC runtime)
+- [ ] Preprocessor defines match the existing build: `NDEBUG`/`_DEBUG`, `_WINDOWS`
+- [ ] C++17 standard is enforced
+- [ ] Disabled warnings match existing build (4267, 4244, 4018) to avoid noise
+- [ ] The existing `.sln`/`.vcxproj` files are left intact for manual use
+
+**Implementation Notes:**
+- Create `code/CMakeLists.txt` as a standalone project (not a subdirectory of the root `CMakeLists.txt` which targets `src/`)
+- Use `add_executable()` with all `.cpp` and `.rc` files
+- External libraries live in `code/lib64/` (Release) and `code/lib64_db/` (Debug) — use generator expressions: `$<IF:$<CONFIG:Debug>,lib64_db,lib64>`
+- Include paths: `code/libharu/` for libharu headers, `code/mysql/` for MySQL headers, `code/png/` for libpng, `code/restbed/` for REST API, `code/minizip/` for zip
+- Library names differ between Win32 and x64 (e.g., `libhpdf.lib` vs `libharu.lib`) — target x64 only since that's what CI builds
+- For OpenSSL: use `find_package(OpenSSL)` or link directly against installed libs (CI installs OpenSSL 1.1 via Chocolatey)
+- Resource compilation: CMake handles `.rc` files natively on Windows when using MSVC generator
+- CI workflow changes:
+  - Replace `msbuild MeOS.sln /p:Configuration=Release /p:Platform=x64` with `cmake -S code -B code/build -A x64` + `cmake --build code/build --config Release`
+  - `setup-msbuild` action can be removed (CMake finds MSVC via Visual Studio installation)
+  - Artifact paths change from `code/**/MeOS.exe` to `code/build/Release/MeOS.exe`
+- Whole-program optimization (`/GL` + `/LTCG`) and multi-processor compilation (`/MP`) should be preserved for Release
+
+**Known Pitfalls:**
+- `find_package(OpenSSL)` may need `OPENSSL_ROOT_DIR` set to the Chocolatey install path on CI — use `Get-ChildItem "C:\Program Files\OpenSSL*"` to locate it
+- The `.rc` files may reference relative paths for icons/bitmaps — ensure the working directory or include paths are set correctly
+- `WIN32` flag in `add_executable(MeOS WIN32 ...)` is needed to produce a Windows GUI app (no console window), matching the existing `/SUBSYSTEM:WINDOWS` setting
+- Library search order matters: `code/lib64/` contains pre-built static libs that must be found before any system-installed versions
+- `RestBed.lib` is very large (~20-48MB) — CMake will link it fine, but build times may be notable
+
+### US-P0m1: Migrate libharu to vcpkg
+
+**Description:** Replace the vendored libharu headers (`code/libharu/`) and pre-built static libraries (`libharu.lib`/`libhpdf.lib` in `code/lib64/`, `code/lib64_db/`, `code/lib/`) with a vcpkg-managed dependency. This eliminates checked-in binaries and ensures consistent, reproducible builds across platforms.
+
+**Acceptance Criteria:**
+- [ ] `libharu` is declared as a dependency in `vcpkg.json`
+- [ ] `code/CMakeLists.txt` uses `find_package(unofficial-libharu)` or equivalent vcpkg integration instead of manual library paths
+- [ ] The vendored `code/libharu/` header directory is removed
+- [ ] The pre-built `libharu.lib` / `libhpdf.lib` files are removed from `code/lib64/`, `code/lib64_db/`, and `code/lib/`
+- [ ] `code/pdfwriter.cpp` compiles and links against the vcpkg-provided libharu
+- [ ] CI builds succeed on both Windows and Linux
+
+**Implementation Notes:**
+- vcpkg port name: `libharu`
+- The project uses libharu via `#include "hpdf.h"` in `pdfwriter.cpp` — verify the vcpkg port provides the same header path or update includes
+- lib64 has `libharu.lib`, lib has `libhpdf.lib` — vcpkg normalizes this difference
+- Remove the vendored headers and libs only after verifying the vcpkg build works
+
+**Known Pitfalls:**
+- The vendored libharu version may differ from the vcpkg port version — check for API changes if the version jump is large
+- libharu depends on zlib and libpng — coordinate with US-P0m3 and US-P0m4 to avoid version conflicts (vcpkg handles transitive dependencies automatically)
+
+### US-P0m2: Migrate MySQL Connector/C to vcpkg
+
+**Description:** Replace the vendored MySQL Connector/C headers (`code/mysql/`) and pre-built import libraries (`libmysql.lib` in `code/lib64/`, `code/lib64_db/`, `code/lib/`) and runtime DLLs (`libmysql.dll` in `code/dll/`, `code/dll64/`) with a vcpkg-managed dependency.
+
+**Acceptance Criteria:**
+- [ ] `libmysql` (or `mysql-connector-c`) is declared as a dependency in `vcpkg.json`
+- [ ] `code/CMakeLists.txt` uses `find_package()` or vcpkg integration instead of manual library paths
+- [ ] The vendored `code/mysql/` header directory is removed
+- [ ] The pre-built `libmysql.lib` files are removed from `code/lib64/`, `code/lib64_db/`, and `code/lib/`
+- [ ] The pre-built `libmysql.dll` / `libmySQL.dll` files are removed from `code/dll/` and `code/dll64/`
+- [ ] `code/mysqlwrapper.cpp`, `code/MeosSQL.cpp`, and `code/mysqldaemon.cpp` compile and link correctly
+- [ ] CI builds succeed on both Windows and Linux
+
+**Implementation Notes:**
+- vcpkg port name: `libmysql` (provides the MySQL C client library)
+- The vendored headers are from MySQL 5.7 — check for API compatibility with the vcpkg version
+- `code/mysqlwrapper.h` includes `<mysql.h>` — verify the vcpkg port provides headers at the same include path
+- `libmysql.dll` is needed at runtime — vcpkg handles DLL deployment differently than the current manual copy approach; ensure the CI artifact packaging step picks up the vcpkg-installed DLL
+- The `code/mysql/` directory has a nested `mysql/` subdirectory with additional headers — ensure all nested includes resolve correctly
+
+**Known Pitfalls:**
+- MySQL Connector/C vs MariaDB Connector/C — the vcpkg port `libmysql` provides the Oracle MySQL client; if MariaDB is acceptable, `libmariadb` is an alternative with better cross-platform support
+- Runtime DLL deployment: the current build copies DLLs from `code/dll64/` into the output — with vcpkg, use `vcpkg_installed/` or CMake install rules instead
+- The vendored MySQL headers reference Windows-specific types (`my_thread.h`, etc.) — the vcpkg version may differ
+
+### US-P0m3: Migrate libpng to vcpkg
+
+**Description:** Replace the vendored libpng headers (`code/png/`) and pre-built static libraries (`libpng.lib` in `code/lib64/`, `code/lib64_db/`, `code/lib/`) with a vcpkg-managed dependency.
+
+**Acceptance Criteria:**
+- [ ] `libpng` is declared as a dependency in `vcpkg.json`
+- [ ] `code/CMakeLists.txt` uses `find_package(PNG)` instead of manual library paths
+- [ ] The vendored `code/png/` header directory is removed
+- [ ] The pre-built `libpng.lib` files are removed from `code/lib64/`, `code/lib64_db/`, and `code/lib/`
+- [ ] `code/image.cpp` compiles and links against the vcpkg-provided libpng
+- [ ] CI builds succeed on both Windows and Linux
+
+**Implementation Notes:**
+- vcpkg port name: `libpng`
+- The project uses libpng via `#include "png.h"` in `image.cpp` — the vcpkg port provides this header via `find_package(PNG)` which sets `PNG_INCLUDE_DIRS` and `PNG_LIBRARIES`
+- libpng depends on zlib — coordinate with US-P0m4 (vcpkg handles transitive dependencies automatically)
+
+**Known Pitfalls:**
+- The vendored `pnglibconf.h` may contain custom configuration — compare with the vcpkg version to ensure no feature flags differ
+
+### US-P0m4: Migrate zlib to vcpkg
+
+**Description:** Replace the vendored zlib static libraries (`zlibstat.lib` / `zlibstat_vc15.lib` in `code/lib64/`, `code/lib64_db/`, `code/lib/`) with a vcpkg-managed dependency. Note: zlib headers are currently bundled inside `code/minizip/` — only the standalone library files are replaced by this story.
+
+**Acceptance Criteria:**
+- [ ] `zlib` is declared as a dependency in `vcpkg.json`
+- [ ] `code/CMakeLists.txt` uses `find_package(ZLIB)` instead of manual library paths
+- [ ] The pre-built `zlibstat.lib` / `zlibstat_vc15.lib` files are removed from `code/lib64/`, `code/lib64_db/`, and `code/lib/`
+- [ ] `code/zip.cpp` and minizip code compile and link against the vcpkg-provided zlib
+- [ ] CI builds succeed on both Windows and Linux
+
+**Implementation Notes:**
+- vcpkg port name: `zlib`
+- The zlib headers (`zlib.h`, `zconf.h`) are currently located in `code/minizip/` alongside the minizip source — these should be removed once the vcpkg zlib provides them via include paths
+- `find_package(ZLIB)` sets `ZLIB_INCLUDE_DIRS` and `ZLIB_LIBRARIES`
+
+**Known Pitfalls:**
+- `code/minizip/` contains both zlib headers and minizip source files — only the zlib headers and libs are replaced here; minizip source files are handled by US-P0m5
+- The vendored lib has different names across platforms (`zlibstat.lib` vs `zlibstat_vc15.lib`) — vcpkg normalizes this
+
+### US-P0m5: Migrate minizip to vcpkg
+
+**Description:** Replace the vendored minizip source files and headers (`code/minizip/`) with a vcpkg-managed dependency. Currently minizip source is compiled directly as part of the MeOS build — with vcpkg it becomes a pre-built library.
+
+**Acceptance Criteria:**
+- [ ] `minizip` is declared as a dependency in `vcpkg.json`
+- [ ] `code/CMakeLists.txt` uses `find_package()` or vcpkg integration for minizip instead of compiling minizip sources directly
+- [ ] The vendored `code/minizip/` directory is removed (after zlib headers are provided by US-P0m4)
+- [ ] `code/zip.cpp` compiles and links against the vcpkg-provided minizip
+- [ ] CI builds succeed on both Windows and Linux
+
+**Implementation Notes:**
+- vcpkg port name: `minizip`
+- The `code/minizip/` directory contains both minizip-specific files (`zip.h`, `unzip.h`, `ioapi.h`, `iowin32.h`, `mztools.h`) and zlib internals (`zlib.h`, `zconf.h`, `deflate.h`, `inflate.h`, etc.) — the zlib files are handled by US-P0m4
+- `code/zip.cpp` includes `"minizip/zip.h"` and `"minizip/unzip.h"` — the vcpkg port may require `<minizip/zip.h>` or just `<zip.h>` depending on configuration
+- `iowin32.h`/`iowin32.c` is the Windows-specific I/O backend for minizip — the vcpkg port should provide this on Windows automatically
+
+**Known Pitfalls:**
+- minizip depends on zlib — must be done together with or after US-P0m4
+- The vendored minizip may include modifications or patches — diff against upstream minizip to check for local changes before removing
+- The current build likely compiles minizip `.c` files directly — these compilation units must be removed from the CMakeLists.txt source list when switching to the vcpkg library
+
+### US-P0m6: Migrate restbed to vcpkg
+
+**Description:** Replace the vendored restbed headers (`code/restbed/`) and pre-built static library (`RestBed.lib` in `code/lib64/`, `code/lib64_db/`, `code/lib/`) with a vcpkg-managed dependency.
+
+**Acceptance Criteria:**
+- [ ] `restbed` is declared as a dependency in `vcpkg.json`
+- [ ] `code/CMakeLists.txt` uses `find_package(restbed)` or vcpkg integration instead of manual library paths
+- [ ] The vendored `code/restbed/` header directory is removed
+- [ ] The pre-built `RestBed.lib` files are removed from `code/lib64/`, `code/lib64_db/`, and `code/lib/`
+- [ ] `code/restserver.cpp` and `code/RestService.cpp` compile and link against the vcpkg-provided restbed
+- [ ] CI builds succeed on both Windows and Linux
+
+**Implementation Notes:**
+- vcpkg port name: `restbed`
+- The project includes restbed via `#include <restbed>` (the umbrella header) in `restserver.cpp` — verify the vcpkg port provides this header
+- restbed has a transitive dependency on OpenSSL (via `ssl_settings.hpp`) — coordinate with US-P0m7
+- The vendored `RestBed.lib` is very large (20–48 MB) — removing it significantly reduces repository size
+
+**Known Pitfalls:**
+- restbed's vcpkg port may be outdated or have different default features (SSL enabled/disabled) — verify the `[ssl]` feature is enabled in the vcpkg dependency declaration if SSL support is needed
+- The vendored restbed is from 2017 (Corvusoft era) — the vcpkg version may have API changes; check `restserver.cpp` and `RestService.cpp` for compatibility
+- restbed depends on ASIO (either standalone or Boost.Asio) — vcpkg handles this transitively, but it adds to the dependency tree
+
+### US-P0m7: Migrate OpenSSL to vcpkg
+
+**Description:** Replace the system-installed OpenSSL (currently installed via Chocolatey on Windows CI) with a vcpkg-managed dependency. This ensures consistent OpenSSL versions across all platforms and eliminates the need for CI-specific installation steps.
+
+**Acceptance Criteria:**
+- [ ] `openssl` is declared as a dependency in `vcpkg.json`
+- [ ] `code/CMakeLists.txt` uses `find_package(OpenSSL)` with vcpkg integration instead of relying on system-installed OpenSSL
+- [ ] CI workflow no longer needs a separate OpenSSL installation step (Chocolatey)
+- [ ] restbed links against the vcpkg-provided OpenSSL
+- [ ] CI builds succeed on both Windows and Linux
+
+**Implementation Notes:**
+- vcpkg port name: `openssl`
+- OpenSSL is not directly used by MeOS code — it is a transitive dependency of restbed (for SSL/TLS support)
+- If restbed is migrated to vcpkg (US-P0m6), OpenSSL is pulled in transitively and this story may only require adding it explicitly to `vcpkg.json` and removing the Chocolatey install step from CI
+- The current CI uses OpenSSL 1.1 via Chocolatey — vcpkg may provide OpenSSL 3.x; verify restbed compatibility
+
+**Known Pitfalls:**
+- OpenSSL 1.1 vs 3.x API differences — if restbed was built against 1.1, the vcpkg version (likely 3.x) may require restbed to be updated as well
+- On Linux, OpenSSL is typically available as a system package — vcpkg can still manage it for consistency, but `VCPKG_USE_SYSTEM_OPENSSL` may be needed in some configurations
+- OpenSSL build from source is slow — vcpkg caches it, but first CI build will be longer
+
 ## Functional Requirements
 
 - FR-1: All changes must use standard C++17 compatible with MSVC (v143), GCC 12+, and Clang 15+ — Windows build verification happens post-hoc via CI
@@ -332,13 +528,14 @@ Fixing these in `code/` eliminates entire categories of migration errors and red
 - Migrating any files to `src/` — that is covered by the main platform modernization PRD
 - Changing UI/Tab code beyond what's needed for decoupling (US-P0f)
 - Adding tests (the legacy codebase has no test infrastructure; tests come after migration)
-- Fixing issues in non-domain files (UI, build scripts, etc.)
+- Fixing issues in non-domain files (UI, Tab code, etc.) beyond what's needed for decoupling and build system changes
 
 ## Dependency Order
 
 The stories can be worked largely in parallel, with one exception:
 
 ```
+US-P0l (CMake build)        — independent, do early to get CI feedback on all subsequent changes
 US-P0a (include casing)     — independent, do first
 US-P0b (extract utilities)  — independent
 US-P0c (string functions)   — independent, but easier after US-P0b
@@ -350,13 +547,22 @@ US-P0i (file APIs)          — independent, but easier after US-P0e (path separ
 US-P0j (threading)          — independent
 US-P0k (Sleep)              — independent, can combine with US-P0j
 US-P0n (MessageBox/Debug)   — independent, can combine with US-P0f (same decoupling pattern)
+US-P0m4 (zlib vcpkg)        — depends on US-P0l (CMake must exist)
+US-P0m3 (libpng vcpkg)      — depends on US-P0m4 (zlib is a transitive dependency)
+US-P0m1 (libharu vcpkg)     — depends on US-P0m3 and US-P0m4 (libharu depends on both)
+US-P0m5 (minizip vcpkg)     — depends on US-P0m4 (minizip depends on zlib)
+US-P0m7 (OpenSSL vcpkg)     — depends on US-P0l
+US-P0m6 (restbed vcpkg)     — depends on US-P0m7 (restbed depends on OpenSSL)
+US-P0m2 (MySQL vcpkg)       — depends on US-P0l
 US-P0g (split large files)  — do last to avoid conflicts with all other changes
 ```
 
-Recommended order: P0a first (quick, mechanical), then P0b (unblocks cleaner domain files), then P0c-P0e, P0h-P0k, and P0n in any order (P0k can combine with P0j, P0n can combine with P0f), then P0f (most complex), then P0g last (reduces churn from earlier refactorings).
+Recommended order: P0l first (establishes CMake CI so all subsequent changes get build verification), then P0a (quick, mechanical), then P0b (unblocks cleaner domain files), then P0c-P0e, P0h-P0k, and P0n in any order (P0k can combine with P0j, P0n can combine with P0f), then P0f (most complex). vcpkg migrations (P0m1-P0m7) should be done after P0l establishes CMake, in dependency order: P0m4 (zlib) → P0m3 (libpng) + P0m5 (minizip) → P0m1 (libharu), and P0m7 (OpenSSL) → P0m6 (restbed), with P0m2 (MySQL) independent. P0g last (reduces churn from earlier refactorings). Note: P0g requires updating `code/CMakeLists.txt` when new split files are created.
 
 ## Success Metrics
 
+- `code/CMakeLists.txt` builds MeOS.exe successfully via `cmake --build` on Windows CI
+- `.github/workflows/build-legacy.yml` uses CMake (no MSBuild dependency)
 - Zero case-sensitivity mismatches in `#include` directives
 - Domain `.cpp/.h` files have no direct `#include "gdioutput.h"` (only via utility headers)
 - `grep` for `_wtoi`, `sprintf_s`, `_itow_s`, `DWORD`, Win32 `BOOL` returns zero hits in domain files
@@ -367,4 +573,7 @@ Recommended order: P0a first (quick, mechanical), then P0b (unblocks cleaner dom
 - `grep` for `FindFirstFile`, `GetTempPath`, `_wfopen_s`, `MAX_PATH` returns zero hits in domain files
 - `grep` for `CRITICAL_SECTION`, `_beginthread`, `TerminateThread` returns zero hits in domain files
 - `grep` for Win32 `Sleep(` returns zero hits in domain files
+- All third-party libraries (libharu, libmysql, libpng, zlib, minizip, restbed, OpenSSL) are managed via `vcpkg.json` — no vendored headers or pre-built `.lib`/`.dll` files remain in `code/`
+- `code/libharu/`, `code/mysql/`, `code/png/`, `code/minizip/`, `code/restbed/` directories are removed
+- `code/lib/`, `code/lib64/`, `code/lib64_db/`, `code/dll/`, `code/dll64/` directories are removed
 - Windows MSBuild build succeeds after all changes (verified via CI post-hoc)
