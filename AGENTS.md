@@ -1,6 +1,6 @@
 # Copilot Instructions for MeOS
 
-MeOS (Much Easier Orienteering System) is a Windows desktop application for managing orienteering competitions. A platform modernization is planned — see the PRD in `plan/prd-platform-modernization.md` for the target architecture.
+MeOS (Much Easier Orienteering System) is a Windows desktop application for managing orienteering competitions. A platform modernization is underway — see the PRDs in `plan/` for the target architecture and progress.
 
 ## Project Overview
 
@@ -9,7 +9,10 @@ MeOS (Much Easier Orienteering System) is a Windows desktop application for mana
 | Directory | Purpose |
 |-----------|---------|
 | `code/` | Legacy Windows-only codebase (MSBuild, Win32/GDI, MySQL). Has its own `AGENTS.md` with detailed architecture docs. |
-| `plan/` | PRD and planning artifacts for the modernization effort. |
+| `src/` | Modern cross-platform codebase (CMake, vcpkg). Currently a stub `main.cpp` + React frontend shell in `src/ui/web/`. |
+| `tests/` | Google Test suite. Currently a smoke test; per-module tests will be added as migration progresses. |
+| `plan/` | PRDs and planning artifacts for the modernization effort. |
+| `.github/workflows/` | CI/CD: `cpp.yml` (CMake build/test), `frontend.yml` (React lint/test/build), `build-legacy.yml` (MSBuild Windows). |
 
 ## Legacy Codebase (`code/`)
 
@@ -63,11 +66,25 @@ Custom exception `meosException` (with `wwhat()` for wide-string messages) and `
 
 ## Modernization
 
-The PRD at `plan/prd-platform-modernization.md` describes the planned migration from Win32/GDI + MSBuild + MySQL to CMake + React/TypeScript + SQLite. No modern codebase (`src/`) exists yet — the migration has not started.
+Three PRDs describe the modernization effort (all in `plan/`):
+
+| PRD | Scope | Status |
+|-----|-------|--------|
+| [`prd-core-migration.md`](plan/prd-core-migration.md) | Full platform migration: CMake, domain extraction, SQLite, REST API, React frontend | Build infrastructure complete (US-001/015/016/017 archived). Domain migration not started. |
+| [`prd-legacy-preparation.md`](plan/prd-legacy-preparation.md) | Preparatory refactoring in `code/`: cross-platform fixes, Win32 API replacement, vcpkg migration | Not started. |
+| [`prd-web-frontend.md`](plan/prd-web-frontend.md) | React + TypeScript SPA in `src/ui/web/` | Shell project scaffolded (Vite, TypeScript, Vitest, ESLint). No pages/routes yet. |
+
+### What exists in `src/` today
+
+- `src/main.cpp` — stub (`int main() { return 0; }`)
+- `src/ui/web/` — React + TypeScript project shell (Vite, Vitest, ESLint, Tailwind CSS configured). Only has `App.tsx` and a smoke test. No routing, pages, or API client yet.
+- `tests/smoke_test.cpp` — Google Test smoke test
+- `CMakeLists.txt` — root build with vcpkg integration, clang-tidy option, coverage option
+- `vcpkg.json` — currently only `gtest`
 
 ### Iterative Migration Approach
 
-The migration is **run from scratch repeatedly** by Ralph (an autonomous agent loop in `plan/ralph.sh`). Each full attempt is analyzed, the PRD/skills/prompts are improved, and the migration is run again. The generated code is disposable — only the learnings persist across runs.
+Domain migration is **run from scratch repeatedly** by Ralph (an autonomous agent loop in `plan/ralph.sh`). Each full attempt is analyzed, the PRD/skills/prompts are improved, and the migration is run again. The generated code is disposable — only the learnings persist across runs.
 
 **This is a fork of [melinsoftware/meos](https://github.com/melinsoftware/meos).** We sync with upstream before each migration run. The legacy code in `code/` is therefore **not static** — do not make assumptions about exact file contents, line numbers, or function signatures. Always read and discover code structure dynamically.
 
@@ -75,9 +92,9 @@ The migration is **run from scratch repeatedly** by Ralph (an autonomous agent l
 
 | File | Purpose |
 |------|---------|
-| `plan/prd-platform-modernization.md` | What to build (updated between runs) |
-| `plan/prd.json` | Machine-readable PRD for Ralph (regenerated from the PRD) |
+| `plan/prd-core-migration.md` | What to build (updated between runs) |
+| `plan/prd.json` | Machine-readable PRD for Ralph (regenerated from the PRD, gitignored) |
 | `plan/prompt.md` | Instructions for each Ralph iteration (updated between runs) |
 | `plan/ralph.sh` | The agent loop runner (updated between runs) |
-| `plan/progress.txt` | Learnings from the current run (discarded between runs, patterns extracted first) |
-| `.gemini/skills/migration/Skill.md` | Accumulated migration knowledge (persists across runs) |
+| `plan/progress.txt` | Learnings from the current run (discarded between runs, patterns extracted first, gitignored) |
+| `.gemini/skills/migration/SKILL.md` | Accumulated migration knowledge (persists across runs) |

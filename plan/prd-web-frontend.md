@@ -44,11 +44,9 @@ These patterns were discovered during previous Ralph runs and should be followed
 
 ### US-007: React + TypeScript Web GUI Shell
 
-**Description:** As a user, I want a modern web-based interface so that I can manage competitions from any browser on any platform.
+**Description:** As a user, I want a modern web-based interface so that I can manage competitions from any browser on any platform. The React + Vite project is already scaffolded (`src/ui/web/`). This story adds routing, layout, and API client.
 
 **Acceptance Criteria:**
-- [ ] React 18+ app with TypeScript in `src/ui/web/`
-- [ ] Vite as build tool
 - [ ] Routing with React Router (tabs map to routes: `/runners`, `/classes`, `/clubs`, etc.)
 - [ ] API client layer with typed interfaces matching REST API
 - [ ] Basic layout: navigation sidebar/tabs + content area

@@ -2,42 +2,37 @@
 
 ## Introduction
 
-MeOS (Much Easier Orienteering System) is a mature Windows desktop application for managing orienteering competitions, built with C++17, Win32/GDI, and MSBuild. This PRD describes a comprehensive modernization effort to make MeOS platform-independent, replace the Win32 GUI with a React+TypeScript web interface, adopt CMake, introduce proper testing and CI/CD, and restructure the codebase into a modular layout.
+MeOS (Much Easier Orienteering System) is a mature Windows desktop application for managing orienteering competitions, built with C++17, Win32/GDI, and MSBuild. This PRD describes the remaining migration work to make MeOS platform-independent, replace the Win32 GUI with a React+TypeScript web interface, and restructure the codebase into a modular layout.
 
 The end result is a single executable that starts an embedded HTTP server and serves a React web GUI — users open `http://localhost:<port>` in any browser. The application runs on Linux, macOS, and Windows without modification.
 
-### Current State
+### What exists today
 
-- **Build:** MSBuild / Visual Studio 2022 (Windows-only)
-- **GUI:** Win32/GDI via custom `gdioutput` wrapper, tab-based (`TabRunner`, `TabClass`, etc.)
-- **Source layout:** Flat `code/` directory (~200+ files, no subdirectories for source)
-- **Database:** MySQL via custom ORM (`MeosSQL` → `mysqlwrapper`)
-- **REST API:** Minimal query-parameter based API returning XML/HTML via restbed
-- **Hardware:** SportIdent reader integration via Windows serial port APIs
-- **Dependencies:** Vendored in `code/` (restbed, libharu, minizip, mysql, png, sound, DLLs)
-- **Tests:** Stub test framework (`testmeos.cpp`), no CI/CD
+**Legacy (`code/`):** ~200+ files in a flat directory. C++17, Win32/GDI UI, MySQL, MSBuild, vendored dependencies. See `code/AGENTS.md` for full details.
+
+**Modern (`src/`):** Build infrastructure is complete (see `plan/archive/prd-build-infrastructure.md`):
+
+- CMake 3.28+ with vcpkg integration, Ninja generator, CMakePresets.json
+- Google Test + Vitest + `meos_add_test` macro
+- CI/CD via GitHub Actions (`cpp.yml`, `frontend.yml`, `build-legacy.yml`)
+- React + TypeScript + Vite shell in `src/ui/web/` (no pages/routes yet)
+- Stub `src/main.cpp` — modular layout (US-002) not yet created
+- `vcpkg.json` with `gtest` only
 
 ### Target State
 
-- **Build:** CMake (cross-platform)
-- **GUI:** React + TypeScript SPA served by embedded HTTP server
-- **Source layout:** Modular `src/` with domain, net, db, util, etc.
-- **Database:** SQLite (embedded, no separate server)
-- **REST API:** Full CRUD JSON API covering all domain entities
-- **Hardware:** Deferred to later phase
-- **Dependencies:** vcpkg package manager
-- **Tests:** Google Test (C++), Vitest (React), CI/CD via GitHub Actions
+- Modular `src/` with domain, net, db, util, io modules
+- SQLite (embedded, no separate server)
+- Full CRUD JSON API covering all domain entities
+- React + TypeScript SPA served by embedded HTTP server
 
 ## Goals
 
-- Make MeOS fully platform-independent (Linux, macOS, Windows)
-- Replace Win32 GUI with a modern React + TypeScript web interface
-- Migrate from MSBuild to CMake for cross-platform builds
 - Restructure source code from flat `code/` into modular `src/` layout
+- Extract domain model into standalone library with no platform-specific code
 - Replace MySQL with SQLite for zero-configuration deployment
 - Build complete CRUD REST API with JSON for all domain entities
-- Replace vendored libraries with vcpkg-managed dependencies
-- Add comprehensive test coverage and CI/CD from the start
+- Build React + TypeScript web interface replacing Win32 GUI
 - Migrate existing domain logic incrementally (module by module)
 - Maintain single-binary deployment model (download and run)
 
@@ -83,11 +78,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 
 ### US-P0: Legacy Code Preparation
 
-> **Extracted to separate PRD:** See [`plan/prd-legacy-preparation.md`](prd-legacy-preparation.md) for the full US-P0 breakdown (US-P0a through US-P0f). This work operates on the legacy `code/` directory under MSBuild and can run **in parallel** with the migration work below.
-
-### US-001, US-015, US-016: Build & Infrastructure
-
-> **Extracted to separate PRD (DONE):** See [`plan/archive/prd-build-infrastructure.md`](archive/prd-build-infrastructure.md) for the full breakdown (US-001 CMake, US-015 Test Infrastructure, US-016 CI/CD). This work is complete and archived.
+> **Extracted to separate PRD:** See [`plan/prd-legacy-preparation.md`](prd-legacy-preparation.md) for the full US-P0 breakdown (US-P0a through US-P0n). This work operates on the legacy `code/` directory under MSBuild and can run **in parallel** with the migration work below.
 
 ### US-002: Modular Source Layout
 
@@ -408,7 +399,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 
 ### US-007–010: React Web Frontend
 
-> **Extracted to separate PRD:** See [`plan/prd-web-frontend.md`](prd-web-frontend.md) for the full breakdown (US-007 through US-010, including US-009a–c and US-010a–c). This work operates exclusively in `src/ui/web/` and can run **in parallel** with all C++ migration work since it only depends on the API contract.
+> **Extracted to separate PRD:** See [`plan/prd-web-frontend.md`](prd-web-frontend.md) for the full breakdown (US-007 through US-010). Runs **in parallel** with C++ migration work — only depends on the API contract.
 
 ### US-011: Static File Serving from C++ Server
 
@@ -553,8 +544,6 @@ These patterns were discovered during previous Ralph runs and should be followed
 
 ## Functional Requirements
 
-- FR-1: The application must build with CMake on Linux (GCC 12+, Clang 15+) and Windows (MSVC v143)
-- FR-2: All external dependencies must be managed through vcpkg
 - FR-3: The domain layer must compile as an independent static library with no platform-specific code
 - FR-4: Persistence must use SQLite with the database stored as a single file
 - FR-5: The REST API must expose full CRUD operations for all domain entities via JSON
@@ -564,8 +553,6 @@ These patterns were discovered during previous Ralph runs and should be followed
 - FR-9: The application must start with a single command/double-click (no external dependencies at runtime)
 - FR-10: The build system must produce a single distributable binary (with bundled frontend assets)
 - FR-11: Source code must be organized in `src/` with clear module boundaries
-- FR-12: All new code must have corresponding unit tests
-- FR-13: CI must run on every push and pull request
 - FR-14: The domain model must preserve existing business logic (result computation, class drawing, qualification systems)
 - FR-15: Localization support must be retained (Swedish primary, multi-language via `.lng` files)
 
@@ -593,28 +580,24 @@ These patterns were discovered during previous Ralph runs and should be followed
 
 ### Migration Strategy
 
-The migration follows an incremental approach. Both `code/` (legacy) and `src/` (new) coexist during the transition.
+The migration follows an incremental approach. Both `code/` (legacy) and `src/` (new) coexist during the transition. Phase 0 (legacy prep) and Phase 1 (foundation) are complete — see `plan/archive/`. Remaining phases:
 
-0. **Phase 0 — Legacy Preparation:** Fix cross-platform blockers in `code/` *before* migration starts (case sensitivity, Win32-specific APIs in domain code, GUI/domain coupling). All changes stay in the legacy MSBuild project and must not break the Windows build.
-1. **Phase 1 — Foundation:** CMake + vcpkg + modular `src/` structure + CI/CD + test framework (empty shell that compiles)
-2. **Phase 2 — Utilities & Domain:** Migrate `src/util/` and `src/domain/` (no GUI, no DB), add tests
-3. **Phase 3 — Database:** Implement SQLite layer in `src/db/`, wire to domain
-4. **Phase 4 — REST API:** Build JSON CRUD API in `src/net/`, wire to domain + DB
-5. **Phase 5 — React Frontend:** Build web GUI in `src/ui/web/`, connect to API
-6. **Phase 6 — Static Serving & Integration:** C++ server serves React build, single-binary packaging
-7. **Phase 7 — Cleanup:** Remove Win32 code, remove `code/` directory
+2. **Utilities & Domain:** Migrate `src/util/` and `src/domain/` (no GUI, no DB), add tests
+3. **Database:** Implement SQLite layer in `src/db/`, wire to domain
+4. **REST API:** Build JSON CRUD API in `src/net/`, wire to domain + DB
+5. **React Frontend:** Build web GUI in `src/ui/web/`, connect to API
+6. **Static Serving & Integration:** C++ server serves React build, single-binary packaging
+7. **Cleanup:** Remove Win32 code, remove `code/` directory
 
-Each phase produces a working, testable increment. No phase depends on Win32 GUI code — avoiding wasted effort.
+Each phase produces a working, testable increment.
 
-### Key Dependencies (vcpkg)
+### Key Dependencies (vcpkg, to be added)
 
-- **restbed** or **cpp-httplib** — HTTP server (evaluate if restbed is available in vcpkg, otherwise switch)
+- **cpp-httplib** — HTTP server
 - **nlohmann-json** — JSON serialization
-- **sqlite3** — Database
-- **libharu** — PDF generation
-- **gtest** — Testing
-- **pugixml** or **tinyxml2** — XML parsing (replace custom parser if beneficial)
-- **zlib** — Compression (for minizip replacement)
+- **sqlite3** (`unofficial-sqlite3`) — Database
+- **libharu** (`unofficial-libharu`) — PDF generation
+- **zlib** — Compression
 
 ### Architecture Diagram
 
@@ -670,18 +653,14 @@ src/
 
 ## Success Metrics
 
-- MeOS builds and runs on Linux and Windows from a single CMake command
 - All domain entity CRUD operations work end-to-end (GUI → API → DB → response)
-- Test suite passes with >80% coverage on new code
-- CI pipeline runs green on every PR
 - Single binary + bundled frontend deploys without any external dependencies
 - Competition workflow (create competition → add classes/courses → add runners → record results → view results) works entirely through the web GUI
 
 ## Open Questions
 
 1. Should the REST API support WebSocket for real-time updates (live results), or is polling sufficient for the initial version?
-2. Which HTTP server library should replace/augment restbed? cpp-httplib is header-only and simpler; restbed is more feature-rich but heavier.
-3. Should the React frontend support offline mode (service worker / PWA)?
-4. How should the bundled frontend assets be embedded — as files alongside the binary, or compiled into the binary as resources?
-5. Should localization in the frontend reuse the existing `.lng` files or adopt a standard i18n library (e.g., react-intl)?
-6. What is the minimum supported browser version for the web GUI?
+2. Should the React frontend support offline mode (service worker / PWA)?
+3. How should the bundled frontend assets be embedded — as files alongside the binary, or compiled into the binary as resources?
+4. Should localization in the frontend reuse the existing `.lng` files or adopt a standard i18n library (e.g., react-intl)?
+5. What is the minimum supported browser version for the web GUI?
