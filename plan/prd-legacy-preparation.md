@@ -145,13 +145,34 @@ Fixing these in `code/` eliminates entire categories of migration errors and red
 
 ### US-P0f: Decouple Domain Code from Tab* UI Classes
 
-**Description:** Remove direct coupling from domain files to Tab UI classes (`TabList`, `TabAuto`, `TabSI`, `TabCompetition`). Currently multiple domain files have direct `#include` of Tab headers and call Tab methods, creating hard dependencies from domain/infrastructure code to the UI layer. Replace with callbacks or interfaces so domain code has no knowledge of Tab classes.
+> **Note:** Split into two sub-stories because the full decoupling spans 9+ files. US-P0f1 establishes the callback pattern in `oEvent.cpp` (the hardest part); US-P0f2 applies it mechanically to the remaining files.
+
+#### US-P0f1: Decouple oEvent.cpp from Tab* UI Classes
+
+**Description:** Create `std::function` callback infrastructure in `oEvent` and remove direct Tab* dependencies from `oEvent.cpp`. This establishes the pattern that US-P0f2 reuses.
 
 **Acceptance Criteria:**
 - [ ] `oEvent.cpp` no longer includes `TabList.h`, `TabAuto.h`, or `TabSI.h`
-- [ ] `TabList::baseButtons()` call replaced with a callback or interface
-- [ ] `TabAuto::tabAutoKillMachines()` call replaced with a callback or interface
-- [ ] `TabSI::getSI().setSubSecondMode()` call replaced with a callback or interface
+- [ ] `TabList::baseButtons()` call replaced with a `std::function` callback
+- [ ] `TabAuto::tabAutoKillMachines()` call replaced with a `std::function` callback
+- [ ] `TabSI::getSI().setSubSecondMode()` call replaced with a `std::function` callback
+- [ ] `oEvent.h` has no Tab* forward declarations or includes
+- [ ] Tab classes register their callbacks during application initialization in `meos.cpp`
+- [ ] Changes use only standard C++17 compatible with both MSVC and GCC/Clang (verified via CI post-hoc)
+
+**Implementation Notes:**
+- Use `std::function` callbacks stored as members in `oEvent`
+- `meos.cpp` is the natural composition root where Tab callbacks should be registered (after `gEvent` initialization)
+- This establishes the pattern — keep it clean and well-documented so US-P0f2 can follow it
+
+**Known Pitfalls:**
+- After decoupling Tab includes, `oEvent` still has coupling to `meos.cpp` via external declarations of `createTabs` and `hideTabs` — these could also be converted to callbacks for full library extraction
+
+#### US-P0f2: Decouple Remaining Domain Files from Tab* UI Classes
+
+**Description:** Apply the callback pattern from US-P0f1 to all remaining domain files that include Tab* headers.
+
+**Acceptance Criteria:**
 - [ ] `autotask.cpp` no longer includes `TabAuto.h` or `TabSI.h` — `timerCallback()` and `checkPrintQueue()` replaced with callbacks
 - [ ] `oEventResult.cpp` no longer includes `TabBase.h` or `TabList.h`
 - [ ] `oEventSQL.cpp` no longer includes `TabAuto.h`
@@ -160,48 +181,93 @@ Fixing these in `code/` eliminates entire categories of migration errors and red
 - [ ] `metalist.cpp` no longer includes `TabAuto.h`
 - [ ] `mysqldaemon.cpp` no longer includes `TabAuto.h`
 - [ ] `onlineinput.cpp` no longer includes `TabSI.h`
-- [ ] Tab classes register their callbacks during application initialization
+- [ ] `grep` confirms: no domain `.cpp/.h` file includes any `Tab*.h` header
 - [ ] Changes use only standard C++17 compatible with both MSVC and GCC/Clang (verified via CI post-hoc)
 
 **Implementation Notes:**
-- Use `std::function` callbacks stored in `oEvent` or passed via initialization — this pattern has already been proven in the migration work
-- Tab classes register their callbacks during application startup (e.g., in `main()` or initialization code)
+- Uses the callback pattern established in US-P0f1
 - `autotask.cpp` uses `dynamic_cast` to Tab classes — replace with stored `std::function` callbacks registered at startup
-- This is the most complex preparation task — test thoroughly
+- Tab classes register their callbacks during application startup in `meos.cpp`
 
 **Known Pitfalls:**
-- `meos.cpp` is the natural composition root where Tab callbacks should be registered (after `gEvent` initialization)
-- After decoupling Tab includes, `oEvent` still has coupling to `meos.cpp` via external declarations of `createTabs` and `hideTabs` — these could also be converted to callbacks for full library extraction
 - `autotask.cpp` currently does `dynamic_cast` on a list of `TabBase*` to find TabAuto/TabSI — the callback approach avoids this entirely since the Tab classes register themselves
 
 ### US-P0g: Split Large Files
 
-**Description:** Several files in `code/` are extremely large (5000–8000+ lines), making migration to `src/` painful — large files cause merge conflicts, are hard to review, and slow down incremental migration. Split the biggest domain files into logical sub-files before migration.
+> **Note:** Split into one sub-story per file. Each file is 5000–8000+ lines and splitting requires reading the full file, identifying logical seams, creating split files, and updating build systems — too much for a single iteration.
 
-**Target files (lines):**
-- `oEvent.cpp` (~7400) — domain aggregate root with mixed responsibilities
-- `oRunner.cpp` (~7800) — runner logic, result calculation, ranking
-- `oClass.cpp` (~5700) — class configuration, draw, course assignment
-- `oListInfo.cpp` (~5900) — list/result formatting and output
-- `gdioutput.cpp` (~8200) — UI rendering (out of domain scope, but blocks migration)
-
-**Acceptance Criteria:**
-- [ ] No single domain `.cpp` file exceeds ~3000 lines after splitting
-- [ ] Splits follow logical/functional boundaries (e.g., `oEvent` IO vs draw vs SQL, `oRunner` results vs ranking)
-- [ ] All split files compile and link correctly — no missing symbols or duplicate definitions
-- [ ] Header files updated with any necessary forward declarations
-- [ ] Changes use only standard C++17 compatible with both MSVC and GCC/Clang (verified via CI post-hoc)
-
-**Implementation Notes:**
-- `oEvent.cpp` already has partial splits (`oEventDraw.cpp`, `oEventImport.cpp`) — follow the same pattern
+**General Implementation Notes (apply to all sub-stories):**
 - Look for natural seams: groups of related methods, `#pragma region` blocks, comment section headers
 - Each split file should `#include` the parent class header and implement a coherent subset of methods
 - Update the build system (`.vcxproj` / CMake) to include the new files
 - Prefer splitting `.cpp` files only — avoid splitting `.h` files unless a class genuinely has separable interfaces
+- Anonymous-namespace helpers and file-static variables used by only some methods need to move to the correct split file (or to an internal header)
+
+#### US-P0g1: Split oEvent.cpp
+
+**Description:** Split `oEvent.cpp` (~7400 lines) into logical sub-files so no single file exceeds ~3000 lines.
+
+**Acceptance Criteria:**
+- [ ] `oEvent.cpp` does not exceed ~3000 lines after splitting
+- [ ] Split files follow the existing pattern (`oEventDraw.cpp`, `oEventImport.cpp` already exist)
+- [ ] Splits follow logical/functional boundaries (IO, draw, SQL, results, etc.)
+- [ ] All split files compile and link correctly — no missing symbols or duplicate definitions
+- [ ] New split files added to `code/CMakeLists.txt` and the `.vcxproj`
+- [ ] Anonymous-namespace helpers and file-static variables moved to the correct split file
+- [ ] Changes use only standard C++17 compatible with both MSVC and GCC/Clang (verified via CI post-hoc)
 
 **Known Pitfalls:**
-- Anonymous-namespace helpers and file-static variables used by only some methods need to move to the correct split file (or to an internal header)
+- `oEvent.cpp` already has partial splits (`oEventDraw.cpp`, `oEventImport.cpp`) — follow the same naming pattern
+
+#### US-P0g2: Split oRunner.cpp
+
+**Description:** Split `oRunner.cpp` (~7800 lines) into logical sub-files so no single file exceeds ~3000 lines.
+
+**Acceptance Criteria:**
+- [ ] `oRunner.cpp` does not exceed ~3000 lines after splitting
+- [ ] Splits follow logical/functional boundaries (results vs ranking vs data management)
+- [ ] All split files compile and link correctly — no missing symbols or duplicate definitions
+- [ ] New split files added to `code/CMakeLists.txt` and the `.vcxproj`
+- [ ] Anonymous-namespace helpers and file-static variables moved to the correct split file
+- [ ] Changes use only standard C++17 compatible with both MSVC and GCC/Clang (verified via CI post-hoc)
+
+**Known Pitfalls:**
 - `oRunner.cpp` has interleaved result/ranking logic — identify method groups carefully before splitting
+
+#### US-P0g3: Split oClass.cpp
+
+**Description:** Split `oClass.cpp` (~5700 lines) into logical sub-files so no single file exceeds ~3000 lines.
+
+**Acceptance Criteria:**
+- [ ] `oClass.cpp` does not exceed ~3000 lines after splitting
+- [ ] Splits follow logical/functional boundaries (configuration, draw, course assignment)
+- [ ] All split files compile and link correctly — no missing symbols or duplicate definitions
+- [ ] New split files added to `code/CMakeLists.txt` and the `.vcxproj`
+- [ ] Changes use only standard C++17 compatible with both MSVC and GCC/Clang (verified via CI post-hoc)
+
+#### US-P0g4: Split oListInfo.cpp
+
+**Description:** Split `oListInfo.cpp` (~5900 lines) into logical sub-files so no single file exceeds ~3000 lines.
+
+**Acceptance Criteria:**
+- [ ] `oListInfo.cpp` does not exceed ~3000 lines after splitting
+- [ ] Splits follow logical/functional boundaries (list formatting vs result output)
+- [ ] All split files compile and link correctly — no missing symbols or duplicate definitions
+- [ ] New split files added to `code/CMakeLists.txt` and the `.vcxproj`
+- [ ] Changes use only standard C++17 compatible with both MSVC and GCC/Clang (verified via CI post-hoc)
+
+#### US-P0g5: Split gdioutput.cpp
+
+**Description:** Split `gdioutput.cpp` (~8200 lines) into logical sub-files so no single file exceeds ~3000 lines.
+
+**Acceptance Criteria:**
+- [ ] `gdioutput.cpp` does not exceed ~3000 lines after splitting
+- [ ] Splits follow logical/functional boundaries
+- [ ] All split files compile and link correctly — no missing symbols or duplicate definitions
+- [ ] New split files added to `code/CMakeLists.txt` and the `.vcxproj`
+- [ ] Changes use only standard C++17 compatible with both MSVC and GCC/Clang (verified via CI post-hoc)
+
+**Known Pitfalls:**
 - `gdioutput.cpp` is UI code and not strictly domain, but its size blocks migration; split it if practical
 
 ### US-P0h: Replace Win32 Time APIs with std::chrono
@@ -535,29 +601,34 @@ Fixing these in `code/` eliminates entire categories of migration errors and red
 The stories can be worked largely in parallel, with one exception:
 
 ```
-US-P0l (CMake build)        — independent, do early to get CI feedback on all subsequent changes
-US-P0a (include casing)     — independent, do first
-US-P0b (extract utilities)  — independent
-US-P0c (string functions)   — independent, but easier after US-P0b
-US-P0d (Win32 types)        — independent
-US-P0e (path separators)    — independent
-US-P0f (decouple Tab*)      — independent, but benefits from US-P0b being done
-US-P0h (time APIs)          — independent
-US-P0i (file APIs)          — independent, but easier after US-P0e (path separators)
-US-P0j (threading)          — independent
-US-P0k (Sleep)              — independent, can combine with US-P0j
-US-P0n (MessageBox/Debug)   — independent, can combine with US-P0f (same decoupling pattern)
-US-P0m4 (zlib vcpkg)        — depends on US-P0l (CMake must exist)
-US-P0m3 (libpng vcpkg)      — depends on US-P0m4 (zlib is a transitive dependency)
-US-P0m1 (libharu vcpkg)     — depends on US-P0m3 and US-P0m4 (libharu depends on both)
-US-P0m5 (minizip vcpkg)     — depends on US-P0m4 (minizip depends on zlib)
-US-P0m7 (OpenSSL vcpkg)     — depends on US-P0l
-US-P0m6 (restbed vcpkg)     — depends on US-P0m7 (restbed depends on OpenSSL)
-US-P0m2 (MySQL vcpkg)       — depends on US-P0l
-US-P0g (split large files)  — do last to avoid conflicts with all other changes
+US-P0l  (CMake build)         — independent, do early to get CI feedback on all subsequent changes
+US-P0a  (include casing)      — independent, do first
+US-P0b  (extract utilities)   — independent
+US-P0c  (string functions)    — independent, but easier after US-P0b
+US-P0d  (Win32 types)         — independent
+US-P0e  (path separators)     — independent
+US-P0h  (time APIs)           — independent
+US-P0i  (file APIs)           — independent, but easier after US-P0e (path separators)
+US-P0j  (threading)           — independent
+US-P0k  (Sleep)               — independent, can combine with US-P0j
+US-P0n  (MessageBox/Debug)    — independent
+US-P0f1 (decouple oEvent)     — independent, but benefits from US-P0b being done
+US-P0f2 (decouple remaining)  — depends on US-P0f1 (uses its callback pattern)
+US-P0m4 (zlib vcpkg)          — depends on US-P0l (CMake must exist)
+US-P0m3 (libpng vcpkg)        — depends on US-P0m4 (zlib is a transitive dependency)
+US-P0m1 (libharu vcpkg)       — depends on US-P0m3 and US-P0m4 (libharu depends on both)
+US-P0m5 (minizip vcpkg)       — depends on US-P0m4 (minizip depends on zlib)
+US-P0m7 (OpenSSL vcpkg)       — depends on US-P0l
+US-P0m6 (restbed vcpkg)       — depends on US-P0m7 (restbed depends on OpenSSL)
+US-P0m2 (MySQL vcpkg)         — depends on US-P0l
+US-P0g1 (split oEvent.cpp)    — do last to avoid conflicts with all other changes
+US-P0g2 (split oRunner.cpp)   — do last
+US-P0g3 (split oClass.cpp)    — do last
+US-P0g4 (split oListInfo.cpp) — do last
+US-P0g5 (split gdioutput.cpp) — do last
 ```
 
-Recommended order: P0l first (establishes CMake CI so all subsequent changes get build verification), then P0a (quick, mechanical), then P0b (unblocks cleaner domain files), then P0c-P0e, P0h-P0k, and P0n in any order (P0k can combine with P0j, P0n can combine with P0f), then P0f (most complex). vcpkg migrations (P0m1-P0m7) should be done after P0l establishes CMake, in dependency order: P0m4 (zlib) → P0m3 (libpng) + P0m5 (minizip) → P0m1 (libharu), and P0m7 (OpenSSL) → P0m6 (restbed), with P0m2 (MySQL) independent. P0g last (reduces churn from earlier refactorings). Note: P0g requires updating `code/CMakeLists.txt` when new split files are created.
+Recommended order: P0l first (establishes CMake CI so all subsequent changes get build verification), then P0a (quick, mechanical), then P0b (unblocks cleaner domain files), then P0c-P0e, P0h-P0k, and P0n in any order (P0k can combine with P0j), then P0f1 followed by P0f2 (decoupling, most complex). vcpkg migrations (P0m1-P0m7) should be done after P0l establishes CMake, in dependency order: P0m4 (zlib) → P0m3 (libpng) + P0m5 (minizip) → P0m1 (libharu), and P0m7 (OpenSSL) → P0m6 (restbed), with P0m2 (MySQL) independent. P0g1-P0g5 last (reduces churn from earlier refactorings). Note: P0g stories require updating `code/CMakeLists.txt` when new split files are created.
 
 ## Success Metrics
 
