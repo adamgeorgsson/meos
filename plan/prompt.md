@@ -23,7 +23,7 @@ This migration is **iterative and disposable**. The entire migration will be run
 6. Update AGENTS.md files if you discover reusable patterns (see below)
 7. **Write your full progress report** to `plan/progress.txt` BEFORE committing (see format below). Never use placeholders like "..." or "TODO" — write the real content now.
 8. Update the PRD to set `passes: true` for the completed story
-9. Commit all **source code changes** with message: `feat: [Story ID] - [Story Title]`. **Do NOT commit `plan/prd.json` or `plan/progress.txt`** — these are tracked outside of git and must not be included in commits. Use `git reset HEAD plan/prd.json plan/progress.txt` before committing if they are staged.
+9. Commit all **source code changes** with message: `feat: [Story ID] - [Story Title]`. **Do NOT commit `plan/prd.json`, `plan/progress.txt`, or `plan/metrics.csv`** — these are tracked outside of git and must not be included in commits. Use `git reset HEAD plan/prd.json plan/progress.txt plan/metrics.csv` before committing if they are staged.
 
 ## Writing to plan/ files — IMPORTANT
 
@@ -93,7 +93,20 @@ Only update AGENTS.md if you have **genuinely reusable knowledge** that would he
 - Keep changes focused and minimal
 - Follow existing code patterns
 - **IMPORTANT:** Keep `.gitignore` updated so that build artifacts, generated files, and other unnecessary files are not committed. Check this BEFORE every commit.
-- **NEVER commit `plan/prd.json` or `plan/progress.txt`.** These files are managed outside git. Always unstage them before committing.
+- **NEVER commit `plan/prd.json`, `plan/progress.txt`, or `plan/metrics.csv`.** These files are managed outside git. Always unstage them before committing.
+
+## Metrics Collection (Gemini only)
+
+1. **At the very start** of your session, run `/stats` and record the **gemini-3-flash-preview** remaining percentage.
+2. Do all the work (implement story, test, commit, etc.)
+3. **After completing everything** (after committing), run `/stats` again and extract:
+   - **Wall Time** (e.g. `22m 34s`)
+   - **gemini-3-flash-preview** remaining percentage
+4. Compute **tokens consumed** = start_remaining − end_remaining (percentage points)
+5. Append a row to `plan/metrics.csv`: `task_id,wall_time,tokens_consumed_pct`
+6. If `plan/metrics.csv` doesn't exist, create it with the header row first: `task_id,wall_time,tokens_consumed_pct`
+7. Use your file writing/editing tool (not bash echo/heredoc), consistent with existing plan/ file rules
+8. **Do NOT commit `plan/metrics.csv`** — unstage it before committing (same as prd.json and progress.txt)
 
 ## Stop Condition — CRITICAL
 
