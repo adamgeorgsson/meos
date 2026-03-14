@@ -3,7 +3,7 @@
 # Usage: ./ralph.sh [--tool claude|copilot|gemini] [max_iterations]
 #
 # ITERATIVE MIGRATION: This script runs the entire migration from scratch.
-# After each full run, we analyze results (progress.txt),
+# After each full run, we analyze results (progress.txt, metrics.csv),
 # improve the PRD/skills/prompt.md, and run again. The generated code is
 # disposable — only the learnings persist across iterations.
 #
@@ -12,7 +12,7 @@
 
 set -e
 
-# Clean exit on interrupt — don't write garbage to progress
+# Clean exit on interrupt — don't write garbage to progress/metrics
 trap 'echo ""; echo "Ralph interrupted. No partial data written."; exit 130' INT TERM
 
 # Filter out verbose GaxiosError stack traces from gemini CLI output.
@@ -63,12 +63,18 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRD_FILE="$SCRIPT_DIR/prd.json"
 PROGRESS_FILE="$SCRIPT_DIR/progress.txt"
+METRICS_FILE="$SCRIPT_DIR/metrics.csv"
 
 # Initialize progress file if it doesn't exist
 if [ ! -f "$PROGRESS_FILE" ]; then
   echo "# Ralph Progress Log" > "$PROGRESS_FILE"
   echo "Started: $(date)" >> "$PROGRESS_FILE"
   echo "---" >> "$PROGRESS_FILE"
+fi
+
+# Initialize metrics CSV if it doesn't exist
+if [ ! -f "$METRICS_FILE" ]; then
+  echo "task_id,tool,start_time,duration_seconds,status,tokens_pct" > "$METRICS_FILE"
 fi
 
 echo "Starting Ralph - Tool: $TOOL - Max iterations: $MAX_ITERATIONS"
@@ -114,12 +120,27 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     echo "Ralph completed all tasks!"
     echo "Completed at iteration $i of $MAX_ITERATIONS (${STEP_DURATION_FMT})"
 
+    # Log final metrics (tokens_pct left empty for manual entry)
+    echo "$TASK_ID,$TOOL,$STEP_START_FMT,$STEP_DURATION,completed," >> "$METRICS_FILE"
     echo "" >> "$PROGRESS_FILE"
     echo "## $TASK_ID — COMPLETED (${STEP_DURATION_FMT})" >> "$PROGRESS_FILE"
 
+    # Print summary
+    echo ""
+    echo "=== Metrics Summary (see $METRICS_FILE) ==="
+    TOTAL_TIME=0
+    TASK_COUNT=0
+    while IFS=',' read -r tid tool start dur status tokens; do
+      [[ "$tid" == "task_id" ]] && continue
+      TOTAL_TIME=$((TOTAL_TIME + dur))
+      TASK_COUNT=$((TASK_COUNT + 1))
+    done < "$METRICS_FILE"
+    printf "Total time: %dm%02ds across %d tasks\n" $((TOTAL_TIME / 60)) $((TOTAL_TIME % 60)) "$TASK_COUNT"
     exit 0
   fi
 
+  # Log metrics for this iteration (tokens_pct left empty for manual entry)
+  echo "$TASK_ID,$TOOL,$STEP_START_FMT,$STEP_DURATION,continuing," >> "$METRICS_FILE"
   echo "" >> "$PROGRESS_FILE"
   echo "## $TASK_ID (${STEP_DURATION_FMT})" >> "$PROGRESS_FILE"
 
@@ -130,4 +151,15 @@ done
 echo ""
 echo "Ralph reached max iterations ($MAX_ITERATIONS) without completing all tasks."
 echo "Check $PROGRESS_FILE for status."
+echo ""
+echo "=== Metrics Summary (see $METRICS_FILE) ==="
+TOTAL_TIME=0
+TASK_COUNT=0
+while IFS=',' read -r tid tool start dur status tokens; do
+  [[ "$tid" == "task_id" ]] && continue
+  TOTAL_TIME=$((TOTAL_TIME + dur))
+  TASK_COUNT=$((TASK_COUNT + 1))
+  printf "  %s: %dm%02ds\n" "$tid" $((dur / 60)) $((dur % 60))
+done < "$METRICS_FILE"
+printf "Total time: %dm%02ds across %d tasks\n" $((TOTAL_TIME / 60)) $((TOTAL_TIME % 60)) "$TASK_COUNT"
 exit 1
