@@ -307,6 +307,12 @@ namespace MeOSUtil {
 void string2Wide(const string &in, wstring &out);
 void wide2String(const wstring &in, string &out);
 
+// String conversion utilities (available without gdioutput dependency)
+const wstring &widen(const string &input);
+const string &narrow(const wstring &input);
+const string &toUTF8(const wstring &input);
+const wstring &fromUTF8(const string &input);
+
 void checkWriteAccess(const wstring &file);
 
 void moveFile(const wstring& src, const wstring& dst);
