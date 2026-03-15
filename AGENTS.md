@@ -8,11 +8,11 @@ MeOS (Much Easier Orienteering System) is a Windows desktop application for mana
 
 | Directory | Purpose |
 |-----------|---------|
-| `code/` | Legacy Windows-only codebase (MSBuild, Win32/GDI, MySQL). Has its own `AGENTS.md` with detailed architecture docs. |
+| `code/` | Legacy Windows-only codebase (CMake + MSBuild, Win32/GDI, MySQL). Has its own `AGENTS.md` with detailed architecture docs. |
 | `src/` | Modern cross-platform codebase (CMake, vcpkg). Currently a stub `main.cpp` + React frontend shell in `src/ui/web/`. |
 | `tests/` | Google Test suite. Currently a smoke test; per-module tests will be added as migration progresses. |
 | `plan/` | PRDs and planning artifacts for the modernization effort. |
-| `.github/workflows/` | CI/CD: `cpp.yml` (CMake build/test), `frontend.yml` (React lint/test/build), `build-legacy.yml` (MSBuild Windows). |
+| `.github/workflows/` | CI/CD: `cpp.yml` (CMake build/test), `frontend.yml` (React lint/test/build), `build-legacy.yml` (CMake Windows, Visual Studio 17 2022 generator). |
 
 ## Legacy Codebase (`code/`)
 
@@ -20,7 +20,7 @@ See `code/AGENTS.md` for full details. In summary:
 
 - ~190 source files in a flat directory
 - C++17, Win32/GDI UI, MySQL backend
-- MSBuild with Visual Studio 2022 (`MeOS.sln`)
+- CMake with Visual Studio 2022 generator (`code/CMakeLists.txt`); legacy `MeOS.sln` also present
 - Vendored dependencies (restbed, libharu, minizip, mysql, png)
 
 ### Domain Model

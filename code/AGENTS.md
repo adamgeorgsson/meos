@@ -4,9 +4,25 @@ MeOS (Much Easier Orienteering System) is a Windows desktop application for mana
 
 ## Build
 
-MSBuild with Visual Studio 2022 (MSVC v143). Open `MeOS.sln` in Visual Studio.
+**CMake (preferred for CI):** Standalone project in `code/CMakeLists.txt`.
+
+```
+cmake -S code -B code/build -G "Visual Studio 17 2022" -A x64 -DOPENSSL_ROOT_DIR="C:/Program Files/OpenSSL-Win64"
+cmake --build code/build --config Release --parallel
+```
+
+Output: `code/build/Release/MeOS.exe`
+
+**MSBuild (legacy, kept intact):** Open `MeOS.sln` in Visual Studio.
 
 Platforms: Win32 (x86) and x64. Precompiled header: `StdAfx.h`.
+
+### CMake library layout
+- x64 Release: `lib64/` — `zlibstat.lib`, `libharu.lib`, `RestBed.lib`, `libpng.lib`, `libmysql.lib`
+- x64 Debug: `lib64_db/` — same names
+- Win32 Release: `lib/` — `zlibstat_vc15.lib`, `libhpdf.lib`, `RestBed.lib`, `libpng.lib`, `libmysql.lib`
+- Win32 Debug: `lib_db/` — same names as Win32 Release
+- OpenSSL must be installed (Chocolatey: `choco install openssl --version=1.1.1.2100`) and `OPENSSL_ROOT_DIR` pointed at its install dir.
 
 ## Architecture
 
