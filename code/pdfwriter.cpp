@@ -49,7 +49,7 @@ void  __stdcall pdfErrorhandler(HPDF_STATUS errorNo,
                                 HPDF_STATUS detailNo,
                                 void *user_data) {
   char bf[128];
-  sprintf_s(bf, "PDF ERROR: error_no=%04X, detail_no=%u\n", (HPDF_UINT)errorNo,
+  snprintf(bf, sizeof(bf), "PDF ERROR: error_no=%04X, detail_no=%u\n", (HPDF_UINT)errorNo,
                 (HPDF_UINT)detailNo);
   throw meosException(bf);
 }

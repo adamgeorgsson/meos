@@ -159,6 +159,9 @@ wstring itow(unsigned long i);
 wstring itow(int64_t i);
 wstring itow(uint64_t i);
 
+/// Portable replacement for Win32 _wtoi: convert wide string to int (returns 0 for invalid input)
+inline int wtoi(const wchar_t* s) { return (int)wcstol(s, nullptr, 10); }
+
 
 ///Lower case match (filt_lc must be lc and stripped of accents)
 bool filterMatchString(const wstring &c, const wchar_t *filt_lc, int &score);

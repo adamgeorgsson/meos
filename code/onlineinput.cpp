@@ -270,7 +270,7 @@ void OnlineInput::save(oEvent &oe, gdioutput &gdi, bool doProcess) {
     split(unitId, L" ,;", out);
     wstring modems;
     for (auto& m : out) {
-      int mId = _wtoi(m.c_str());
+      int mId = wtoi(m.c_str());
       if (mId > 0) {
         if (!modems.empty())
           modems += L",";
@@ -332,7 +332,7 @@ void OnlineInput::saveMachine(oEvent &oe, const wstring &guiInterval) {
   
   cnt.set("useId", useUnitId);
 
-  int iv = _wtoi(guiInterval.c_str());
+  int iv = wtoi(guiInterval.c_str());
   cnt.set("interval", iv);
 
   /*vector<int> pm;
@@ -547,9 +547,9 @@ void OnlineInput::processPunches(oEvent &oe, list<vector<wstring>> &rocData) {
   for (list< vector<wstring> >::iterator it = rocData.begin(); it != rocData.end(); ++it) {
     vector<wstring> &line = *it;
     if (line.size() == 4) {
-      int punchId = _wtoi(line[0].c_str());
-      int code = _wtoi(line[1].c_str());
-      int card = _wtoi(line[2].c_str());
+      int punchId = wtoi(line[0].c_str());
+      int code = wtoi(line[1].c_str());
+      int card = wtoi(line[2].c_str());
       wstring timeS = line[3].substr(11);
       int time = oe.getRelativeTime(timeS);
       if (!oe.supportSubSeconds())

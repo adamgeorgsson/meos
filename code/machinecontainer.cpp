@@ -33,7 +33,7 @@ bool MachineContainer::AbstractMachine::has(const string& prop) const {
 }
 
 int MachineContainer::AbstractMachine::getInt(const string &v) const {
-  return _wtoi(getString(v).c_str());
+  return wtoi(getString(v).c_str());
 }
 
 const wstring &MachineContainer::AbstractMachine::getString(const string &v) const {
@@ -49,7 +49,7 @@ vector<int> MachineContainer::AbstractMachine::getVectorInt(const string &v) con
   split(s, L",", sp);
   vector<int> res(sp.size());
   for (size_t j = 0; j < sp.size(); j++)
-    res[j] = _wtoi(sp[j].c_str());
+    res[j] = wtoi(sp[j].c_str());
   return res;
 }
 

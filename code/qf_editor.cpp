@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     Melin Software HB - software@melin.nu - www.melin.nu
-    Eksoppsv‰gen 16, SE-75646 UPPSALA, Sweden
+    Eksoppsv√§gen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
 
@@ -74,7 +74,7 @@ void QFEditor::show(gdioutput& gdi) {
   gdi.clearPage(false);
   gdi.pushX();
   gdi.fillRight();
-  gdi.addButton("CloseEditor", "St‰ng").setHandler(this);
+  gdi.addButton("CloseEditor", "St√§ng").setHandler(this);
   gdi.addButton("New", "Nytt").setHandler(this);
   gdi.addButton("Load", "Ladda").setHandler(this);
   gdi.addButton("Save", "Exportera").setHandler(this);
@@ -87,7 +87,7 @@ void QFEditor::show(gdioutput& gdi) {
 
   gdi.fillDown();
   gdi.dropLine(3);
-  gdi.addSelection("Levels", 100, 100, nullptr, L"Antal nivÂer:").setHandler(this);
+  gdi.addSelection("Levels", 100, 100, nullptr, L"Antal niv√•er:").setHandler(this);
   
   vector<pair<wstring, size_t>> levels;
   for (int i = 2; i <= 10; i++) 
@@ -118,7 +118,7 @@ void QFEditor::showLevel(gdioutput& gdi, int level, size_t numRaces, const vecto
   RECT rcR = { cxBase, cy, cxBase + gdi.scaleLength(400), cy + gdi.scaleLength(2) };
   gdi.addRectangle(rcR, colorDarkBlue);
 
-  gdi.addString("", fontMediumPlus, "NivÂ X#" + itos(level + 1));
+  gdi.addString("", fontMediumPlus, "Niv√• X#" + itos(level + 1));
   string cKey = "NumCls" + itos(level);
   gdi.addSelection(cKey, 100, 100, nullptr, L"Antal klasser:").setHandler(this).setExtra(level);
 
@@ -134,7 +134,7 @@ void QFEditor::showLevel(gdioutput& gdi, int level, size_t numRaces, const vecto
 
   if (level > 0) {
     gdi.addCheckbox("Rank" + itos(level), "Klass efter ranking", nullptr, rankBased,
-      "Anv‰nd ranking ist‰llet fˆr placering i kval fˆr att placera kvalificerade lˆpare i klasser").setExtra(level).setHandler(this);
+      "Anv√§nd ranking ist√§llet f√∂r placering i kval f√∂r att placera kvalificerade l√∂pare i klasser").setExtra(level).setHandler(this);
   }
 //  auto rc = gdi.getDimensionSince("Level" + itos(level));
 
@@ -175,7 +175,7 @@ void QFEditor::showLevel(gdioutput& gdi, int level, size_t numRaces, const vecto
 void QFEditor::loadQualificationView(gdioutput& gdi, const QFClass& cls, int cCode) {
   gdi.clearPage(false);
   gdi.fillDown();
-  gdi.addString("", boldLarge, L"Kvalificeringsregler fˆr X#" + cls.name);
+  gdi.addString("", boldLarge, L"Kvalificeringsregler f√∂r X#" + cls.name);
 
   gdi.pushY();
   gdi.setRestorePoint("X");
@@ -196,13 +196,13 @@ void QFEditor::loadQualificationView(gdioutput& gdi, const QFClass& cls, int cCo
   gdi.setCX(rcRuleForm.left + gdi.scaleLength(10));
   gdi.pushX();
   gdi.fillDown();
-  gdi.addString("", fontMediumPlus, "L‰gg till regler");
+  gdi.addString("", fontMediumPlus, "L√§gg till regler");
   gdi.dropLine();
 
   gdi.addSelection("RuleType", 200, 100).setHandler(this).setExtra(cCode);
 
   vector<pair<wstring, size_t>> ruleType;
-  for (auto* type : { "Klass / placering", "B‰sta tid", "÷vriga okvalificerade"}) {
+  for (auto* type : { "Klass / placering", "B√§sta tid", "√ñvriga okvalificerade"}) {
     ruleType.emplace_back(lang.tl(type), ruleType.size());
   }
   gdi.setItems("RuleType", ruleType);
@@ -221,7 +221,7 @@ void QFEditor::loadQualificationView(gdioutput& gdi, const QFClass& cls, int cCo
 
   gdi.setCX(rcE.right - gdi.scaleLength(75));
   gdi.setCY(gdi.getHeight());
-  gdi.addButton("Close", "St‰ng").setHandler(this);
+  gdi.addButton("Close", "St√§ng").setHandler(this);
   gdi.refresh();*/
 }
 
@@ -243,20 +243,20 @@ void QFEditor::addRuleClassPlace(int cCode, gdioutput& gdi) {
   gdi.addInput("Places", L"", 10, nullptr, L"Placeringar");
   gdi.fillDown();
   gdi.dropLine(0.9);
-  gdi.addButton("AddClassPlace", "L‰gg till").setHandler(this).setExtra(cCode);
+  gdi.addButton("AddClassPlace", "L√§gg till").setHandler(this).setExtra(cCode);
   gdi.popX();
   endAddRuleForm(gdi);
 }
 
 void QFEditor::addRuleTime(int cCode, gdioutput& gdi) {
   gdi.dropLine();
-  gdi.addString("", gdiFonts::boldText, "B‰sta tid");
-  gdi.addButton("AddBestTime", "L‰gg till").setHandler(this).setExtra(cCode);
+  gdi.addString("", gdiFonts::boldText, "B√§sta tid");
+  gdi.addButton("AddBestTime", "L√§gg till").setHandler(this).setExtra(cCode);
   endAddRuleForm(gdi);
 }
 
 void QFEditor::addRuleOther(int cCode, gdioutput &gdi) {
-//  gdi.addString("", gdiFonts::boldText, "÷vriga okvalificerade:");
+//  gdi.addString("", gdiFonts::boldText, "√ñvriga okvalificerade:");
 
   gdi.pushX();
   gdi.fillRight();
@@ -264,12 +264,12 @@ void QFEditor::addRuleOther(int cCode, gdioutput &gdi) {
   vector<pair<wstring, size_t>> other;
   other.emplace_back(lang.tl("Inga"), 0);
   other.emplace_back(lang.tl("Alla"), 1);
-  other.emplace_back(lang.tl("N b‰sta"), 2);
+  other.emplace_back(lang.tl("N b√§sta"), 2);
   other.emplace_back(lang.tl("Tidskval"), 3);
   gdi.setItems("Other", other);
   gdi.autoGrow("Other");
 
-  gdi.addButton("AddOther", "L‰gg till").setHandler(this).setExtra(cCode);
+  gdi.addButton("AddOther", "L√§gg till").setHandler(this).setExtra(cCode);
 
   gdi.popX();
   gdi.dropLine(3);
@@ -301,7 +301,7 @@ void QFEditor::endAddRuleForm(gdioutput &gdi) {
 
   gdi.setCX(rcRuleForm.right - gdi.scaleLength(75));
   gdi.setCY(gdi.getHeight());
-  gdi.addButton("Close", "St‰ng").setHandler(this);
+  gdi.addButton("Close", "St√§ng").setHandler(this);
   gdi.refresh();
 }
 
@@ -345,13 +345,13 @@ vector<pair<wstring, size_t>> QFEditor::getRules(const QFClass& cls) const {
 
   int base = cls.qualificationMap.size() + 1;
   for (int j = 0; j < cls.numTimeQualifications; j++) {
-    qf.emplace_back(itow(base++) + lang.tl(" B‰sta tid"), 1000 + j);
+    qf.emplace_back(itow(base++) + lang.tl(" B√§sta tid"), 1000 + j);
   }
 
   if (cls.extraQualification == QFClass::ExtraQualType::All)
-    qf.emplace_back(itow(base++) + lang.tl(" Alla ˆvriga"), 10000);
+    qf.emplace_back(itow(base++) + lang.tl(" Alla √∂vriga"), 10000);
   else if(cls.extraQualification == QFClass::ExtraQualType::NBest)
-    qf.emplace_back(itow(base++) + lang.tl(" X b‰sta#" + itos(cls.extraQualData) ), 10000);
+    qf.emplace_back(itow(base++) + lang.tl(" X b√§sta#" + itos(cls.extraQualData) ), 10000);
   else if (cls.extraQualification == QFClass::ExtraQualType::TimeLimit)
     qf.emplace_back(itow(base++) + lang.tl(L" Tidskval: X#" + formatTimeMS(cls.extraQualData, false)), 10000);
 
@@ -478,7 +478,7 @@ void QFEditor::handle(gdioutput& gdi, BaseInfo& info, GuiEventType type) {
       split(place, L" ;,", sPlace);
       vector<int> iPlace;
       for (auto& sp : sPlace) {
-        int p = _wtoi(sp.c_str());
+        int p = wtoi(sp.c_str());
         if (p > 0)
           iPlace.push_back(p);
       }
@@ -550,7 +550,7 @@ void QFEditor::handle(gdioutput& gdi, BaseInfo& info, GuiEventType type) {
         cls.extraQualification = QFClass::ExtraQualType::All;
       else if (tp == 2) {       
         cls.extraQualification = QFClass::ExtraQualType::NBest;
-        cls.extraQualData = max(_wtoi(gdi.getText("NBest").c_str()), 0);
+        cls.extraQualData = max(wtoi(gdi.getText("NBest").c_str()), 0);
       }
       else if (tp == 3) {       
         cls.extraQualification = QFClass::ExtraQualType::TimeLimit;
@@ -734,14 +734,14 @@ void QFEditor::updateQInfo(const QFClass& cls) {
 
 bool QFEditor::checkSave(gdioutput& gdi) {
   if (cls != nullptr && dirtyInt) {
-    auto ans = gdi.askCancel(L"Vill du uppdatera X med ‰ndringarna?#" + cls->getName());
+    auto ans = gdi.askCancel(L"Vill du uppdatera X med √§ndringarna?#" + cls->getName());
     if (ans == gdioutput::AskAnswer::AnswerCancel)
       return false;
     else if (ans == gdioutput::AskAnswer::AnswerYes)
       use();
   }
   else if (cls == nullptr && dirtyExt) {
-    auto ans = gdi.askCancel(L"Vill du spara ‰ndringar?");
+    auto ans = gdi.askCancel(L"Vill du spara √§ndringar?");
     if (ans == gdioutput::AskAnswer::AnswerCancel)
       return false;
     else if (ans == gdioutput::AskAnswer::AnswerYes) {

@@ -149,7 +149,7 @@ const wstring &oRunner::RaceIdFormatter::formatData(const oBase *ob, int index) 
 }
 
 pair<int, bool> oRunner::RaceIdFormatter::setData(oBase *ob, int index, const wstring &input, wstring &output, int inputId) const {
-  int rid = _wtoi(input.c_str());
+  int rid = wtoi(input.c_str());
   if (input == L"0")
     ob->getDI().setInt("RaceId", 0);
   else if (rid>0 && rid != dynamic_cast<oRunner *>(ob)->getRaceIdentifier())
@@ -555,7 +555,7 @@ string oRunner::codeMultiR() const
   for (size_t k=0;k<multiRunner.size() && multiRunner[k];k++) {
     if (!r.empty())
       r+=":";
-    sprintf_s(bf, "%d", multiRunner[k]->getId());
+    snprintf(bf, sizeof(bf), "%d", multiRunner[k]->getId());
     r+=bf;
   }
   return r;
@@ -2368,8 +2368,8 @@ bool oRunner::operator<(const oRunner &c) const {
     const wstring &b = getBib();
     const wstring &bc = c.getBib();
     if (b != bc) {
-      int bn = _wtoi(b.c_str());
-      int bcn = _wtoi(bc.c_str());
+      int bn = wtoi(b.c_str());
+      int bcn = wtoi(bc.c_str());
       if (bn != 0 && bcn != 0 && bn != bcn)
         return bn < bcn;
       else
@@ -2718,7 +2718,7 @@ wstring oAbstractRunner::getPlaceS() const
   wchar_t bf[16];
   int p=getPlace();
   if (p>0 && p<10000){
-    _itow_s(p, bf, 16, 10);
+    swprintf(bf, 16, L"%d", p);
     return bf;
   }
   else return _EmptyWString;
@@ -2730,7 +2730,7 @@ wstring oAbstractRunner::getPrintPlaceS(bool withDot) const
   int p=getPlace();
   if (p>0 && p<10000){
     if (withDot) {
-      _itow_s(p, bf, 16, 10);
+      swprintf(bf, 16, L"%d", p);
       return wstring(bf)+L".";
     }
     else
@@ -2744,7 +2744,7 @@ wstring oAbstractRunner::getTotalPlaceS() const
   wchar_t bf[16];
   int p=getTotalPlace();
   if (p>0 && p<10000){
-    _itow_s(p, bf, 16, 10);
+    swprintf(bf, 16, L"%d", p);
     return bf;
   }
   else return _EmptyWString;
@@ -2756,7 +2756,7 @@ wstring oAbstractRunner::getPrintTotalPlaceS(bool withDot) const
   int p=getTotalPlace();
   if (p>0 && p<10000){
     if (withDot) {
-      _itow_s(p, bf, 16, 10);
+      swprintf(bf, 16, L"%d", p);
       return wstring(bf)+L".";
     }
     else
@@ -3555,7 +3555,7 @@ pRunner oEvent::getRunnerByBibOrStartNo(const wstring &bib, bool findWithoutCard
     }
   }
 
-  int sno = _wtoi(bib.c_str());
+  int sno = wtoi(bib.c_str());
 
   pair<BSRTIterator, BSRTIterator> res;
   if (sno > 0) {
@@ -3687,17 +3687,17 @@ const vector< pair<wstring, size_t> > &oEvent::fillRunners(vector< pair<wstring,
         if (compact) {
           const wstring &club = it->getClub();
           if (!club.empty()) {
-            swprintf_s(bf, L"%s, %s (%s)", it->getNameAndRace(true).c_str(),
+            swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s, %s (%s)", it->getNameAndRace(true).c_str(),
                        club.c_str(),
                        it->getClass(true).c_str());
           }
           else {
-            swprintf_s(bf, L"%s (%s)", it->getNameAndRace(true).c_str(),
+            swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s (%s)", it->getNameAndRace(true).c_str(),
                        it->getClass(true).c_str());
           }
 
         } else {
-          swprintf_s(bf, L"%s\t%s\t%s", it->getNameAndRace(true).c_str(),
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s\t%s\t%s", it->getNameAndRace(true).c_str(),
                                         it->getClass(true).c_str(),
                                         it->getClub().c_str());
         }
@@ -3718,7 +3718,7 @@ const vector< pair<wstring, size_t> > &oEvent::fillRunners(vector< pair<wstring,
         if ( it->getClubId() != lVacId || lVacId == 0)
           out.push_back(make_pair(it->getUIName(), it->Id));
         else {
-          swprintf_s(bf, L"%s (%s)", it->getUIName().c_str(), it->getClass(true).c_str());
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s (%s)", it->getUIName().c_str(), it->getClass(true).c_str());
           out.emplace_back(bf, it->Id);
         }
       }
@@ -3740,7 +3740,7 @@ wstring oRunner::getNameAndRace(bool userInterface) const
 {
   if (tDuplicateLeg>0 || multiRunner.size()>0) {
     wchar_t bf[16];
-    swprintf_s(bf, L" (%d)", getRaceNo()+1);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L" (%d)", getRaceNo()+1);
     if (userInterface)
       return getUIName() + bf;
     return getName()+bf;
@@ -4114,10 +4114,10 @@ void oRunner::addTableRow(Table &table) const
       int place = 0;
 
       if (k + 3 < spvec.size()) {
-        rawStat = _wtoi(spvec[k].c_str());
+        rawStat = wtoi(spvec[k].c_str());
         rawTime = parseRelativeTime(spvec[k + 1].c_str());
-        rawPoints = _wtoi(spvec[k + 2].c_str());
-        place = _wtoi(spvec[k + 3].c_str());
+        rawPoints = wtoi(spvec[k + 2].c_str());
+        place = wtoi(spvec[k + 3].c_str());
       }
       table.set(row++, it, 200 + j, formatTime(rawTime));
       table.set(row++, it, 300 + j, oEvent::formatStatus(RunnerStatus(rawStat), false), true, cellSelection);
@@ -4187,7 +4187,7 @@ pair<int, bool> oRunner::inputData(int id, const wstring &input,
     break;
     case 5:
     {
-      int place = _wtoi(input.c_str());
+      int place = wtoi(input.c_str());
       output = spvec[4 * stage + 3] = itow(place);
     }
     break;
@@ -4202,7 +4202,7 @@ pair<int, bool> oRunner::inputData(int id, const wstring &input,
 
   switch(id) {
     case TID_CARD:
-      setCardNo(_wtoi(input.c_str()), true);
+      setCardNo(wtoi(input.c_str()), true);
       synchronizeAll();
       output = itow(getCardNo());
       break;
@@ -4295,7 +4295,7 @@ pair<int, bool> oRunner::inputData(int id, const wstring &input,
     break;
 
     case TID_STARTNO:
-      setStartNo(_wtoi(input.c_str()), ChangeType::Update);
+      setStartNo(wtoi(input.c_str()), ChangeType::Update);
       synchronize(true);
       output = itow(getStartNo());
       break;
@@ -4320,7 +4320,7 @@ pair<int, bool> oRunner::inputData(int id, const wstring &input,
       break;
 
     case TID_INPUTPLACE:
-      setInputPlace(_wtoi(input.c_str()));
+      setInputPlace(wtoi(input.c_str()));
       synchronize(true);
       output = itow(getInputPlace());
       break;
@@ -4621,7 +4621,7 @@ pRunner oEvent::findRunner(const wstring &s, int lastId,
   matchFilter.clear();
   wstring trm = trim(s);
   int len = trm.length();
-  int sn = _wtoi(trm.c_str());
+  int sn = wtoi(trm.c_str());
   wchar_t s_lc[1024];
   wcscpy_s(s_lc, s.c_str());  
   prepareMatchString(s_lc, len);
@@ -5224,7 +5224,7 @@ void oRunner::printSplits(gdioutput& gdi, const oListInfo* li) const {
           gdi.addStringUT(cy, cx + c1 + gdi.scaleLength(10 / 2), fontSmall, point);
           any = true;
 
-          sprintf_s(bf, "%d", it->type);
+          snprintf(bf, sizeof(bf), "%d", it->type);
           gdi.addStringUT(cy, cx, fontSmall, bf);
           int st = Card->getSplitTime(getStartTime(), &*it);
 
@@ -5304,11 +5304,11 @@ void oRunner::printSplits(gdioutput& gdi, const oListInfo* li) const {
             if (it->type == startType && (index + offset) == 1)
               continue; // Skip start control
 
-            sprintf_s(bf, "%d.", index + offset + startOffset);
+            snprintf(bf, sizeof(bf), "%d.", index + offset + startOffset);
             gdi.addStringUT(cy, cx, fontSmall, bf);
             
             if (includeControlCode) {
-              sprintf_s(bf, "(%d)", it->type);
+              snprintf(bf, sizeof(bf), "(%d)", it->type);
               gdi.addStringUT(cy, cx + c1, fontSmall, bf);
             }
 
@@ -5350,7 +5350,7 @@ void oRunner::printSplits(gdioutput& gdi, const oListInfo* li) const {
             if (!it->isUsed && includeControlCode) {
               gdi.addStringUT(cy, cx, fontSmall, makeDash(L"-"));
             }
-            sprintf_s(bf, "(%d)", it->type);
+            snprintf(bf, sizeof(bf), "(%d)", it->type);
             if (includeControlCode)
               gdi.addStringUT(cy, cx + c1, fontSmall, bf);
             else
@@ -5489,9 +5489,9 @@ void oRunner::printSplits(gdioutput& gdi, const oListInfo* li) const {
           }
         }
         else if (it.type > 10 && it.type != startType) { //Filter away check and start
-          sprintf_s(bf, "%d.", ++index);
+          snprintf(bf, sizeof(bf), "%d.", ++index);
           gdi.addStringUT(cy, cx, fontSmall, bf);
-          sprintf_s(bf, "(%d)", it.type);
+          snprintf(bf, sizeof(bf), "(%d)", it.type);
           gdi.addStringUT(cy, cx + c1, fontSmall, bf);
 
           if (it.hasTime()) {
@@ -5894,7 +5894,7 @@ oRunner::BibAssignResult oRunner::autoAssignBib() {
 
   if (maxbib>0 && withBib>noBib) {
     wchar_t bib[32];
-    swprintf_s(bib, pattern, maxbib+1);
+    swprintf(bib, sizeof(bib)/sizeof(wchar_t), pattern, maxbib+1);
     wstring nBib = bib;
     if (allBibs.count(nBib))
       return BibAssignResult::Failed; // Bib already use. Do not allow duplicates.
@@ -6735,7 +6735,7 @@ void oEvent::selectRunners(const wstring &classType, int lowAge,
   oRunnerList::const_iterator it;
   int cid = 0;
   if (classType.length() > 2 && classType.substr(0,2) == L"::")
-    cid = _wtoi(classType.c_str() + 2);
+    cid = wtoi(classType.c_str() + 2);
 
   output.clear();
 
@@ -7143,10 +7143,10 @@ void oAbstractRunner::getInputResults(vector<RunnerStatus> &st,
   points.resize(nStageNow);
   places.resize(nStageNow);
   for (int j = 0; j < nStageNow; j++) {
-    st[j] = RunnerStatus(_wtoi(spvec[j * 4 + 0].c_str()));
+    st[j] = RunnerStatus(wtoi(spvec[j * 4 + 0].c_str()));
     times[j] = parseRelativeTime(spvec[j * 4 + 1].c_str());
-    points[j] = _wtoi(spvec[j * 4 + 2].c_str());
-    places[j] = _wtoi(spvec[j * 4 + 3].c_str());
+    points[j] = wtoi(spvec[j * 4 + 2].c_str());
+    places[j] = wtoi(spvec[j * 4 + 3].c_str());
   }
 }
 
@@ -7274,7 +7274,7 @@ wstring oRunner::getRankingScore() const {
     constexpr int TurnAround = MaxOrderRank * 100000;
     double score = double(TurnAround - raw)/100;
     if (score > 0 && score < 10000) {
-      swprintf_s(wbf, L"%.2f", score);
+      swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%.2f", score);
     }
   }
   return wbf;
@@ -7741,7 +7741,7 @@ void oRunner::setExtraPersonData(const wstring &sex, const wstring &nationality,
     rf.setData(this, 0, rank, out, 0);
   }
   di.setString("Phone", phone);
-  setBib(bib, _wtoi(bib.c_str()), true);
+  setBib(bib, wtoi(bib.c_str()), true);
   di.setString("TextA", text);
   di.setInt("DataA", dataA);
   di.setInt("DataB", dataB);

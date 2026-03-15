@@ -53,9 +53,9 @@ wstring getMeosFullVersion() {
 
   wstring maj = getMajorVersion();
   if (getBuildType().empty())
-    swprintf_s(bf, L"Version X#%s.%d (%s), %s", maj.c_str(), getMeosBuild(), bits, getMeosDate().c_str());
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Version X#%s.%d (%s), %s", maj.c_str(), getMeosBuild(), bits, getMeosDate().c_str());
   else
-    swprintf_s(bf, L"Version X#%s.%d (%s), %s, %s", maj.c_str(), getMeosBuild(), bits, getBuildType().c_str(), getMeosDate().c_str());
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Version X#%s.%d (%s), %s, %s", maj.c_str(), getMeosBuild(), bits, getBuildType().c_str(), getMeosDate().c_str());
   return bf;
 }
 

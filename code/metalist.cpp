@@ -584,7 +584,7 @@ const wstring &MetaList::fromResultModuleNumber(const wstring &in, int nr, wstri
     res.swap(out[ix]);
     if (res.find_first_of('%') != wstring::npos) {
       wchar_t bf2[256];
-      swprintf_s(bf2, res.c_str(), itow(nr).c_str());
+      swprintf(bf2, sizeof(bf2)/sizeof(wchar_t), res.c_str(), itow(nr).c_str());
       res = bf2;
     }
   }
@@ -2077,7 +2077,7 @@ void MetaListPost::serialize(xmlparser &xml) const {
     xml.write("TextAdjust", getTextAdjust());
   if (color != colorDefault) {
     char bf[16];
-    sprintf_s(bf, "%x", color);
+    snprintf(bf, sizeof(bf), "%x", color);
     xml.write("Color", bf);
   }
   xml.endTag();
@@ -2901,7 +2901,7 @@ wstring MetaListContainer::makeUniqueParamName(const wstring &nameIn) const {
         maxValue = max(1, maxValue);
       else {
         if (it->second.name.substr(0, len) == nameIn) {
-          int v = _wtoi(it->second.name.substr(len + 1).c_str());
+          int v = wtoi(it->second.name.substr(len + 1).c_str());
           if (v > 0)
             maxValue = max(v, maxValue);
         }

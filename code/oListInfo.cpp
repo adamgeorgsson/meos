@@ -756,7 +756,7 @@ const wstring &oEvent::formatRogainingStringAux(const oPrintPost &pp, const oLis
     if (pp.text.empty())
       return *wsptr;
     else {
-      swprintf_s(bfw, pp.text.c_str(), wsptr->c_str());
+      swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), pp.text.c_str(), wsptr->c_str());
       wstring &res = StringCache::getInstance().wget();
       res = bfw;
       return res;
@@ -770,7 +770,7 @@ const wstring &oEvent::formatRogainingStringAux(const oPrintPost &pp, const oLis
     }
     else {
       wchar_t bf2[512];
-      swprintf_s(bf2, pp.text.c_str(), bfw);
+      swprintf(bf2, sizeof(bf2)/sizeof(wchar_t), pp.text.c_str(), bfw);
       wstring &res = StringCache::getInstance().wget();
       res = bf2;
       return res;
@@ -834,7 +834,7 @@ const wstring &oEvent::formatPunchStringAux(const oPrintPost &pp, const oListPar
               ctrl = getControlByType(punch->type);
 
             if (ctrl && ctrl->hasName()) {
-              swprintf_s(bfw, L"%s", ctrl->getName().c_str());
+              swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"%s", ctrl->getName().c_str());
             }
           }
         }
@@ -876,7 +876,7 @@ const wstring &oEvent::formatPunchStringAux(const oPrintPost &pp, const oListPar
             if (pp.type == lPunchTeamTime && r->getTeam())
               off = r->getTeam()->getTotalRunningTimeAtLegStart(r->getLegNumber(), false);
 
-            swprintf_s(bfw, L"\u2013 (%s)", formatTime(off + punch->getTimeInt() - r->getStartTime(), SubSecond::Off).c_str());
+            swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"\u2013 (%s)", formatTime(off + punch->getTimeInt() - r->getStartTime(), SubSecond::Off).c_str());
           }
           else {
             wsptr = &makeDash(L"- (-)");
@@ -884,7 +884,7 @@ const wstring &oEvent::formatPunchStringAux(const oPrintPost &pp, const oListPar
           break;
         }
         case lPunchSplitTime: {
-          swprintf_s(bfw, L"\u2013");
+          swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"\u2013");
           break;
         }
         case lPunchControlNumber: {
@@ -892,7 +892,7 @@ const wstring &oEvent::formatPunchStringAux(const oPrintPost &pp, const oListPar
           break;
         }
         case lPunchControlCode: {
-          swprintf_s(bfw, L"%d", punch->getTypeCode());
+          swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"%d", punch->getTypeCode());
           break;
         }
         case lPunchAbsTime: {
@@ -946,7 +946,7 @@ const wstring &oEvent::formatPunchStringAux(const oPrintPost &pp, const oListPar
     if (pp.text.empty())
       return *wsptr;
     else {
-      swprintf_s(bfw, pp.text.c_str(), wsptr->c_str());
+      swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), pp.text.c_str(), wsptr->c_str());
       wstring &res = StringCache::getInstance().wget();
       res = bfw;
       return res;
@@ -960,7 +960,7 @@ const wstring &oEvent::formatPunchStringAux(const oPrintPost &pp, const oListPar
     }
     else {
       wchar_t bf2[512];
-      swprintf_s(bf2, pp.text.c_str(), bfw);
+      swprintf(bf2, sizeof(bf2)/sizeof(wchar_t), pp.text.c_str(), bfw);
       wstring &res = StringCache::getInstance().wget();
       res = bf2;
       return res;
@@ -988,7 +988,7 @@ const wstring &oEvent::formatSpecialStringAux(const oPrintPost &pp, const oListP
       if (pc) {
         int len = pc->getLength();
         if (len > 0)
-          swprintf_s(bfw, L"%d", len);
+          swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"%d", len);
       }
     break;
 
@@ -1025,7 +1025,7 @@ const wstring &oEvent::formatSpecialStringAux(const oPrintPost &pp, const oListP
     case lCourseClimb: {
       int len = pc ? pc->getDCI().getInt("Climb") : 0;
       if (len > 0)
-        swprintf_s(bfw, L"%d", len);      
+        swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"%d", len);      
     }
     break;
 
@@ -1184,7 +1184,7 @@ const wstring &oEvent::formatSpecialStringAux(const oPrintPost &pp, const oListP
     if (pp.text.empty())
       return *wsptr;
     else {
-      swprintf_s(bfw, pp.text.c_str(), wsptr->c_str());
+      swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), pp.text.c_str(), wsptr->c_str());
       wstring &res = StringCache::getInstance().wget();
       res = bfw;
       return res;
@@ -1198,7 +1198,7 @@ const wstring &oEvent::formatSpecialStringAux(const oPrintPost &pp, const oListP
     }
     else {
       wchar_t bf2[512];
-      swprintf_s(bf2, pp.text.c_str(), bfw);
+      swprintf(bf2, sizeof(bf2)/sizeof(wchar_t), pp.text.c_str(), bfw);
       wstring &res = StringCache::getInstance().wget();
       res = bf2;
       return res;
@@ -1306,7 +1306,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
   switch (type) {
     case lClassName:
       if (invalidClass)
-        swprintf_s(wbf, L"%s (%s)", pc->getName().c_str(), lang.tl("Struken").c_str());
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s (%s)", pc->getName().c_str(), lang.tl("Struken").c_str());
       else
         wsptr=pc ? &pc->getName() : 0;
       break;
@@ -1359,14 +1359,14 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
       if (pc && !invalidClass) {
         int total, finished,  dns;
         pc->getNumResults(par.getLegNumber(pc), total, finished, dns);
-        swprintf_s(wbf, L"(%d / %d)", finished, max(finished, total-dns));
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"(%d / %d)", finished, max(finished, total-dns));
       }
       break;
     case lClassRemainInForest:
       if (pc && !invalidClass) {
         int total, finished, dns;
         pc->getNumResults(par.getLegNumber(pc), total, finished, dns);
-        swprintf_s(wbf, L"%d", max(0, total - dns - finished));
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", max(0, total - dns - finished));
       }
       break;
     case lCourseLength:
@@ -1456,7 +1456,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
       if (r) {
         int sh = r->getNumShortening();
         if (sh > 0)
-          swprintf_s(wbf, L"%d", sh);
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", sh);
       }
       break;
     case lCmpName:
@@ -1547,7 +1547,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         rr = t->getRunnerBestTimePar(legIndex);
 
       if (rr)
-        swprintf_s(wbf, L"%s", rr->formatName(oRunner::NameFormat::InitLast).c_str());
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s", rr->formatName(oRunner::NameFormat::InitLast).c_str());
     }
     break;
     case lPatrolNameNames:
@@ -1555,7 +1555,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         pRunner r1 = t->getRunner(0);
         pRunner r2 = t->getRunner(1);
         if (r1 && r2 && r2->tParentRunner != r1) {
-          swprintf_s(wbf, L"%s / %s", r1->getName().c_str(),r2->getName().c_str());
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s / %s", r1->getName().c_str(),r2->getName().c_str());
         }
         else if (r1) {
           wsptr = &r1->getName();
@@ -1580,7 +1580,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
 
         if (type == lPatrolClubNameNames) {
           if (c1 && c2) {
-            swprintf_s(wbf, L"%s / %s", c1->getDisplayName().c_str(), c2->getDisplayName().c_str());
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s / %s", c1->getDisplayName().c_str(), c2->getDisplayName().c_str());
           }
           else if (c1) {
             wsptr = &c1->getDisplayName();
@@ -1591,7 +1591,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         }
         else {
           if (c1 && c2) {
-            swprintf_s(wbf, L"%s / %s", c1->getCompactName().c_str(), c2->getCompactName().c_str());
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s / %s", c1->getCompactName().c_str(), c2->getCompactName().c_str());
           }
           else if (c1) {
             wsptr = &c1->getCompactName();
@@ -1617,7 +1617,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           wsptr = &r->getTempResult(pp.resultModuleIndex).getRunningTimeS(0, mode);
 
         if (r->getNumShortening() > 0) {
-          swprintf_s(wbf, L"*%s", wsptr->c_str());
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", wsptr->c_str());
           wsptr = 0;
         }
       }
@@ -1641,11 +1641,11 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if (ok && !noTimingRunner()) {
             wsptr = &r->getRunningTimeS(true, mode);
             if (r->getNumShortening() > 0) {
-              swprintf_s(wbf, L"*%s", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", wsptr->c_str());
               wsptr = 0;
             }
             else if (r->getStatusComputed(true) == StatusOutOfCompetition) {
-              swprintf_s(wbf, L"(%s)", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"(%s)", wsptr->c_str());
               wsptr = 0;
             }
           }
@@ -1661,11 +1661,11 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if (res.isStatusOK() && !noTimingRunner()) {
             wsptr = &res.getRunningTimeS(0, mode);
             if (r->getNumShortening() > 0) {
-              swprintf_s(wbf, L"*%s", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", wsptr->c_str());
               wsptr = 0;
             }
             else if (res.getStatus() == StatusOutOfCompetition) {
-              swprintf_s(wbf, L"(%s)", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"(%s)", wsptr->c_str());
               wsptr = 0;
             }
           }
@@ -1697,7 +1697,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
             }
 
             if (r->getNumShortening() > 0) {
-              swprintf_s(wbf, L"*%s", timeStatus.c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", timeStatus.c_str());
             }
             else {
               wcscpy_s(wbf, timeStatus.c_str());
@@ -1711,11 +1711,11 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if (res.isStatusOK() && !noTimingRunner()) {
             wsptr = &res.getRunningTimeS(0, mode);
             if (r->getNumShortening() > 0) {
-              swprintf_s(wbf, L"*%s", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", wsptr->c_str());
               wsptr = 0;
             }
             else if (res.getStatus() == StatusOutOfCompetition) {
-              swprintf_s(wbf, L"(%s)", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"(%s)", wsptr->c_str());
               wsptr = 0;
             }
           }
@@ -1737,7 +1737,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
               if ( (t && t->getNumShortening(tleg) == 0) || (!t && r->getNumShortening() == 0)) { 
                 int after = r->getTotalRunningTime() - pc->getTotalLegLeaderTime(oClass::AllowRecompute::Yes, tleg, true, true);
                 if (after > 0)
-                  swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+                  swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
               }
               else {
                 wsptr = &makeDash(L"-");
@@ -1750,7 +1750,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
               if (r->getNumShortening() == 0) {
                 int after = r->getRunningTime(true) - pc->getBestLegTime(oClass::AllowRecompute::Yes, tleg, true);
                 if (after > 0)
-                  swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+                  swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
               }
               else {
                 wsptr = &makeDash(L"-");
@@ -1761,7 +1761,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         else {
           int after = r->getTempResult(pp.resultModuleIndex).getTimeAfter();
           if (after > 0)
-            swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
         }
       }
       break;
@@ -1796,7 +1796,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
             && r->prelStatusOK(true, true, true) && r->getInputStatus() == StatusOK) ) && !noTimingRunner()) {
             wsptr = &r->getTotalRunningTimeS(mode);
             if (r->getNumShortening() > 0) {
-              swprintf_s(wbf, L"*%s", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", wsptr->c_str());
               wsptr = 0;
             }
           }
@@ -1809,7 +1809,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if (input == StatusOK && res.getStatus() == StatusOK && !noTimingRunner()) {
             wsptr = &res.getRunningTimeS(r->getTotalTimeInput(), mode);
             if (r->getNumShortening() > 0) {
-              swprintf_s(wbf, L"*%s", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", wsptr->c_str());
               wsptr = 0;
             }
           }
@@ -1837,7 +1837,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
 
     case lRunnerStageNumber:
       if (pp.legIndex >= 0)
-        swprintf_s(wbf, L"%d", pp.legIndex + 1);
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", pp.legIndex + 1);
       break;
 
     case lRunnerStageTimeStatus:
@@ -1941,7 +1941,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
       if (r && !invalidClass && !noTimingRunner()) {
         int p = r->getCoursePlace(true);
         if (p>0 && p<10000)
-          swprintf_s(wbf, L"%d.", p);
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d.", p);
       }
       break;
 
@@ -1949,7 +1949,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
       if (r && !invalidClass && !noTimingRunner()) {
         int p = r->getCoursePlace(false);
         if (p>0 && p<10000)
-          swprintf_s(wbf, L"%d.", p);
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d.", p);
       }
       break;
     case lRunnerPlaceDiff:
@@ -1958,9 +1958,9 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         if (r->getTotalStatus() == StatusOK && p > 0 && r->inputPlace>0) {
           int pd = p - r->inputPlace;
           if (pd > 0)
-            swprintf_s(wbf, L"+%d", pd);
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%d", pd);
           else if (pd < 0)
-            swprintf_s(wbf, L"-%d", -pd);
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"-%d", -pd);
         }
       }
       break;
@@ -1972,7 +1972,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           int afterOld = r->inputTime - pc->getBestInputTime(oClass::AllowRecompute::Yes, tleg);
           int ad = after - afterOld;
           if (ad > 0)
-            swprintf_s(wbf, L"+%s", formatTimeMS(ad, false, mode).c_str());
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(ad, false, mode).c_str());
           if (ad < 0)
             wsptr = &formatTimeMS(ad, false, mode);
         }
@@ -2017,7 +2017,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         if (a<0)
           wsptr = &oe->formatScore(a);
         else if (a>0)
-          swprintf_s(wbf, L"+%s", oe->formatScore(a).c_str());
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", oe->formatScore(a).c_str());
       }
       break;
     case lRunnerTimeAdjustment:
@@ -2051,7 +2051,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
   
         if (r->getNumShortening() == 0) {
           if (after > 0)
-            swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
         }
         else {
           wsptr = &makeDash(L"-");
@@ -2065,7 +2065,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if ( (t && t->getNumShortening(tleg) == 0) || (!t && r->getNumShortening() == 0)) { 
             int after = r->getTotalRunningTime() - pc->getTotalLegLeaderTime(oClass::AllowRecompute::Yes, tleg, true, true);
             if (after > 0)
-              swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
           }
           else {
             wsptr = &makeDash(L"-");
@@ -2079,7 +2079,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         if (r->isStatusOK(true, true) && !noTimingRunner()) {
           int after = r->getTimeAfterCourse(type == lRunnerClassCourseTimeAfter);
           if (after > 0)
-            swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
         }
       }
       break;
@@ -2112,14 +2112,14 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         if (r->tempStatus == StatusOK && pc && !noTimingRunner()
             && r->tempRT > pc->tLegLeaderTime) {
           int after = r->tempRT - pc->tLegLeaderTime;
-          swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
         }
       }
       break;
 
     case lRunnerCard:
       if (r && r->getCardNo() > 0)
-        swprintf_s(wbf, L"%d", r->getCardNo());
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", r->getCardNo());
       break;
     case lRunnerRank:
       if (r) {
@@ -2152,23 +2152,23 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         pc->getNumResults(par.getLegNumber(pc), total, finished, dns);
         int percent = int(floor(0.5+double((100*(total-dns-r->getPlace()))/double(total-dns))));
         if (r->getStatus()==StatusOK)
-          swprintf_s(wbf, L"%d",  percent);
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d",  percent);
         else
-          swprintf_s(wbf, L"0");
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"0");
       }
       break;
     case lRunnerAge:
       if (r) {
         int y = r->getBirthAge();
         if (y > 0)
-          swprintf_s(wbf, L"%d", y);
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", y);
       }
     break;
     case lRunnerBirthYear:
       if (r) {
         int y = r->getBirthYear();
         if (y > 0)
-          swprintf_s(wbf, L"%d", y);
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", y);
       }
     break;
     case lRunnerBirthDate:
@@ -2303,7 +2303,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
             if (st != StatusOutOfCompetition)
               wcscpy_s(wbf, t->getLegRunningTimeS(legIndex, true, false, mode).c_str());
             else 
-              swprintf_s(wbf, L"(%s)", t->getLegRunningTimeS(legIndex, true, false, mode).c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"(%s)", t->getLegRunningTimeS(legIndex, true, false, mode).c_str());
           }
           else
             wsptr = &t->getLegStatusS(legIndex, true, false);
@@ -2313,7 +2313,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if (st == StatusOK || st == StatusUnknown) {
             wsptr = &t->getTempResult(pp.resultModuleIndex).getRunningTimeS(0, mode);
             if (t->getNumShortening() > 0) {
-              swprintf_s(wbf, L"*%s", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", wsptr->c_str());
               wsptr = 0;
             }
           }
@@ -2380,7 +2380,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
             if (t->getNumShortening(legIndex) == 0) {
               int ta=t->getTimeAfter(legIndex, true);
               if (ta>0)
-                swprintf_s(wbf, L"+%s", formatTimeMS(ta, false, mode).c_str());
+                swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(ta, false, mode).c_str());
             }
             else {
               wsptr = &makeDash(L"-");
@@ -2391,7 +2391,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if (t->getTempResult().getStatus() == StatusOK) {
             int after = t->getTempResult(pp.resultModuleIndex).getTimeAfter();
             if (after > 0)
-              swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
           }
         }
       }
@@ -2423,7 +2423,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         if (st == StatusOK)
           wcscpy_s(wbf, t->getLegRunningTimeS(ix, true, false, mode).c_str() );
         else if (st == StatusOutOfCompetition && t->getLegRunningTime(ix, true, false) > 0)
-          swprintf_s(wbf, L"(%s)", t->getLegRunningTimeS(ix, true, false, mode).c_str());
+          swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"(%s)", t->getLegRunningTimeS(ix, true, false, mode).c_str());
         else
           wcscpy_s(wbf, t->getLegStatusS(ix, true, false).c_str() );
       }
@@ -2444,7 +2444,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if (t->getNumShortening(ix) == 0) {
             int ta=t->getTimeAfter(ix, true);
             if (ta>0)
-              swprintf_s(wbf, L"+%s", formatTimeMS(ta, false, mode).c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(ta, false, mode).c_str());
           }
           else {
             wsptr = &makeDash(L"-");
@@ -2469,7 +2469,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
     case lTeamRunnerCard:
       if (t && unsigned(legIndex)<t->Runners.size() && t->Runners[legIndex]
       && t->Runners[legIndex]->getCardNo()>0)
-        swprintf_s(wbf, L"%d", t->Runners[legIndex]->getCardNo());
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", t->Runners[legIndex]->getCardNo());
       break;
     case lTeamBib:
       if (t) {
@@ -2495,7 +2495,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           if (st == StatusOK && inp == StatusOK) {
             wsptr = &t->getTempResult(pp.resultModuleIndex).getRunningTimeS(0, mode);
             if (t->getNumShortening() > 0) {
-              swprintf_s(wbf, L"*%s", wsptr->c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"*%s", wsptr->c_str());
               wsptr = 0;
             }
           }
@@ -2510,9 +2510,9 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         if (t->getTotalStatus() == StatusOK && p > 0 && t->inputPlace>0) {
           int pd = p - t->inputPlace;
           if (pd > 0)
-            swprintf_s(wbf, L"+%d", pd);
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%d", pd);
           else if (pd < 0)
-            swprintf_s(wbf, L"-%d", -pd);
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"-%d", -pd);
         }
       }
       break;
@@ -2525,7 +2525,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         if (t->getTotalStatus()==StatusOK &&  pc && !noTimingTeam()) {
           int after = t->getTotalRunningTime() - pc->getTotalLegLeaderTime(oClass::AllowRecompute::Yes, tleg, true, true);
           if (after > 0)
-            swprintf_s(wbf, L"+%s", formatTimeMS(after, false, mode).c_str());
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(after, false, mode).c_str());
         }
       }
       break;
@@ -2537,7 +2537,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           int afterOld = t->inputTime - pc->getBestInputTime(oClass::AllowRecompute::Yes, tleg);
           int ad = after - afterOld;
           if (ad > 0)
-            swprintf_s(wbf, L"+%s", formatTimeMS(ad, false, mode).c_str()); 
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"+%s", formatTimeMS(ad, false, mode).c_str()); 
           if (ad < 0)
             wsptr = &formatTimeMS(ad, false, mode);
         }
@@ -2545,11 +2545,11 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
       break;
     case lTeamStartNo:
       if (t)
-        swprintf_s(wbf, L"%d", t->getStartNo());
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", t->getStartNo());
       break;
     case lRunnerStartNo:
       if (r)
-        swprintf_s(wbf, L"%d", r->getStartNo());
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", r->getStartNo());
       break;
     case lRunnerDataA:
       if (r)
@@ -2643,14 +2643,14 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         switch (type) {
           case lPunchNamedSplit:
             if (ctrl && ctrl->hasName() && r->getPunchTime(counter.level3, false, true, false) > 0) {
-              swprintf_s(wbf, L"%s", r->getNamedSplitS(counter.level3, SubSecond::Off).c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s", r->getNamedSplitS(counter.level3, SubSecond::Off).c_str());
             }
           break;
 
           case lPunchNamedTime:
           case lPunchTeamTotalNamedTime:
             if (ctrl && ctrl->hasName() && (!par.lineBreakControlList || r->getPunchTime(counter.level3, false, true, false) > 0)) {
-              swprintf_s(wbf, L"%s: %s (%s)", ctrl->getName().c_str(),
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s: %s (%s)", ctrl->getName().c_str(),
                          r->getPunchTimeS(counter.level3, false, true, type == lPunchTeamTotalNamedTime, SubSecond::Off).c_str(),
                          r->getNamedSplitS(counter.level3, SubSecond::Off).c_str());
             }
@@ -2658,7 +2658,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
           case lControlName:
           case lPunchName:
             if (ctrl && ctrl->hasName() && (!par.lineBreakControlList || r->getPunchTime(counter.level3, false, true, false) > 0)) {
-              swprintf_s(wbf, L"%s", ctrl->getName().c_str());
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s", ctrl->getName().c_str());
             }
             else if (counter.level3 == nCtrl) {
               wsptr = &lang.tl(L"Mål");
@@ -2667,7 +2667,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
 
           case lPunchTime:
           case lPunchTeamTime: {
-            swprintf_s(wbf, L"%s (%s)",
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s (%s)",
                        r->getSplitTimeS(counter.level3, false, SubSecond::Off).c_str(),
                        r->getPunchTimeS(counter.level3, false, true, type == lPunchTeamTime, SubSecond::Off).c_str());
             break;
@@ -2701,24 +2701,24 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
             if (ctrl) {
               if (ctrl->getStatus() == oControl::ControlStatus::StatusMultiple) {
                 wstring str = ctrl->getStatusS();
-                swprintf_s(wbf, L"%s.", str.substr(0, 1).c_str());
+                swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%s.", str.substr(0, 1).c_str());
               }
               else
-                swprintf_s(wbf, L"%d", ctrl->getFirstNumber());
+                swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", ctrl->getFirstNumber());
             }
             break;
           }
           case lPunchControlPlace: {
             int p = r->getLegPlace(counter.level3);
             if (p > 0)
-              swprintf_s(wbf, L"%d", p);
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", p);
             break;
           }
           case lPunchControlPlaceAcc:
           case lPunchControlPlaceTeamAcc: {
             int p = r->getLegPlaceAcc(counter.level3, type == lPunchControlPlaceTeamAcc);
             if (p > 0)
-              swprintf_s(wbf, L"%d", p);
+              swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", p);
             break;
           }
           case lPunchLostTime: {
@@ -2736,21 +2736,21 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
       break;
     case lSubSubCounter:
       if (pp.text.empty())
-        swprintf_s(wbf, L"%d.", counter.level3+1);
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d.", counter.level3+1);
       else
-        swprintf_s(wbf, L"%d", counter.level3+1);
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", counter.level3+1);
       break;
     case lSubCounter:
       if (pp.text.empty())
-        swprintf_s(wbf, L"%d.", counter.level2+1);
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d.", counter.level2+1);
       else
-        swprintf_s(wbf, L"%d", counter.level2+1);
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", counter.level2+1);
       break;
     case lTotalCounter:
       if (pp.text.empty())
-        swprintf_s(wbf, L"%d.", counter.level1+1);
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d.", counter.level1+1);
       else
-        swprintf_s(wbf, L"%d", counter.level1+1);
+        swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d", counter.level1+1);
       break;
 
     case lTotalRunLength: {
@@ -2841,7 +2841,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
         if (punch && punch->tRogainingIndex>=0) {
           const pControl ctrl = crs->getControl(punch->tRogainingIndex);
           if (ctrl) {
-            swprintf_s(wbf, L"%d, %sp, %s (%s)",
+            swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), L"%d, %sp, %s (%s)",
                       punch->type, ctrl->getRogainingPointsS().c_str(),
                       r->Card->getRogainingSplit(counter.level3, r->tStartTime).c_str(),
                       punch->getRunningTime(r->tStartTime).c_str());
@@ -2860,7 +2860,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
     if (pp.text.empty())
       return *wsptr;
     else {
-      swprintf_s(wbf, pp.text.c_str() + textOffset, wsptr->c_str());
+      swprintf(wbf, sizeof(wbf)/sizeof(wchar_t), pp.text.c_str() + textOffset, wsptr->c_str());
       wstring &res = StringCache::getInstance().wget();
       res = wbf;
       return res;
@@ -2874,7 +2874,7 @@ const wstring &oEvent::formatListStringAux(const oPrintPost &pp, const oListPara
     }
     else {
       wchar_t bf2[512];
-      swprintf_s(bf2, pp.text.c_str() + textOffset, wbf);
+      swprintf(bf2, sizeof(bf2)/sizeof(wchar_t), pp.text.c_str() + textOffset, wbf);
       wstring &res = StringCache::getInstance().wget();
       res = bf2;
       return res;
@@ -5028,9 +5028,9 @@ void oEvent::generateListInfoAux(const gdioutput& target, oListParam &par, oList
     case unused_EStdTeamResultListLeg: {
       wchar_t title[256];
       if (li.lp.getLegNumberCoded() != 1000)
-        swprintf_s(title, (lang.tl(L"Resultat efter sträcka X#" + li.lp.getLegName())+L" - %%s").c_str());
+        swprintf(title, sizeof(title)/sizeof(wchar_t), (lang.tl(L"Resultat efter sträcka X#" + li.lp.getLegName())+L" - %%s").c_str());
       else
-        swprintf_s(title, (lang.tl(L"Resultat efter sträckan")+L" - %%s").c_str());
+        swprintf(title, sizeof(title)/sizeof(wchar_t), (lang.tl(L"Resultat efter sträckan")+L" - %%s").c_str());
 
       pos.add("place", 25);
       pos.add("team", getMaxCharWidth(lTeamName));
@@ -5072,9 +5072,9 @@ void oEvent::generateListInfoAux(const gdioutput& target, oListParam &par, oList
     case unused_EStdTeamResultListLegLARGE: {
       wchar_t title[256];
       if (li.lp.getLegNumberCoded() != 1000)
-        swprintf_s(title, (L"%%s - "+lang.tl(L"sträcka X#" + li.lp.getLegName())).c_str());
+        swprintf(title, sizeof(title)/sizeof(wchar_t), (L"%%s - "+lang.tl(L"sträcka X#" + li.lp.getLegName())).c_str());
       else
-        swprintf_s(title, (L"%%s - "+lang.tl(L"slutsträckan")).c_str());
+        swprintf(title, sizeof(title)/sizeof(wchar_t), (L"%%s - "+lang.tl(L"slutsträckan")).c_str());
 
       pos.add("place", 25);
       pos.add("team", min(120, getMaxCharWidth(lTeamName)));
@@ -5856,7 +5856,7 @@ wstring oListParam::getLegName() const {
   
   wchar_t bf[64];
   char symb = 'a' + sub;
-  swprintf_s(bf, L"%d%c", maj, symb);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d%c", maj, symb);
   return bf;
 }
 

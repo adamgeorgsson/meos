@@ -446,11 +446,11 @@ int ListEditor::editList(gdioutput &gdi, GuiEventType type, BaseInfo &data) {
           int w = image.getWidth(imgId);
           int ww, hh;
           if (ii.id == "ImgWidth") {
-            ww = _wtoi(ii.text.c_str());
+            ww = wtoi(ii.text.c_str());
             hh = (ww * h + w/2) / w;
             gdi.setText("ImgHeight", hh);
           } else {
-            hh = _wtoi(ii.text.c_str());
+            hh = wtoi(ii.text.c_str());
             ww = (hh * w + h / 2) / h;
             gdi.setText("ImgWidth", ww);
           }
@@ -1560,7 +1560,7 @@ void ListEditor::showExample(gdioutput &gdi, const MetaListPost &mlp) {
       int xb = gdi.getCX();
       if (!text.empty() && !hasStringMap) {
         wchar_t st[300];
-        swprintf_s(st, text.c_str(), s.c_str());
+        swprintf(st, sizeof(st)/sizeof(wchar_t), text.c_str(), s.c_str());
         s = st;
       }
       

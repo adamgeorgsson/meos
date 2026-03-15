@@ -329,7 +329,7 @@ void Table::sort(int col, bool forceDirection)
         while (str[i] != 0 && (str[i] < '0' || str[i] > '9'))
           i++;
 
-        int key = _wtoi(str + i);
+        int key = wtoi(str + i);
         Data[sortIndex[k].index].intKey = key;
         if (key == 0)
           Data[sortIndex[k].index].key = Data[sortIndex[k].index].cells[col].contents; 
@@ -1352,7 +1352,7 @@ void Table::draw(gdioutput &gdi, HDC hDC, int dx, int dy, const RECT &screen)
       tbf[1]=0;
       CharLower(tbf);
       wstring filter = lang.tl("Urval %c%s: ");
-      swprintf_s(bf, filter.c_str(), tbf[0],
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), filter.c_str(), tbf[0],
               Titles[editCol].name+1, int(sortIndex.size())-2);
 
       DrawText(hDC, bf, -1, &rc, DT_RIGHT|DT_NOPREFIX);
@@ -2185,13 +2185,13 @@ void Table::exportClipboard(gdioutput &gdi)
       "EndFragment:%08u\n";
 
     char head[256];
-    sprintf_s(head, cbd, 1,0,0,0);
+    snprintf(head, sizeof(head), cbd, 1,0,0,0);
 
     int offset=strlen(head);
     //Fill header with relevant information
     int ho_start = offset;
     int ho_end = offset + len;
-    sprintf_s(head, cbd, offset,offset+len,ho_start,ho_end);
+    snprintf(head, sizeof(head), cbd, offset,offset+len,ho_start,ho_end);
 
 
     HANDLE hMem=GlobalAlloc(GMEM_MOVEABLE|GMEM_DDESHARE, offset+len);

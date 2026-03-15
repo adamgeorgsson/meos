@@ -156,7 +156,7 @@ string oTeam::getRunners() const
 
   for(m=0;m<Runners.size();m++){
     if (Runners[m]){
-      sprintf_s(bf, 16, "%d;", Runners[m]->getId());
+      snprintf(bf, 16, "%d;", Runners[m]->getId());
       str+=bf;
     }
     else str+="0;";
@@ -801,7 +801,7 @@ wstring oTeam::getLegPlaceS(int leg, bool multidayTotal) const
   int p = getLegPlace(leg, multidayTotal);
   wchar_t bf[16];
   if (p > 0 && p < 10000) {
-    swprintf_s(bf, L"%d", p);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d", p);
     return bf;
   }
   return _EmptyWString;
@@ -813,7 +813,7 @@ wstring oTeam::getLegPrintPlaceS(int leg, bool multidayTotal, bool withDot) cons
   wchar_t bf[16];
   if (p>0 && p<10000){
     if (withDot) {
-      swprintf_s(bf, L"%d.", p);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d.", p);
       return bf;
     }
     else
@@ -1421,7 +1421,7 @@ void oTeam::applyBibs() {
         else if (bibMode == BibAdd) {
           wchar_t pattern[32], bf[32];
           int ibib = oClass::extractBibPattern(bib, pattern) + i;
-          swprintf_s(bf, pattern, ibib);
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), pattern, ibib);
           tr->setBib(bf, 0, false);
         }
         else if (bibMode == BibLeg) {
@@ -2185,7 +2185,7 @@ pair<int, bool> oTeam::inputData(int id, const wstring &input,
           }
         }
         else {
-          Runners[ix]->setCardNo(_wtoi(input.c_str()), true);
+          Runners[ix]->setCardNo(wtoi(input.c_str()), true);
           Runners[ix]->synchronize(true);
           output = itow(Runners[ix]->getCardNo());
         }
@@ -2267,7 +2267,7 @@ pair<int, bool> oTeam::inputData(int id, const wstring &input,
     break;
 
     case TID_STARTNO:
-      setStartNo(_wtoi(input.c_str()), ChangeType::Update);
+      setStartNo(wtoi(input.c_str()), ChangeType::Update);
       evaluate(oBase::ChangeType::Update);
       output = itow(getStartNo());
       break;
@@ -2292,7 +2292,7 @@ pair<int, bool> oTeam::inputData(int id, const wstring &input,
       break;
 
     case TID_INPUTPLACE:
-      setInputPlace(_wtoi(input.c_str()));
+      setInputPlace(wtoi(input.c_str()));
       synchronize(true);
       output = itow(getInputPlace());
       break;

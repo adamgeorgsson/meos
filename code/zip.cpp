@@ -359,7 +359,7 @@ int zip(const wchar_t *zipfilename, const char *password, const vector<wstring> 
   zf = zipOpen2_64(filename_try, 0,NULL, &ffunc);
 
   if (zf == NULL) {
-    swprintf_s(eb, L"Error opening %s.",filename_try);
+    swprintf(eb, sizeof(eb)/sizeof(wchar_t), L"Error opening %s.",filename_try);
     throw meosException(eb);
   }
 
@@ -419,13 +419,13 @@ int zip(const wchar_t *zipfilename, const char *password, const vector<wstring> 
                       password,crcFile, zip64);
 
     if (err != ZIP_OK) {
-      swprintf_s(eb, L"Error opening %s in zipfile",filenameinzip);
+      swprintf(eb, sizeof(eb)/sizeof(wchar_t), L"Error opening %s in zipfile",filenameinzip);
       throw meosException(eb);
     }
     else {
       fin = fopen64(wfn.c_str(),L"rb");
       if (fin==NULL)  {
-        swprintf_s(eb, L"Error opening %s for reading",filenameinzip);
+        swprintf(eb, sizeof(eb)/sizeof(wchar_t), L"Error opening %s for reading",filenameinzip);
         throw meosException(eb);
       }
     }
@@ -436,7 +436,7 @@ int zip(const wchar_t *zipfilename, const char *password, const vector<wstring> 
         size_read = (int)fread(buf,1,size_buf,fin);
         if (size_read < size_buf) {
           if (feof(fin)==0) {
-            swprintf_s(eb, L"Error reading %s",filenameinzip);
+            swprintf(eb, sizeof(eb)/sizeof(wchar_t), L"Error reading %s",filenameinzip);
             throw meosException(eb);
           }
         }
@@ -444,7 +444,7 @@ int zip(const wchar_t *zipfilename, const char *password, const vector<wstring> 
         if (size_read > 0) {
           err = zipWriteInFileInZip (zf,buf,size_read);
           if (err<0) {
-            swprintf_s(eb, L"Error in writing %s in the zipfile",filenameinzip);
+            swprintf(eb, sizeof(eb)/sizeof(wchar_t), L"Error in writing %s in the zipfile",filenameinzip);
             throw meosException(eb);
           }
         }
@@ -458,7 +458,7 @@ int zip(const wchar_t *zipfilename, const char *password, const vector<wstring> 
     else {
       err = zipCloseFileInZip(zf);
       if (err!=ZIP_OK) {
-        swprintf_s(eb, L"Error closing %s in the zipfile", filenameinzip);
+        swprintf(eb, sizeof(eb)/sizeof(wchar_t), L"Error closing %s in the zipfile", filenameinzip);
         throw meosException(eb);
       }
     }
@@ -466,7 +466,7 @@ int zip(const wchar_t *zipfilename, const char *password, const vector<wstring> 
 
   errclose = zipClose(zf,NULL);
   if (errclose != ZIP_OK) {
-    swprintf_s(eb, L"Error closing %s",filename_try);
+    swprintf(eb, sizeof(eb)/sizeof(wchar_t), L"Error closing %s",filename_try);
     throw meosException(eb);
   }
 

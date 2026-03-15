@@ -44,7 +44,7 @@ const int externalSourceId = 17000017;
 extern gdioutput *gdi_main;
 
 static int wtoi(const wstring &sp) {
-  return _wtoi(sp.c_str());
+  return wtoi(sp.c_str());
 }
 csvparser::csvparser() {
   LineNumber=0;
@@ -1349,7 +1349,7 @@ void csvparser::importTeamLineup(const wstring &file,
         TeamLineup::TeamMember &member = teams.back().members.back();
         member.name = trim(line[0]);
         if (line.size()>1)
-          member.cardNo = _wtoi(line[1].c_str());
+          member.cardNo = wtoi(line[1].c_str());
         else
           member.cardNo = 0;
 
@@ -1428,7 +1428,7 @@ int csvparser::importRanking(oEvent &oe, const wstring &file, vector<wstring> &p
     if (rank.size() <= rankIx)
       continue;
 
-    int rpos = _wtoi(rank[rankIx].c_str());
+    int rpos = wtoi(rank[rankIx].c_str());
     if (rpos <= 0)
       continue;
 

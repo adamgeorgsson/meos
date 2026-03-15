@@ -210,7 +210,7 @@ string oClass::codeMultiCourse() const
     vector<pCourse>::const_iterator it;
     for (it=stage_it->begin();it!=stage_it->end(); ++it) {
       if (*it){
-        sprintf_s(bf, 16, " %d", (*it)->getId());
+        snprintf(bf, 16, " %d", (*it)->getId());
         str+=bf;
       }
       else str+=" 0";
@@ -273,9 +273,9 @@ string oLegInfo::codeLegMethod() const {
 
   auto codeTime = [](int t, char *b) -> const char * {
     if (timeConstSecond == 1 || t <= 0)
-      sprintf_s(b, 16, "%d", t);
+      snprintf(b, 16, "%d", t);
     else
-      sprintf_s(b, 16, "%d.%d", (t / timeConstSecond),(t % timeConstSecond));
+      snprintf(b, 16, "%d.%d", (t / timeConstSecond),(t % timeConstSecond));
 
     return b;
   };
@@ -283,7 +283,7 @@ string oLegInfo::codeLegMethod() const {
   char bf[256];
 
   if (isStartDataTime()) {
-    sprintf_s(bf, "(%s:%s:%s:%s:%s:%d)", StartTypeNames[startMethod],
+    snprintf(bf, sizeof(bf), "(%s:%s:%s:%s:%s:%d)", StartTypeNames[startMethod],
               LegTypeNames[legMethod],
               codeTime(legStartData, bsd),
               codeTime(legRestartTime, bret),
@@ -291,7 +291,7 @@ string oLegInfo::codeLegMethod() const {
               duplicateRunner);
   }
   else {
-    sprintf_s(bf, "(%s:%s:%d:%s:%s:%d)", StartTypeNames[startMethod],
+    snprintf(bf, sizeof(bf), "(%s:%s:%d:%s:%s:%d)", StartTypeNames[startMethod],
               LegTypeNames[legMethod],
               legStartData, 
               codeTime(legRestartTime, bret),
@@ -816,7 +816,7 @@ bool oClass::fillStageCourses(gdioutput &gdi, int stage,
   int m=0;
 
   for (it=Stage.begin(); it!=Stage.end(); ++it) {
-    swprintf_s(bf, L"%d: %s", ++m, (*it)->getName().c_str());
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d: %s", ++m, (*it)->getName().c_str());
     gdi.addItem(name, bf, (*it)->getId());
   }
 
@@ -1204,7 +1204,7 @@ bool oClass::setStartData(int leg, const wstring &s) {
   if (styp==STTime || styp==STPursuit)
     rt=oe->getRelativeTime(s);
   else
-    rt=_wtoi(s.c_str());
+    rt=wtoi(s.c_str());
 
   return setStartData(leg, rt);
 }
@@ -1331,11 +1331,11 @@ const vector< pair<wstring, size_t> > &oEvent::fillClasses(vector< pair<wstring,
         wchar_t bf[256];
 
         if (it->MultiCourse.size() > 0 && it->getStartType(0) == STTime)
-          swprintf_s(bf, L"%s\t%s", it->Name.c_str(), it->getStartDataS(0).c_str());
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s\t%s", it->Name.c_str(), it->getStartDataS(0).c_str());
         else if (undrawn.count(it->getId()) || !hasRunner.count(it->getId()))
-          swprintf_s(bf, L"%s", it->Name.c_str());
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s", it->Name.c_str());
         else {
-          swprintf_s(bf, L"%s\t[S]", it->Name.c_str());
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s\t[S]", it->Name.c_str());
         }
         out.emplace_back(bf, it->Id);
       }
@@ -1343,9 +1343,9 @@ const vector< pair<wstring, size_t> > &oEvent::fillClasses(vector< pair<wstring,
         wchar_t bf[256];
         int nmaps = it->getNumRemainingMaps(false);
         if (nmaps != numeric_limits<int>::min())
-          swprintf_s(bf, L"%s (%d %s)", it->Name.c_str(), nmaps, lang.tl(L"kartor").c_str());
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s (%d %s)", it->Name.c_str(), nmaps, lang.tl(L"kartor").c_str());
         else
-          swprintf_s(bf, L"%s ( - %s)", it->Name.c_str(), lang.tl(L"kartor").c_str());
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s ( - %s)", it->Name.c_str(), lang.tl(L"kartor").c_str());
 
         out.emplace_back(bf, it->Id);
       }
@@ -1491,9 +1491,9 @@ wstring oClass::getLength(int leg) const {
       minlen=maxlen;
 
     if ( (maxlen-minlen)<100 )
-      swprintf_s(bf, L"%d", maxlen);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d", maxlen);
     else
-      swprintf_s(bf, L"%d - %d", minlen, maxlen);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d - %d", minlen, maxlen);
 
     return makeDash(bf);
   }
@@ -2635,7 +2635,7 @@ int oClass::getExpectedAge() const
   // Try to guess age from class name
   for (size_t k=0; k<Name.length(); k++) {
     if (Name[k]>='0' && Name[k]<='9') {
-      int age = _wtoi(&Name[k]);
+      int age = wtoi(&Name[k]);
       if (age>=10 && age<100) {
         if (age>=10 && age<=20)
           return age - 1;
@@ -3499,7 +3499,7 @@ int oClass::getAccLegControlPlace(int teamLeg, int courseControlId, int time) co
 void oClass::insertAccLegPlace(int courseId, int controlNo, int time, int place)
 { /*
   char bf[256];
-  sprintf_s(bf, "Insert to %d, %d, time %d\n", courseId, controlNo, time);
+  snprintf(bf, sizeof(bf), "Insert to %d, %d, time %d\n", courseId, controlNo, time);
   OutputDebugString(bf);
   */
   if (tLegAccTimeToPlace) {
@@ -3554,7 +3554,7 @@ void oClass::getStartRange(int leg, int &firstStart, int &lastStart) const {
 int oClass::getAccLegPlace(int courseId, int controlNo, int time) const
 {/*
   char bf[256];
-  sprintf_s(bf, "Get from %d,  %d, time %d\n", courseId, controlNo, time);
+  snprintf(bf, sizeof(bf), "Get from %d,  %d, time %d\n", courseId, controlNo, time);
   OutputDebugString(bf);
   */
   if (tLegAccTimeToPlace) {
@@ -3946,10 +3946,10 @@ wstring oClass::getLegNumber(int leg) const {
   wchar_t bf[16];
   if (par) {
     char symb = 'a' + legOrder;
-    swprintf_s(bf, L"%d%c", legNumber + 1, symb);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d%c", legNumber + 1, symb);
   }
   else {
-    swprintf_s(bf, L"%d", legNumber + 1);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d", legNumber + 1);
   }
   return bf;
 }
@@ -4634,7 +4634,7 @@ pair<int, wstring> oClass::getNextBib(map<int, pair<wstring, int> > &patterns) {
   map<int, pair<wstring, int> >::iterator it = patterns.find(Id);
   if (it != patterns.end() && it->second.second > 0) {
     wchar_t bib[32];
-    swprintf_s(bib, it->second.first.c_str(), ++it->second.second);
+    swprintf(bib, sizeof(bib)/sizeof(wchar_t), it->second.first.c_str(), ++it->second.second);
     return make_pair(it->second.second, bib);  
   }
   return make_pair(0, _EmptyWString);
@@ -4691,7 +4691,7 @@ pair<int, wstring> oClass::getNextBib() {
   }
 
   wchar_t bib[32];
-  swprintf_s(bib, pattern, candidate);
+  swprintf(bib, sizeof(bib)/sizeof(wchar_t), pattern, candidate);
   return make_pair(candidate, bib);
 }
 

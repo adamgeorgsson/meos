@@ -1433,7 +1433,7 @@ void oEvent::optimizeStartOrder(vector<pair<int, wstring>>& outLines, DrawInfo& 
     }
     int nr = countStarts[j];
     wchar_t bf[20];
-    swprintf_s(bf, L"%d ", nr);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d ", nr);
     accRunners += nr;
     str += bf;
     if (j % 60 == 59) {
@@ -1456,7 +1456,7 @@ void oEvent::optimizeStartOrder(vector<pair<int, wstring>>& outLines, DrawInfo& 
   }
   /*for (int nr : countStarts) {
     wchar_t bf[20];
-    swprintf_s(bf, L"%d ", nr);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d ", nr);
     str += bf;
   }
 
