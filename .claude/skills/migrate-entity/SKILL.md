@@ -51,6 +51,16 @@ Follow these steps in order for each entity:
   - Template linker errors -> ensure `*impl.hpp` is included in its header
   - Incomplete type in `std::vector` -> provide class definition (even minimal)
 
+## SI Card and Punch Handling
+
+- `SICard` and `SIPunch` are the primary structures for raw card data.
+- Use `SICard::calculateHash()` to identify unique readout instances. Store hash in `oCard::readId`.
+- Always clear `SICard` objects with `clear(nullptr)` to ensure all fields (especially codes set to -1) are correctly initialized.
+- `oCard` belongs to an `oRunner` or `oTeam`.
+- `oFreePunch` is managed by `oEvent` and indexed via `oEvent::punchIndex`.
+- Use `oFreePunch::rehashPunches(oe, cardNo, newPunch)` to maintain the lookup index when punches change.
+- The `Localizer` supports `#` substitution for multiple placeholders: `lang.tl(L"Base String with X, Y, Z, W#ValX#ValY#ValZ#ValW")`.
+
 ## Entity migration order (by dependency)
 
 ```

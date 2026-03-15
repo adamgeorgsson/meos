@@ -4,8 +4,8 @@ This skill provides a procedure and script for normalizing `#include` directives
 
 ## Procedure
 
-1.  **Audit**: Run `python .gemini/skills/include-normalization/fix_includes.py --dry-run` to list all mismatches without changing anything.
-2.  **Apply Fixes**: Run `python .gemini/skills/include-normalization/fix_includes.py` to update source files to use the correct casing.
+1.  **Audit**: Run `python .claude/skills/include-normalization/fix_includes.py --dry-run` to list all mismatches without changing anything.
+2.  **Apply Fixes**: Run `python .claude/skills/include-normalization/fix_includes.py` to update source files to use the correct casing.
 3.  **Verify**: Re-run with `--dry-run` to confirm zero mismatches remain.
 
 Run from the repository root (parent of `code/`).

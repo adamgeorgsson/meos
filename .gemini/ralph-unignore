@@ -1,4 +1,0 @@
-# Override .gitignore for ralph files so Gemini CLI can read them
-!prd.json
-!progress.txt
-!metrics.csv

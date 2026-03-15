@@ -95,19 +95,6 @@ Only update AGENTS.md if you have **genuinely reusable knowledge** that would he
 - **IMPORTANT:** Keep `.gitignore` updated so that build artifacts, generated files, and other unnecessary files are not committed. Check this BEFORE every commit.
 - **NEVER commit `plan/prd.json`, `plan/progress.txt`, or `plan/metrics.csv`.** These files are managed outside git. Always unstage them before committing.
 
-## Metrics Collection (Gemini only)
-
-1. **At the very start** of your session, run `/stats` and record the **gemini-3-flash-preview** remaining percentage.
-2. Do all the work (implement story, test, commit, etc.)
-3. **After completing everything** (after committing), run `/stats` again and extract:
-   - **Wall Time** (e.g. `22m 34s`)
-   - **gemini-3-flash-preview** remaining percentage
-4. Compute **tokens consumed** = start_remaining − end_remaining (percentage points)
-5. Append a row to `plan/metrics.csv`: `task_id,wall_time,tokens_consumed_pct`
-6. If `plan/metrics.csv` doesn't exist, create it with the header row first: `task_id,wall_time,tokens_consumed_pct`
-7. Use your file writing/editing tool (not bash echo/heredoc), consistent with existing plan/ file rules
-8. **Do NOT commit `plan/metrics.csv`** — unstage it before committing (same as prd.json and progress.txt)
-
 ## Stop Condition — CRITICAL
 
 **You must implement exactly ONE user story per iteration, then STOP.** Do not continue to the next story — end your response so the outer loop can start a fresh iteration.
@@ -128,12 +115,12 @@ After each completed story, update `README.md` so it always reflects the current
 
 Update only the sections that changed due to your story. If a story adds a new dependency, build step, or runtime flag, the README must reflect it. Keep the instructions concise and tested — run the commands yourself before documenting them.
 
-## Update Gemini Skills
+## Update Skills
 
-After each completed story, save reusable learnings and scripts to `.gemini/skills/`:
+After each completed story, save reusable learnings and scripts to `.claude/skills/`:
 
-- **Create or update skill files** (e.g., `.gemini/skills/migration.md`, `.gemini/skills/cross-platform-cpp/SKILL.md`) with patterns, gotchas, and migration knowledge
-- **Save reusable scripts** (e.g., `.gemini/skills/fix-includes.sh`, `.gemini/skills/check-platform-deps.py`) that automate repetitive or time-consuming tasks discovered during migration
+- **Create or update skill files** (e.g., `.claude/skills/migration.md`, `.claude/skills/cross-platform-cpp/SKILL.md`) with patterns, gotchas, and migration knowledge
+- **Save reusable scripts** (e.g., `.claude/skills/fix-includes.sh`, `.claude/skills/check-platform-deps.py`) that automate repetitive or time-consuming tasks discovered during migration
 - **Keep skills focused** — one topic per file, concise and actionable
 - **Skills must be self-contained** — they survive across migration runs where all previously generated code is discarded. A skill must work without depending on files or changes from a previous run. Scripts should operate on the raw legacy codebase, not on migrated output.
 
@@ -143,6 +130,6 @@ After each completed story, save reusable learnings and scripts to `.gemini/skil
 - Commit frequently
 - Keep CI green
 - Read the Codebase Patterns section in plan/progress.txt before starting
-- Update `.gemini/skills/` with migration learnings and reusable scripts after each story
+- Update `.claude/skills/` with migration learnings and reusable scripts after each story
 - **Never assume legacy code is static** — always read and parse it dynamically, as upstream changes may alter structure, signatures, or file contents between migration runs
 - **Never write placeholder progress entries.** Every progress entry must contain the actual files changed and real learnings.

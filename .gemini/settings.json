@@ -1,7 +1,0 @@
-{
-  "context": {
-    "fileFiltering": {
-      "customIgnoreFilePaths": [".gemini/ralph-unignore"]
-    }
-  }
-}

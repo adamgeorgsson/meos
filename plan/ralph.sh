@@ -1,6 +1,6 @@
 #!/bin/bash
 # Ralph Wiggum - Long-running AI agent loop
-# Usage: ./ralph.sh [--tool claude|copilot|gemini] [max_iterations]
+# Usage: ./ralph.sh [--tool claude|copilot] [max_iterations]
 #
 # ITERATIVE MIGRATION: This script runs the entire migration from scratch.
 # After each full run, we analyze results (progress.txt),
@@ -15,24 +15,8 @@ set -e
 # Clean exit on interrupt — don't write garbage to progress
 trap 'echo ""; echo "Ralph interrupted. No partial data written."; exit 130' INT TERM
 
-# Filter out verbose GaxiosError stack traces from gemini CLI output.
-# Keeps the "Attempt N failed..." message, strips the error dump.
-filter_gaxios_errors() {
-  awk '
-    /GaxiosError:/ {
-      sub(/GaxiosError:.*/, "")
-      if ($0 ~ /[^ \t]/) print $0
-      skip = 1
-      next
-    }
-    skip && /^[[:space:]]/ { next }
-    skip && /^[})\]]/ { next }
-    { skip = 0; print }
-  '
-}
-
 # Parse arguments
-TOOL="gemini"
+TOOL="claude"
 MAX_ITERATIONS=10
 
 while [[ $# -gt 0 ]]; do
@@ -56,8 +40,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate tool choice
-if [[ "$TOOL" != "claude" && "$TOOL" != "copilot" && "$TOOL" != "gemini" ]]; then
-  echo "Error: Invalid tool '$TOOL'. Must be 'claude', 'copilot', or 'gemini'."
+if [[ "$TOOL" != "claude" && "$TOOL" != "copilot" ]]; then
+  echo "Error: Invalid tool '$TOOL'. Must be 'claude' or 'copilot'."
   exit 1
 fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -92,9 +76,6 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     OUTPUT=$(timeout --kill-after=10 $TIMEOUT claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/prompt.md" 2>&1 | tee /dev/stderr) || true
   elif [[ "$TOOL" == "copilot" ]]; then
     OUTPUT=$(timeout --kill-after=10 $TIMEOUT copilot -p "$(cat "$SCRIPT_DIR/prompt.md")" --allow-all 2>&1 | tee /dev/stderr) || true
-  elif [[ "$TOOL" == "gemini" ]]; then
-    # Use stdin redirect instead of -p to avoid shell interpretation of backticks/special chars in prompt
-    OUTPUT=$(timeout --kill-after=10 $TIMEOUT gemini -y < "$SCRIPT_DIR/prompt.md" 2>&1 | filter_gaxios_errors | tee /dev/stderr) || true
   fi
 
   STEP_END=$(date +%s)
