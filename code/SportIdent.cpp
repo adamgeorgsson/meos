@@ -35,6 +35,7 @@
 #include "localizer.h"
 #include "meos_util.h"
 #include "gdioutput.h"
+#include <chrono>
 #include "oPunch.h"
 #include <algorithm>
 
@@ -868,13 +869,13 @@ int SportIdent::MonitorTCPSI(WORD port, int localZeroTime)
       int r=0;
       while (r!=-1 && tcpPortOpen) {
 
-        uint64_t timeout = GetTickCount64() + 1000;
+        auto timeoutPoint = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000);
         int iter = 0;
         while(r!=SOCKET_ERROR && r<15 && tcpPortOpen) {
           r=recv(client, temp, 15, MSG_PEEK);
           iter++;
           if (iter > 10) {
-            if (GetTickCount64() > timeout) {
+            if (std::chrono::steady_clock::now() > timeoutPoint) {
               break;
             }
             else

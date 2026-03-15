@@ -1958,11 +1958,11 @@ const wstring& RunnerDBEntry::getBirthDate() const {
 }
 
 void RunnerDBEntry::setBirthDate(const wstring& in) {
-  SYSTEMTIME st;
+  std::tm st{};
   if (convertDateYMD(in, st, true) > 0) {
-    setBirthYear(st.wYear);
-    setBirthMonth(st.wMonth);
-    setBirthDay(st.wDay);
+    setBirthYear(st.tm_year + 1900);
+    setBirthMonth(st.tm_mon + 1);
+    setBirthDay(st.tm_mday);
   }
   else {
     int year = wtoi(in.c_str());

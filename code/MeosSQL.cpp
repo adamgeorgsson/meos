@@ -40,8 +40,14 @@
 #include "mysqlwrapper.h"
 #include "xmlparser.h"
 #include "maprenderer.h"
+#include <chrono>
 
 extern oEvent* gEvent;
+
+static uint32_t getTickMs32() {
+  return (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 wstring fromUTF(const char *w) {
   const int buff_pre_alloc = 1024 * 8;
@@ -4261,7 +4267,7 @@ void MeosSQL::synchronized(oBase &entity) {
   entity.Modified.setStamp(entity.sqlUpdated);
   
   int id = getTypeId(entity);
-  readTimes[make_pair(id, entity.getId())] = (uint32_t)GetTickCount();
+  readTimes[make_pair(id, entity.getId())] = getTickMs32();
   readent++;
   if (readent % 100 == 99)
     OutputDebugStringA("Read 100 entities\n");
@@ -4272,7 +4278,7 @@ bool MeosSQL::skipSynchronize(const oBase &entity) const {
   map<pair<int, int>, uint32_t>::const_iterator res = readTimes.find(make_pair(id, entity.getId()));
 
   if (res != readTimes.end()) {
-    uint32_t t = (uint32_t)GetTickCount();
+    uint32_t t = getTickMs32();
     if (t > res->second && (t - res->second) < 1000) {
       skipped++;
       return true;

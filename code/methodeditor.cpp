@@ -35,6 +35,7 @@
 #include "TabBase.h"
 #include "CommDlg.h"
 #include "random.h"
+#include <chrono>
 #include "metalist.h"
 
 MethodEditor::MethodEditor(oEvent *oe_) {
@@ -219,7 +220,7 @@ string MethodEditor::uniqueTag(const string &tag) const {
     tags.insert(tagNameList[k].second.first);
 
   int a = GetRandomNumber(65536);
-  srand(GetTickCount());
+  srand((unsigned)std::chrono::steady_clock::now().time_since_epoch().count());
   int b = rand() % 65536;
   char un[64];
   snprintf(un, sizeof(un), "-%04X-%04X-", a, b);

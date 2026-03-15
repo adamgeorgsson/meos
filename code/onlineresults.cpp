@@ -35,6 +35,7 @@
 #include "infoserver.h"
 #include "meosexception.h"
 #include "download.h"
+#include <chrono>
 #include "xmlparser.h"
 #include "progress.h"
 #include "machinecontainer.h"
@@ -395,7 +396,7 @@ void OnlineResults::status(gdioutput &gdi)
   if (sendToFile || sendToURL) {
     if (interval > 0) {
       gdi.addString("", 0, "Exporterar om: ");
-      gdi.addTimer(gdi.getCY(), gdi.getCX(), timerIgnoreSign, (GetTickCount64() - timeout) / 1000);
+      gdi.addTimer(gdi.getCY(), gdi.getCX(), timerIgnoreSign, (int)(getTimeoutElapsedMs() / 1000));
     }
     gdi.addString("", 0, "Antal skickade uppdateringar X (Y kb)#" +
                           itos(exportCounter-1) + "#" + itos(bytesExported/1024));
@@ -412,7 +413,8 @@ void OnlineResults::status(gdioutput &gdi)
 void OnlineResults::process(gdioutput &gdi, oEvent *oe, AutoSyncType ast) {
   processProtected(gdi, ast, [&]() {
     errorLines.clear();
-    uint64_t tick = GetTickCount64();
+    uint64_t tick = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count();
     if (lastSync + interval * 1000 > tick)
       return;
 
@@ -588,7 +590,8 @@ void OnlineResults::process(gdioutput &gdi, oEvent *oe, AutoSyncType ast) {
           throw meosException("Misslyckades med att ladda upp onlineresultat");
       }
 
-      lastSync = GetTickCount64();
+      lastSync = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
       exportCounter++;
     }
   });

@@ -61,6 +61,8 @@
 #include "datadefiners.h"
 #include "maprenderer.h"
 #include "xmlparser.h"
+#include <chrono>
+#include <ctime>
 
 #include <chrono>
 #include <random>
@@ -103,14 +105,12 @@ oEvent::oEvent(gdioutput &gdi) : oBase(nullptr), gdibase(gdi) {
 
   nextFreeStartNo = 0;
 
-  SYSTEMTIME st;
-  GetLocalTime(&st);
-
+  std::tm st = getLocalTm();
   wchar_t bf[64];
-  swprintf(bf, 64, L"%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
+  swprintf(bf, 64, L"%d-%02d-%02d", st.tm_year+1900, st.tm_mon+1, st.tm_mday);
 
   Date=bf;
-  ZeroTime=st.wHour*timeConstHour;
+  ZeroTime=st.tm_hour*timeConstHour;
   oe=this;
 
   runnerDB = make_shared<RunnerDB>(this);
@@ -732,11 +732,18 @@ void oEvent::duplicate(const wstring &annotationIn, bool keepTags) {
   wchar_t filename[64];
   wchar_t nameid[64];
 
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  auto nowChron = std::chrono::system_clock::now();
+  time_t nowT = std::chrono::system_clock::to_time_t(nowChron);
+  std::tm st{};
+#ifdef _WIN32
+  localtime_s(&st, &nowT);
+#else
+  localtime_r(&nowT, &st);
+#endif
+  int ms = (int)(std::chrono::duration_cast<std::chrono::milliseconds>(nowChron.time_since_epoch()).count() % 1000);
 
   swprintf(filename, 64, L"meos_%d%02d%02d_%02d%02d%02d_%X.meos",
-    st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+    st.tm_year+1900, st.tm_mon+1, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec, ms);
 
   getUserFile(file, filename);
 
@@ -1104,34 +1111,42 @@ bool oEvent::open(int id)
   return false;
 }
 
-static uint64_t timer;
+static std::chrono::steady_clock::time_point timer;
 static string mlog;
 
 static void tic() {
-  timer = GetTickCount64();
+  timer = std::chrono::steady_clock::now();
   mlog.clear();
 }
 
 static void toc(const string &str) {
-  uint64_t t = GetTickCount64();
+  auto t = std::chrono::steady_clock::now();
+  auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t - timer).count();
   if (!mlog.empty())
     mlog += ",\n";
   else
     mlog = "Tid (hundradels sekunder):\n";
 
-  mlog += str + "=" + itos( (t-timer)/10 );
+  mlog += str + "=" + itos( (int)(elapsed_ms / 10) );
   timer = t;
 }
 
 namespace {
   void getNewFileName(wstring &fn, wstring &nameId) {
-    SYSTEMTIME st;
-    GetLocalTime(&st);
+    auto nowChron = std::chrono::system_clock::now();
+    time_t nowT = std::chrono::system_clock::to_time_t(nowChron);
+    std::tm st{};
+#ifdef _WIN32
+    localtime_s(&st, &nowT);
+#else
+    localtime_r(&nowT, &st);
+#endif
+    int ms = (int)(std::chrono::duration_cast<std::chrono::milliseconds>(nowChron.time_since_epoch()).count() % 1000);
 
     wchar_t file[260];
     wchar_t filename[64];
     swprintf(filename, 64, L"meos_%d%02d%02d_%02d%02d%02d_%X.meos",
-               st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+               st.tm_year+1900, st.tm_mon+1, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec, ms);
 
     //strcpy_s(CurrentNameId, filename);
     getUserFile(file, filename);
@@ -2501,7 +2516,7 @@ wstring oEvent::getAbsDateTimeISO(uint32_t time, bool includeDate, bool useGMT) 
         dateS = Date;
       }
       else {
-        SYSTEMTIME st;
+        std::tm st{};
         convertDateYMD(Date, st, false);
         __int64 sec = SystemTimeToInt64TenthSecond(st);
         sec = sec + (extraDay * timeConstHour * 24);
@@ -2779,20 +2794,23 @@ int oEvent::getRelativeTime(const string &date, const string &absoluteTime, cons
   int atime = convertAbsoluteTime(absoluteTime);
 
   if ((timeZone == "Z" || timeZone == "z") && atime >= 0) {
-    SYSTEMTIME st;
+    std::tm st{};
     convertDateYMD(date, st, false);
 
-    st.wHour = atime / timeConstHour;
-    st.wMinute = (atime / timeConstMinute) % 60;
-    st.wSecond = (atime / timeConstSecond) % 60;
-    if (timeConstSecond > 1)
-      st.wMilliseconds = (atime % timeConstSecond) * (1000 / timeConstSecond);
-    SYSTEMTIME localTime;
-    memset(&localTime, 0, sizeof(SYSTEMTIME));
-    SystemTimeToTzSpecificLocalTime(0, &st, &localTime);
-
-    atime = localTime.wHour*timeConstHour + localTime.wMinute * timeConstMinute +
-      localTime.wSecond * timeConstSecond + localTime.wMilliseconds / (1000 / timeConstSecond);
+    st.tm_hour = atime / timeConstHour;
+    st.tm_min = (atime / timeConstMinute) % 60;
+    st.tm_sec = (atime / timeConstSecond) % 60;
+    int subMs = (timeConstSecond > 1) ? (atime % timeConstSecond) * (1000 / timeConstSecond) : 0;
+    st.tm_isdst = 0;
+    time_t utcTime = mkgmtime(st); // Treat st as UTC
+    std::tm localTime{};
+#ifdef _WIN32
+    localtime_s(&localTime, &utcTime);
+#else
+    localtime_r(&utcTime, &localTime);
+#endif
+    atime = localTime.tm_hour*timeConstHour + localTime.tm_min * timeConstMinute +
+      localTime.tm_sec * timeConstSecond + (timeConstSecond > 1 ? subMs / (1000 / timeConstSecond) : 0);
   }
 
   if (atime >= 0 && atime < timeConstHour * 24) {
@@ -3861,9 +3879,19 @@ bool oEvent::enumerateCompetitions(const wchar_t *file, const wchar_t *filetype)
       ci.Date=L"2007-01-01";
       ci.Id=id++;
 
-      SYSTEMTIME st;
-      FileTimeToSystemTime(&fd.ftLastWriteTime, &st);
-      ci.Modified=convertSystemTimeN(st);
+      {
+        ULARGE_INTEGER ui;
+        ui.LowPart = fd.ftLastWriteTime.dwLowDateTime;
+        ui.HighPart = fd.ftLastWriteTime.dwHighDateTime;
+        time_t fileTime = (time_t)((ui.QuadPart - 116444736000000000ULL) / 10000000ULL);
+        std::tm st{};
+#ifdef _WIN32
+        gmtime_s(&st, &fileTime);
+#else
+        gmtime_r(&fileTime, &st);
+#endif
+        ci.Modified = convertSystemTimeN(st);
+      }
       xmlparser xp;
 
       try {
@@ -4089,12 +4117,19 @@ bool oEvent::enumerateBackups(const wstring &file, const wstring &filetype, int 
       if (pIndex>0 && pIndex<ci.fileName.size())
         ci.fileName = ci.fileName.substr(0, pIndex);
 
-      SYSTEMTIME st;
-      FILETIME localTime;
-      FileTimeToLocalFileTime(&fd.ftLastWriteTime, &localTime);
-      FileTimeToSystemTime(&localTime, &st);
-
-      ci.Modified=convertSystemTimeN(st);
+      {
+        ULARGE_INTEGER ui;
+        ui.LowPart = fd.ftLastWriteTime.dwLowDateTime;
+        ui.HighPart = fd.ftLastWriteTime.dwHighDateTime;
+        time_t fileTime = (time_t)((ui.QuadPart - 116444736000000000ULL) / 10000000ULL);
+        std::tm st{};
+#ifdef _WIN32
+        localtime_s(&st, &fileTime);
+#else
+        localtime_r(&fileTime, &st);
+#endif
+        ci.Modified = convertSystemTimeN(st);
+      }
       xmlparser xp;
 
       try {
@@ -4353,11 +4388,10 @@ void oEvent::newCompetition(const wstring &name)
   openFileLock->unlockFile();
   clear();
 
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = getLocalTm();
 
   Date = convertSystemDate(st);
-  ZeroTime = st.wHour*timeConstHour;
+  ZeroTime = st.tm_hour*timeConstHour;
 
   Name = name;
   oEventData->initData(this, sizeof(oData));
@@ -4674,11 +4708,10 @@ void oEvent::reCalculateLeaderTimes(int classId)
 
 wstring oEvent::getCurrentTimeS() const
 {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = getLocalTm();
 
   wchar_t bf[64];
-  swprintf(bf, 64, L"%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+  swprintf(bf, 64, L"%02d:%02d:%02d", st.tm_hour, st.tm_min, st.tm_sec);
   return bf;
 }
 

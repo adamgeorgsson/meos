@@ -23,6 +23,8 @@
 #pragma once
 #include <vector>
 #include <map>
+#include <ctime>
+#include <chrono>
 
 class StringCache {
 private:
@@ -52,14 +54,14 @@ public:
   }
 };
 
-string convertSystemTimeN(const SYSTEMTIME &st);
+string convertSystemTimeN(const std::tm &st);
 string getLocalTimeN();
 
 bool checkValidDate(const wstring &date);
 
-wstring convertSystemTime(const SYSTEMTIME &st);
-wstring convertSystemTimeOnly(const SYSTEMTIME &st);
-wstring convertSystemDate(const SYSTEMTIME &st);
+wstring convertSystemTime(const std::tm &st);
+wstring convertSystemTimeOnly(const std::tm &st);
+wstring convertSystemDate(const std::tm &st);
 wstring getLocalTime();
 wstring getLocalDate();
 wstring getLocalTimeOnly();
@@ -92,10 +94,10 @@ const wstring &formatTimeHMS(int rt, SubSecond mode = SubSecond::Auto);
 wstring formatTimeIOF(int rt, int zeroTime);
 
 int convertDateYMD(const string &m, bool checkValid);
-int convertDateYMD(const string &m, SYSTEMTIME &st, bool checkValid);
+int convertDateYMD(const string &m, std::tm &st, bool checkValid);
 
 int convertDateYMD(const wstring &m, bool checkValid);
-int convertDateYMD(const wstring &m, SYSTEMTIME &st, bool checkValid);
+int convertDateYMD(const wstring &m, std::tm &st, bool checkValid);
 
 // Convert a "general" time string to a MeOS compatible time string
 void processGeneralTime(const wstring &generalTime, wstring &meosTime, wstring &meosDate);
@@ -104,8 +106,15 @@ void processGeneralTime(const wstring &generalTime, wstring &meosTime, wstring &
 //string formatDate(int m, bool useIsoFormat);
 wstring formatDate(int m, bool useIsoFormat);
 
-__int64 SystemTimeToInt64TenthSecond(const SYSTEMTIME &st);
-SYSTEMTIME Int64TenthSecondToSystemTime(__int64 time);
+__int64 SystemTimeToInt64TenthSecond(const std::tm &st);
+std::tm Int64TenthSecondToSystemTime(__int64 time);
+
+// Returns current local time as std::tm
+std::tm getLocalTm();
+// Returns milliseconds component of current time (0-999)
+int getLocalTm_ms();
+// Portable mkgmtime: treats std::tm as UTC, returns UTC time_t
+time_t mkgmtime(std::tm &tm);
 
 #define NOTIME 0x7FFFFFFF
 

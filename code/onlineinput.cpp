@@ -846,21 +846,12 @@ void OnlineInput::processEntries(oEvent &oe, const xmlList &entries) {
 }
 
 time_t OnlineInput::getZeroTimeMSLinuxEpoch() const {
-  SYSTEMTIME st;
-  convertDateYMD(oe->getDate(), st, false);
-
-  // Convert SYSTEMTIME to struct tm
-  tm tm{};
-  tm.tm_year = st.wYear - 1900;     // tm_year is years since 1900
-  tm.tm_mon = st.wMonth - 1;        // tm_mon is 0-based
-  tm.tm_mday = st.wDay;
-  tm.tm_hour = st.wHour;
-  tm.tm_min = st.wMinute;
-  tm.tm_sec = st.wSecond;
-  tm.tm_isdst = -1;
+  std::tm tm{};
+  convertDateYMD(oe->getDate(), tm, false);
+  tm.tm_isdst = 0;
 
   // Convert to epoch (UTC)
-  time_t epoch = _mkgmtime64(&tm) * 1000;  // mktime is in seconds
+  time_t epoch = mkgmtime(tm) * 1000;  // mktime is in seconds
   epoch += (time_t)oe->getZeroTimeNum() * 100;    // we use tenth of a second
   return epoch;
 }

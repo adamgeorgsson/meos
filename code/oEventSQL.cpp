@@ -40,8 +40,14 @@
 #include "image.h"
 #include "maprenderer.h"
 #include <cassert>
+#include <chrono>
 
 extern Image image;
+
+static uint64_t getTickMs() {
+  return (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 bool oEvent::connectToServer()
 {
@@ -104,7 +110,7 @@ bool oEvent::synchronizeList(initializer_list<oListId> types) {
   if (!hasDBConnection())
     return true;
 
-  unsigned int ct = GetTickCount();
+  uint64_t ct = getTickMs();
   if (ct < lastTimeConsistencyCheck || (ct - lastTimeConsistencyCheck) > 1000 * 60) {
     // Make autoSynch instead
     autoSynchronizeLists(true);
@@ -151,7 +157,7 @@ bool oEvent::synchronizeList(oListId id, bool preSyncEvent, bool postSyncEvent) 
     return true;
 
   if (postSyncEvent) {
-    unsigned int ct = GetTickCount();
+    uint64_t ct = getTickMs();
     if (ct < lastTimeConsistencyCheck || (ct - lastTimeConsistencyCheck) > 1000 * 60) {
       // Make autoSynch instead
       autoSynchronizeLists(true);
@@ -192,7 +198,7 @@ bool oEvent::checkDatabaseConsistency(bool force) {
     return false;
 
   if (!force) {
-    unsigned int ct = GetTickCount();
+    uint64_t ct = getTickMs();
     if (ct < lastTimeConsistencyCheck || (ct - lastTimeConsistencyCheck) > 1000 * 60) {
       lastTimeConsistencyCheck = ct;
     }
@@ -379,7 +385,7 @@ bool oEvent::uploadSynchronize()
       else if (ans == gdioutput::AskAnswer::AnswerNo) {
         int len = currentNameId.length();
         wchar_t ex[10];
-        swprintf(ex, sizeof(ex)/sizeof(wchar_t), L"_%05XZ", (GetTickCount()/97) & 0xFFFFF);
+        swprintf(ex, sizeof(ex)/sizeof(wchar_t), L"_%05XZ", (unsigned)(getTickMs()/97) & 0xFFFFF);
         if (len > 0) {
           if (len< 7 || currentNameId[len-1] != 'Z')
             currentNameId += ex;

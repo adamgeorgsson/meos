@@ -22,6 +22,7 @@
 
 #include "StdAfx.h"
 #include <cassert>
+#include <chrono>
 
 #include "oEvent.h"
 #include "autotask.h"
@@ -30,6 +31,11 @@
 #include "meos_util.h"
 #include "socket.h"
 #include "meosexception.h"
+
+static uint64_t steadyMs() {
+  return (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 const int SYNC_FACTOR = 4; 
 
@@ -54,9 +60,9 @@ void AutoTask::autoSave() {
       if (oe.getNumRunners() > 500)
         gdi.setWaitCursor(true);
 
-      uint64_t tic = GetTickCount64();
+      uint64_t tic = steadyMs();
       oe.save();
-      uint64_t toc = GetTickCount64();
+      uint64_t toc = steadyMs();
 
       if (toc > tic) {
         int timeToSave = toc - tic;
@@ -108,7 +114,7 @@ void AutoTask::interfaceTimeout(const vector<gdioutput *> &windows) {
 
   wstring msg;
   try {
-    uint64_t tick = GetTickCount64();
+    uint64_t tick = steadyMs();
     for (size_t k = 0; k<windows.size(); k++) {
       if (windows[k])
         windows[k]->CheckInterfaceTimeouts(tick);
@@ -164,7 +170,7 @@ uint32_t AutoTask::getAvgSynchTime() {
 }
 
 void AutoTask::synchronize(const vector<gdioutput *> &windows) {
-  uint64_t tic = GetTickCount64();
+  uint64_t tic = steadyMs();
   uint32_t avg = getAvgSynchTime();
   //OutputDebugString(("AVG Update Time: " + itos(avg)).c_str());
   if (tic > lastSynchTime) {
@@ -189,7 +195,7 @@ void AutoTask::synchronize(const vector<gdioutput *> &windows) {
   lastTriedSynchTime = tic;
 
   if (synchronizeImpl(windows)) {
-    uint64_t toc = GetTickCount64();
+    uint64_t toc = steadyMs();
     if (toc > tic)
       addSynchTime((uint32_t)(toc-tic));
 
@@ -203,7 +209,7 @@ void AutoTask::synchronize(const vector<gdioutput *> &windows) {
 }
 
 void AutoTask::advancePunchInformation(const vector<gdioutput *> &windows) {
-  uint64_t tic = GetTickCount64();
+  uint64_t tic = steadyMs();
   uint32_t avg = getAvgSynchTime();
   //OutputDebugString(("Direct Update Time: " + itos(avg)).c_str());
   if (tic > lastSynchTime) {
@@ -223,7 +229,7 @@ void AutoTask::advancePunchInformation(const vector<gdioutput *> &windows) {
   }
 
   if (advancePunchInformationImpl(windows)) {
-    uint64_t toc = GetTickCount64();
+    uint64_t toc = steadyMs();
     if (toc > tic)
       addSynchTime((uint32_t)(toc-tic));
     lastSynchTime = toc;

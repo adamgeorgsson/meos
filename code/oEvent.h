@@ -966,7 +966,7 @@ protected:
   bool calculateTeamResults(vector<const oTeam*> &teams, int leg, ResultType resultType);
   void calculateModuleTeamResults(const set<int> &cls, vector<oTeam *> &teams);
 
-  unsigned int lastTimeConsistencyCheck = 0;
+  uint64_t lastTimeConsistencyCheck = 0;
   mutable bool lastResultCalcPrelState = false;
   mutable bool lastResultCalcSplitResult = false;
 public:

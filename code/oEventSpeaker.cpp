@@ -35,6 +35,8 @@
 #include "localizer.h"
 #include "gdifonts.h"
 #include "meosexception.h"
+#include <chrono>
+#include <ctime>
 #include <filesystem>
 
 //////////////////////////////////////////////////////////////////////
@@ -1380,28 +1382,35 @@ void oEvent::speakerList(gdioutput& gdi,
 }
 
 void oEvent::updateComputerTime(bool considerDate) {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  auto nowChron = std::chrono::system_clock::now();
+  time_t nowT = std::chrono::system_clock::to_time_t(nowChron);
+  std::tm st{};
+#ifdef _WIN32
+  localtime_s(&st, &nowT);
+#else
+  localtime_r(&nowT, &st);
+#endif
+  int ms = (int)(std::chrono::duration_cast<std::chrono::milliseconds>(nowChron.time_since_epoch()).count() % 1000);
+
   if (!useLongTimes() && !considerDate)
-    computerTime = (((24+2+st.wHour)*timeConstHour+st.wMinute*timeConstMinute+st.wSecond*timeConstSecond - ZeroTime)%(24*timeConstHour)-2*timeConstHour) * (1000/timeConstSecond) + st.wMilliseconds;
+    computerTime = (((24+2+st.tm_hour)*timeConstHour+st.tm_min*timeConstMinute+st.tm_sec*timeConstSecond - ZeroTime)%(24*timeConstHour)-2*timeConstHour) * (1000/timeConstSecond) + ms;
   else {
-    SYSTEMTIME stDate;
+    std::tm stDate{};
     if (convertDateYMD(getDate(), stDate, true) == -1) {
       stDate = st;
-      stDate.wHour = 0;
-      stDate.wMinute = 0;
-      stDate.wSecond = 0;
-      stDate.wMilliseconds = 0;
+      stDate.tm_hour = 0;
+      stDate.tm_min = 0;
+      stDate.tm_sec = 0;
     }
 
-    stDate.wHour = (ZeroTime / timeConstHour)%24;
-    stDate.wMinute = (ZeroTime / timeConstMinute) % 60;
-    stDate.wSecond = (ZeroTime / timeConstSecond) % 60;
-    st.wMilliseconds = (ZeroTime % timeConstSecond) * 1000;
+    stDate.tm_hour = (ZeroTime / timeConstHour)%24;
+    stDate.tm_min = (ZeroTime / timeConstMinute) % 60;
+    stDate.tm_sec = (ZeroTime / timeConstSecond) % 60;
+    int zeroMs = (ZeroTime % timeConstSecond) * 1000;
 
     int64_t zero = SystemTimeToInt64TenthSecond(stDate);
-    int64_t now = SystemTimeToInt64TenthSecond(st);
-    computerTime = (now - zero) * (1000 / timeConstSecond) + st.wMilliseconds % (1000 / timeConstSecond);
+    int64_t nowVal = SystemTimeToInt64TenthSecond(st);
+    computerTime = (nowVal - zero) * (1000 / timeConstSecond) + zeroMs % (1000 / timeConstSecond);
   }
 }
 

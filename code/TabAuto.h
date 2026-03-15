@@ -190,6 +190,11 @@ public:
   AutoMachine(const string &s, Machines type) : myid(uniqueId++), type(type), name(s), interval(0), timeout(0),
             synchronize(false), synchronizePunches(false), editMode(false) {}
   virtual ~AutoMachine() = 0 {}
+
+  // Returns milliseconds elapsed since timeout was set (for status display)
+  int64_t getTimeoutElapsedMs() const {
+    return int64_t(GetTickCount64()) - int64_t(timeout);
+  }
 };
 
 class SaveMachine :
