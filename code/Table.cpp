@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "Table.h"
 #include "gdioutput.h"
 #include "meos_util.h"

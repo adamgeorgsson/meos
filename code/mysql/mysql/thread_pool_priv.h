@@ -42,7 +42,7 @@
 #include <conn_handler/connection_handler_manager.h>
 #include <debug_sync.h>
 #include <sql_profile.h>
-#include <table.h>
+#include <Table.h>
 #include "field.h"
 #include "sql_thd_internal_api.h"
 #include <set>

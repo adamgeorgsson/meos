@@ -21,7 +21,7 @@
 
 ************************************************************************/
 
-#include "tabbase.h"
+#include "TabBase.h"
 #include "gdiconstants.h"
 #include "oFreeImport.h"
 #include "importformats.h"

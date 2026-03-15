@@ -21,7 +21,7 @@
 
 ************************************************************************/
 
-#include "Localizer.h"
+#include "localizer.h"
 #include "gdioutput.h"
 
 

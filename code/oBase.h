@@ -26,7 +26,7 @@
 ************************************************************************/
 
 #include "TimeStamp.h"
-#include "stdafx.h"
+#include "StdAfx.h"
 #include <vector>
 #include <memory>
 

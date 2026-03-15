@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <vector>
 #include <set>
@@ -50,7 +50,7 @@
 #include <sys/stat.h>
 #include <deque>
 
-#include "Localizer.h"
+#include "localizer.h"
 
 
 void oEvent::generateCompetitionReport(gdioutput &gdi)

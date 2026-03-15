@@ -24,14 +24,14 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <vector>
 #include "oEvent.h"
 #include "gdioutput.h"
 #include "oDataContainer.h"
 
-#include "Localizer.h"
+#include "localizer.h"
 #include "intkeymapimpl.hpp"
 #include "MeOSFeatures.h"
 

@@ -24,12 +24,12 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "oCourse.h"
 #include "oEvent.h"
 #include "SportIdent.h"
 #include <limits>
-#include "Localizer.h"
+#include "localizer.h"
 #include "meos_util.h"
 #include "meosexception.h"
 #include <cassert>

@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <algorithm>
 #include <cassert>
@@ -32,7 +32,7 @@
 #include "xmlparser.h"
 #include "RunnerDB.h"
 #include "meos_util.h"
-#include "meosException.h"
+#include "meosexception.h"
 #include "localizer.h"
 #include "maprenderer.h"
 

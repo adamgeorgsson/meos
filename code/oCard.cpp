@@ -24,12 +24,12 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "oCard.h"
 #include "oEvent.h"
 #include "gdioutput.h"
-#include "table.h"
-#include "Localizer.h"
+#include "Table.h"
+#include "localizer.h"
 #include "meos_util.h"
 
 #include <algorithm>

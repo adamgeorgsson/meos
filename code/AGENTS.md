@@ -12,6 +12,8 @@ Platforms: Win32 (x86) and x64. Precompiled header: `StdAfx.h`.
 
 All source files live in this flat directory. Headers are included by bare filename (e.g., `#include "oBase.h"`).
 
+**Important:** For cross-platform compatibility (Linux/macOS), all `#include` directives MUST use the exact casing of the filename on disk. For example, use `#include "StdAfx.h"` (not `stdafx.h`) and `#include "meosexception.h"` (not `meosException.h`).
+
 ### Domain model
 
 `oEvent` is the aggregate root — it owns collections of all domain objects. Domain entity classes use the `o` prefix:

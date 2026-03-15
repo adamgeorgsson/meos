@@ -20,10 +20,10 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
-#include "Download.h"
+#include "StdAfx.h"
+#include "download.h"
 #include <Wininet.h>
-#include "Localizer.h"
+#include "localizer.h"
 #include "meos_util.h"
 #include "progress.h"
 #include "meosexception.h"

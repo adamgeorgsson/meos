@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "oFreeImport.h"
 #include "oEvent.h"
 #include <algorithm>

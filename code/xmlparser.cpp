@@ -24,7 +24,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "xmlparser.h"
 #include "meos_util.h"
 #include "progress.h"
