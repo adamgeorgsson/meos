@@ -16,19 +16,9 @@ set -e
 trap 'echo ""; echo "Ralph interrupted. No partial data written."; exit 130' INT TERM
 
 # Filter out verbose GaxiosError stack traces from gemini CLI output.
-# Keeps the "Attempt N failed..." message, strips the error dump.
+# Uses grep --line-buffered to avoid blocking the pipeline.
 filter_gaxios_errors() {
-  awk '
-    /GaxiosError:/ {
-      sub(/GaxiosError:.*/, "")
-      if ($0 ~ /[^ \t]/) print $0
-      skip = 1
-      next
-    }
-    skip && /^[[:space:]]/ { next }
-    skip && /^[})\]]/ { next }
-    { skip = 0; print }
-  '
+  grep --line-buffered -v 'GaxiosError'
 }
 
 # Parse arguments
@@ -99,8 +89,8 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   elif [[ "$TOOL" == "copilot" ]]; then
     OUTPUT=$(timeout --kill-after=10 $TIMEOUT copilot -p "$(cat "$SCRIPT_DIR/prompt.md")" --allow-all 2>&1 | tee /dev/stderr) || true
   elif [[ "$TOOL" == "gemini" ]]; then
-    # Use stdin redirect instead of -p to avoid shell interpretation of backticks/special chars in prompt
-    OUTPUT=$(timeout --kill-after=10 $TIMEOUT gemini -y < "$SCRIPT_DIR/prompt.md" 2>&1 | filter_gaxios_errors | tee /dev/stderr) || true
+    # cat pipe instead of < redirect — redirect causes gemini to hang on large files
+    OUTPUT=$(cat "$SCRIPT_DIR/prompt.md" | timeout --kill-after=10 $TIMEOUT gemini -y -p "" 2>&1 | filter_gaxios_errors | tee /dev/stderr) || true
   fi
 
   STEP_END=$(date +%s)
