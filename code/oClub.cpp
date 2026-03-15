@@ -27,6 +27,7 @@
 #include "StdAfx.h"
 #include "oClub.h"
 #include "meos_util.h"
+#include <filesystem>
 
 #include "oEvent.h"
 #include "gdioutput.h"
@@ -69,13 +70,12 @@ void oClub::loadNameMap() {
   wstring path = ccpath;
 
   if (!fileExists(path) && exePath[0]) {
-    path = exePath;
-    path += L"\\clubnamemap.csv";
+    path = (std::filesystem::path(exePath) / L"clubnamemap.csv").wstring();
   }
 
 #ifdef _DEBUG
   if (!fileExists(path))
-    path = L".\\..\\Lists\\clubnamemap.csv";
+    path = (std::filesystem::path(L"..") / L"Lists" / L"clubnamemap.csv").wstring();
 #endif
 
   bool good = false;

@@ -22,6 +22,7 @@
 
 #include "StdAfx.h"
 #include "gdioutput.h"
+#include <filesystem>
 #include <vector>
 #include <map>
 #include <cassert>
@@ -773,8 +774,8 @@ void HTMLWriter::enumTemplates(TemplateType type, vector<TemplateInfo> &descript
   int userCounter = res.size();
 
 #ifdef _DEBUG
-  expandDirectory((wstring(programPath) + L".\\..\\Lists\\").c_str(), L"*.meostmpl", res);
-  expandDirectory((wstring(programPath) + L".\\..\\Lists\\").c_str(), L"*.template", res);
+  expandDirectory((std::filesystem::path(programPath) / L".." / L"Lists").wstring().c_str(), L"*.meostmpl", res);
+  expandDirectory((std::filesystem::path(programPath) / L".." / L"Lists").wstring().c_str(), L"*.template", res);
 #endif
 
   if (exePath[0]) {

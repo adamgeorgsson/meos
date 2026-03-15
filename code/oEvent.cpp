@@ -30,6 +30,7 @@
 
 #include "oEvent.h"
 #include "gdioutput.h"
+#include <filesystem>
 #include "gdifonts.h"
 #include "oDataContainer.h"
 #include "metalist.h"
@@ -7341,7 +7342,7 @@ const CardSystem& oEvent::getCardSystem() const {
 
 #ifdef _DEBUG
     if (!fileExists(path))
-      path = L".\\..\\Lists\\sportident.cardsystem";
+      path = (std::filesystem::path(L"..") / L"Lists" / L"sportident.cardsystem").wstring();
 #endif
     cardSystem->load(path);
   }

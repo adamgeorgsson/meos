@@ -22,6 +22,7 @@
 #include "StdAfx.h"
 
 #include <cassert>
+#include <filesystem>
 #include "testmeos.h"
 
 #include "gdioutput.h"
@@ -461,10 +462,7 @@ string TestMeOS::getTestFile(const char *relPath) const {
   string tp = oe_main->getPropertyString("TestPath", "");
   if (tp.length() == 0)
     return relPath;
-  else if (*tp.rbegin() == '\\')
-    return tp + relPath;
-  else
-    return tp + "\\" + relPath;
+  return (std::filesystem::path(tp) / relPath).string();
 }
 
 wstring TestMeOS::getTempFile() const {
