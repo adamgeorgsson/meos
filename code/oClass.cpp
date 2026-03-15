@@ -880,7 +880,7 @@ bool oClass::removeStageCourse(int iStage, int CourseId, int position)
 
   vector<pCourse> &Stage=MultiCourse[iStage];
 
-  if ( !(DWORD(position)<Stage.size()))
+  if (position < 0 || size_t(position) >= Stage.size())
     return false;
 
   if (Stage[position]->getId()==CourseId){

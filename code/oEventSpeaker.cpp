@@ -660,7 +660,7 @@ int renderRowSpeakerList(const oSpeakerObject& r, const oSpeakerObject* next_r,
         rows[0].emplace_back();
     }
     else if (r[0].status == StatusUnknown) {
-      DWORD timeOut = NOTIMEOUT;
+      uint32_t timeOut = NOTIMEOUT;
 
       if (r[0].runningTimeLeg.preliminary >= -timeConstSecond && !r.missingStartTime) {
 
@@ -765,7 +765,7 @@ int renderRowSpeakerList(const oSpeakerObject& r, const oSpeakerObject* next_r,
         else {
           hasShownTimer = true;
 #          // No result yet
-          DWORD timeOut = NOTIMEOUT;          
+          uint32_t timeOut = NOTIMEOUT;
           if (r[j].runningTimeLeg.preliminary >= -timeConstSecond && !r.missingStartTime) {
             // Waiting for competitor
             if (next_r && (*next_r)[j].status == StatusOK && (*next_r)[j].runningTime.preliminary > r[j].runningTime.preliminary)

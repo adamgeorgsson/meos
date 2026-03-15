@@ -2430,8 +2430,8 @@ void oEvent::setDate(const wstring &m, bool manualSet)
   }
 }
 
-const wstring &oEvent::getAbsTime(DWORD time, SubSecond mode) const {
-  DWORD t = ZeroTime + time;
+const wstring &oEvent::getAbsTime(uint32_t time, SubSecond mode) const {
+  uint32_t t = ZeroTime + time;
   if (int(t)<0)
     t = 0;
   int days = time/(timeConstHour*24);
@@ -2450,7 +2450,7 @@ const wstring &oEvent::getTimeZoneString() const {
   return date2LocalTZ[Date];
 }
 
-wstring oEvent::getAbsDateTimeISO(DWORD time, bool includeDate, bool useGMT) const
+wstring oEvent::getAbsDateTimeISO(uint32_t time, bool includeDate, bool useGMT) const
 {
   int t = ZeroTime + time;
   wstring dateS, timeS;
@@ -2624,8 +2624,8 @@ int oEvent::convertScore(const wstring &score) const {
     return base * factor + fraction;
 }
 
-const wstring &oEvent::getAbsTimeHM(DWORD time) const {
-  DWORD t=ZeroTime+time;
+const wstring &oEvent::getAbsTimeHM(uint32_t time) const {
+  uint32_t t=ZeroTime+time;
 
   if (int(t)<0)
     return makeDash(L"-");

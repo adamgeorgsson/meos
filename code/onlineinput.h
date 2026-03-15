@@ -22,6 +22,7 @@
 ************************************************************************/
 
 #include "TabAuto.h"
+#include <cstdint>
 #include <deque>
 #include "oPunch.h"
 
@@ -41,7 +42,7 @@ protected:
   int lastImportedId;
   int importCounter;
   int bytesImported;
-  DWORD lastSync;
+  uint32_t lastSync;
 
   enum class Type {
     MIP,

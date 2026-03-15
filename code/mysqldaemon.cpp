@@ -48,8 +48,8 @@ bool MySQLReconnect::stop() {
 }
 
 static CRITICAL_SECTION CS_MySQL;
-static volatile DWORD mysqlConnecting=0;
-static volatile DWORD mysqlStatus=0;
+static volatile uint32_t mysqlConnecting=0;
+static volatile uint32_t mysqlStatus=0;
 
 void initMySQLCriticalSection(bool init) {
   if (init)

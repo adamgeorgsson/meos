@@ -22,6 +22,7 @@
 
 ************************************************************************/
 
+#include <cstdint>
 #include <vector>
 #include <deque>
 
@@ -40,13 +41,13 @@ private:
   long currentRevision;
   bool lock;
 
-  deque<DWORD> synchQueue;
-  deque<DWORD> directQueue;
+  deque<uint32_t> synchQueue;
+  deque<uint32_t> directQueue;
 
   uint64_t lastSynchTime;
   uint64_t lastTriedSynchTime;
-  void addSynchTime(DWORD tick);
-  DWORD getAvgSynchTime();
+  void addSynchTime(uint32_t tick);
+  uint32_t getAvgSynchTime();
 
   HWND hWndMain;
 

@@ -4261,7 +4261,7 @@ void MeosSQL::synchronized(oBase &entity) {
   entity.Modified.setStamp(entity.sqlUpdated);
   
   int id = getTypeId(entity);
-  readTimes[make_pair(id, entity.getId())] = GetTickCount();
+  readTimes[make_pair(id, entity.getId())] = (uint32_t)GetTickCount();
   readent++;
   if (readent % 100 == 99)
     OutputDebugStringA("Read 100 entities\n");
@@ -4269,10 +4269,10 @@ void MeosSQL::synchronized(oBase &entity) {
 
 bool MeosSQL::skipSynchronize(const oBase &entity) const {
   int id = getTypeId(entity);
-  map<pair<int, int>, DWORD>::const_iterator res = readTimes.find(make_pair(id, entity.getId()));
+  map<pair<int, int>, uint32_t>::const_iterator res = readTimes.find(make_pair(id, entity.getId()));
 
   if (res != readTimes.end()) {
-    DWORD t = GetTickCount();
+    uint32_t t = (uint32_t)GetTickCount();
     if (t > res->second && (t - res->second) < 1000) {
       skipped++;
       return true;
