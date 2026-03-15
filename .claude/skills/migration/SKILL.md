@@ -129,7 +129,16 @@ The codebase is **extremely coupled**. Migrating one class often requires stubbi
 
 9 of 11 domain files include `gdioutput.h` directly (all except `oBase.cpp`, `oPunch.cpp`). `oEvent.cpp` also includes `TabBase`, `TabAuto`, `TabSI`, `TabList`.
 
-**Strategy**: Extract non-GUI utility functions (string conversions) from `gdioutput` to `meos_util.h` as globals. See `decoupling.md` for callback patterns.
+**Strategy**: Extract non-GUI utility functions (string conversions) from `gdioutput` to `meos_util.h` as globals. See section 9 for callback-based decoupling patterns.
+
+#### Headless gdioutput
+
+When migrating classes that depend on `gdioutput` (like `MetaList`, `HTMLWriter`, `oBase`), use the abstract `gdioutput` base class defined in `src/util/gdioutput.h`.
+
+- **Colors and Fonts:** Use `GDICOLOR` enum and `RGB(r,g,b)` macro from `src/util/gdioutput.h`. Use `gdiFonts` enum for font styles. Use `MeOSUtil::HLS` class for background color manipulation (zebra-striped tables).
+- **Layout Metrics:** `gdioutput::getLineHeight()` for default line height. `PageInfo::renderPages()` for splitting `TextInfo` objects into pages (multi-column layouts, page breaks).
+- **String Handling:** Use `MeOSUtil::toUTF8()` for HTML/XML output. Use `MeOSUtil::encodeXML()` / `MeOSUtil::encodeHTML()` for escaping.
+- **Gotchas:** `domain_header.h` should NOT define its own `GDICOLOR`/`gdiFonts` — include `../util/gdioutput.h`. `TextInfo` uses `RECT` from `gdioutput.h` (replaces Win32 `RECT`).
 
 ### 9. oEvent → Tab* Direct Coupling
 
@@ -142,6 +151,30 @@ The codebase is **extremely coupled**. Migrating one class often requires stubbi
 | `TabSI::getSI(gdiBase()).setSubSecondMode(use)` | Sets SportIdent sub-second mode | Callback `std::function<void(bool)>` registered by TabSI |
 
 Expose callback typedefs (e.g., `BaseButtonsCallback`) on `oEvent.h` via `std::function`. UI classes register their callbacks during application initialization. This decouples the domain aggregate root from the UI layer.
+
+#### Generic Decoupling Recipe
+
+1. **Identify UI Dependency:** Find direct calls from domain code to UI classes.
+2. **Add Callback Member:** Add a `std::function` member to the domain class header.
+    ```cpp
+    #include <functional>
+    std::function<int(gdioutput&, int, bool)> baseButtonsCallback;
+    ```
+3. **Add Setter:** Public setter for the callback.
+    ```cpp
+    void setBaseButtonsCallback(std::function<int(gdioutput&, int, bool)> cb) { baseButtonsCallback = cb; }
+    ```
+4. **Replace Direct Call:** Remove the UI header, replace with callback (checked for validity).
+    ```cpp
+    if (baseButtonsCallback) baseButtonsCallback(gdi, 1, false);
+    ```
+5. **Register Callback:** In `meos.cpp` (composition root), register the UI method after domain init.
+    ```cpp
+    gEvent = new oEvent(*gdi_main);
+    gEvent->setBaseButtonsCallback(TabList::baseButtons);
+    ```
+
+Always check if the callback is set before calling. Use lambdas if extra context is needed.
 
 ### 10. Time Handling
 

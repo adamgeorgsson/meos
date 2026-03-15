@@ -17,8 +17,8 @@ This skill provides a procedure and script for replacing Win32 `Sleep()` calls w
 
 ## Procedure
 
-1.  **Audit**: Run `python .gemini/skills/sleep-replacement/fix_sleep.py --dry-run` to list all Sleep() calls that would be replaced.
-2.  **Apply**: Run `python .gemini/skills/sleep-replacement/fix_sleep.py` to perform the replacements and add missing includes.
+1.  **Audit**: Run `python .claude/skills/sleep-replacement/fix_sleep.py --dry-run` to list all Sleep() calls that would be replaced.
+2.  **Apply**: Run `python .claude/skills/sleep-replacement/fix_sleep.py` to perform the replacements and add missing includes.
 3.  **Verify**: Run with `--dry-run` again to confirm zero remaining calls in domain files.
 
 Run from the repository root (parent of `code/`).

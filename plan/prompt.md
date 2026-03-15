@@ -115,12 +115,12 @@ After each completed story, update `README.md` so it always reflects the current
 
 Update only the sections that changed due to your story. If a story adds a new dependency, build step, or runtime flag, the README must reflect it. Keep the instructions concise and tested — run the commands yourself before documenting them.
 
-## Update Gemini Skills
+## Update Skills
 
-After each completed story, save reusable learnings and scripts to `.gemini/skills/`:
+After each completed story, save reusable learnings and scripts to `.claude/skills/`:
 
-- **Create or update skill files** (e.g., `.gemini/skills/migration.md`, `.gemini/skills/cross-platform-cpp/SKILL.md`) with patterns, gotchas, and migration knowledge
-- **Save reusable scripts** (e.g., `.gemini/skills/fix-includes.sh`, `.gemini/skills/check-platform-deps.py`) that automate repetitive or time-consuming tasks discovered during migration
+- **Create or update skill files** (e.g., `.claude/skills/migration.md`, `.claude/skills/cross-platform-cpp/SKILL.md`) with patterns, gotchas, and migration knowledge
+- **Save reusable scripts** (e.g., `.claude/skills/fix-includes.sh`, `.claude/skills/check-platform-deps.py`) that automate repetitive or time-consuming tasks discovered during migration
 - **Keep skills focused** — one topic per file, concise and actionable
 - **Skills must be self-contained** — they survive across migration runs where all previously generated code is discarded. A skill must work without depending on files or changes from a previous run. Scripts should operate on the raw legacy codebase, not on migrated output.
 
@@ -130,6 +130,6 @@ After each completed story, save reusable learnings and scripts to `.gemini/skil
 - Commit frequently
 - Keep CI green
 - Read the Codebase Patterns section in plan/progress.txt before starting
-- Update `.gemini/skills/` with migration learnings and reusable scripts after each story
+- Update `.claude/skills/` with migration learnings and reusable scripts after each story
 - **Never assume legacy code is static** — always read and parse it dynamically, as upstream changes may alter structure, signatures, or file contents between migration runs
 - **Never write placeholder progress entries.** Every progress entry must contain the actual files changed and real learnings.

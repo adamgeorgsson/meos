@@ -1,18 +1,18 @@
 ---
 name: curate-skills
-description: "Audit and clean up .gemini/skills/ to keep only skills that actively support PRD implementation. Removes redundant, outdated, or unused skills and consolidates overlapping ones. Triggers on: curate skills, clean up skills, audit skills, prune skills, skill review."
+description: "Audit and clean up .claude/skills/ to keep only skills that actively support PRD implementation. Removes redundant, outdated, or unused skills and consolidates overlapping ones. Triggers on: curate skills, clean up skills, audit skills, prune skills, skill review."
 user-invocable: true
 ---
 
-# Curate Gemini Skills
+# Curate Skills
 
-Audit `.gemini/skills/` against the PRDs in `plan/` to ensure every skill earns its place. Fewer, higher-quality skills means Ralph spends less context on irrelevant patterns and produces better results.
+Audit `.claude/skills/` against the PRDs in `plan/` to ensure every skill earns its place. Fewer, higher-quality skills means Ralph spends less context on irrelevant patterns and produces better results.
 
 ## Procedure
 
 ### 1. Inventory
 
-List every skill in `.gemini/skills/` and for each one note:
+List every skill in `.claude/skills/` and for each one note:
 - **File/dir name**
 - **One-line summary** of what it teaches
 - **Size** (approximate line count)
@@ -23,7 +23,7 @@ Read all `plan/prd-*.md` files. For each skill, determine:
 
 | Question | How to check |
 |---|---|
-| **Referenced?** | Is the skill file explicitly mentioned (`\.gemini/skills/...`) in any PRD? |
+| **Referenced?** | Is the skill file explicitly mentioned (`\.claude/skills/...`) in any PRD? |
 | **Covered by a story?** | Does at least one user story need the patterns this skill describes? |
 | **Up to date?** | Do the patterns match the current state of the codebase, or do they describe code that has already been migrated/deleted? |
 

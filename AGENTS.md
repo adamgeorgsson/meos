@@ -97,4 +97,4 @@ Domain migration is **run from scratch repeatedly** by Ralph (an autonomous agen
 | `plan/prompt.md` | Instructions for each Ralph iteration (updated between runs) |
 | `plan/ralph.sh` | The agent loop runner (updated between runs) |
 | `plan/progress.txt` | Learnings from the current run (discarded between runs, patterns extracted first, gitignored) |
-| `.gemini/skills/migration/SKILL.md` | Accumulated migration knowledge (persists across runs) |
+| `.claude/skills/migration/SKILL.md` | Accumulated migration knowledge (persists across runs) |

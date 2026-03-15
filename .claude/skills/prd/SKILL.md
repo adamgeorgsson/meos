@@ -16,7 +16,7 @@ PRDs created for MeOS are executed by Ralph (an autonomous agent loop) which run
 
 - **Acceptance criteria must be robust to upstream changes.** Describe the *desired end state*, not specific line numbers or exact code snippets that may shift.
 - **User stories should be self-contained and dynamically discoverable.** "Replace all `DWORD` in domain files" is robust. "Fix 50 DWORD usages in these 5 files" is fragile.
-- **Reference skill files for patterns** (e.g., "See `.gemini/skills/migration/Skill.md`") rather than inlining knowledge that may become stale.
+- **Reference skill files for patterns** (e.g., "See `.claude/skills/migration/Skill.md`") rather than inlining knowledge that may become stale.
 - **Each run is disposable.** The code produced is thrown away and regenerated. Only the learnings (documented in progress.txt and skill files) carry forward.
 
 ---
