@@ -90,7 +90,7 @@ find_package(unofficial-libharu CONFIG REQUIRED)
 
 # ---------------------------------------------------------------------------
 # OpenSSL — RestBed links dynamically against OpenSSL.
-# Set OPENSSL_ROOT_DIR when invoking cmake if OpenSSL is not on PATH.
+# Provided by vcpkg (declared in vcpkg.json); no OPENSSL_ROOT_DIR needed.
 # ---------------------------------------------------------------------------
 find_package(OpenSSL REQUIRED)
 
