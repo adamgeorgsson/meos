@@ -171,7 +171,7 @@ bool SportIdent::readSystemData(SI_StationInfo *si, int retry)
 
   DWORD written=0;
   WriteFile(si->hComm, c, 8, &written, NULL);
-  Sleep(100);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   memset((void *)buff, 0, 30);
   DWORD offset = 0;
   readBytes_delay(buff, sizeof(buff), 15, si->hComm);
@@ -225,7 +225,7 @@ bool SportIdent::readSystemDataV2(SI_StationInfo &si)
 
   DWORD written=0;
   WriteFile(si.hComm, c, 8, &written, NULL);
-  Sleep(100);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   memset((void *)buff, 0, sizeof(buff) );
 //  DWORD offset = 0;
   int consumed = 0;
@@ -455,7 +455,7 @@ bool SportIdent::openCom(const wchar_t *com)
   DWORD written;
 
   WriteFile(si->hComm, c, 9, &written, NULL);
-  Sleep(700);
+  std::this_thread::sleep_for(std::chrono::milliseconds(700));
   //c[6]=
   DWORD read;
   BYTE buff[128];
@@ -463,7 +463,7 @@ bool SportIdent::openCom(const wchar_t *com)
   read = readBytes(buff, 1, si->hComm);
 
   if (read == 1 && buff[0] == 0xFF){
-    Sleep(100);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     read = readBytes(buff, 1, si->hComm);
   }
 
@@ -478,7 +478,7 @@ bool SportIdent::openCom(const wchar_t *com)
     SetCommState(si->hComm, &dcb);
 
     WriteFile(si->hComm, c, 9, &written, NULL);
-    Sleep(600);
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
     //c[6]=
     DWORD read;
     BYTE buff[128];
@@ -498,7 +498,7 @@ bool SportIdent::openCom(const wchar_t *com)
 
       WriteFile(si->hComm, cold, 4, &written, NULL);
 
-      Sleep(500);
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
       read=readByte(*buff, si->hComm);
 
@@ -576,7 +576,7 @@ void SportIdent::closeCom(const wchar_t *com)
         { std::lock_guard<std::mutex> lg(SyncObj);
           shutdown(SOCKET(serverSocket), SD_BOTH); }
 
-        Sleep(300);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
         { std::lock_guard<std::mutex> lg(SyncObj);
           closesocket(SOCKET(serverSocket));
@@ -656,7 +656,7 @@ int SportIdent::readBytes_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDLE h
 
     if (autoLen && r == len) {
        int rloop;
-       Sleep(100);
+       std::this_thread::sleep_for(std::chrono::milliseconds(100));
        while (read < int(buffSize) && (rloop = readBytes(byte+read, min<int>(16, buffSize-read), hComm)) > 0) {
          read += rloop;
        }
@@ -664,7 +664,7 @@ int SportIdent::readBytes_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDLE h
 
     if (read < toread) {
       len = toread - read;
-      Sleep(100);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }
 #ifdef DEBUG_SI2
@@ -721,7 +721,7 @@ int SportIdent::readBytesDLE_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDL
     if (read<toread)
     {
       len=toread-read;
-      Sleep(100);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }
 #ifdef DEBUG_SI2
@@ -873,7 +873,7 @@ int SportIdent::MonitorTCPSI(WORD port, int localZeroTime)
             else
               iter = 0;
           }
-          Sleep(0);
+          std::this_thread::sleep_for(std::chrono::milliseconds(0));
         }
 
         r=recv(client, temp, 15, 0);
@@ -969,10 +969,10 @@ bool SportIdent::MonitorTEST(SI_StationInfo &si)
     }
     addCard(card);
 
-    Sleep(300 + rand()%600);
-    //Sleep(0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(300 + rand()%600));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(0));
     if (++longSleepIter > 20) {
-      Sleep(100 + rand() % 600);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 600));
       longSleepIter = 0;
       OutputDebugString(L"Long sleep\n");
     }
@@ -995,7 +995,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
   if (!SetCommMask(hComm, EV_RXCHAR))
   {
      // Error setting communications event mask.
-    //Sleep(1000);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     return false;
   }
   else
@@ -1066,7 +1066,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
           case 0x53:{ //Control Punch, old mode
             BYTE bf[32];
             bf[0]=chRead;
-            //Sleep(200);
+            //std::this_thread::sleep_for(std::chrono::milliseconds(200));
             readBytesDLE(bf+1, 30, hComm);
 
             BYTE Station=bf[2];
@@ -1252,7 +1252,7 @@ void SportIdent::getSI5DataExt(HANDLE hComm)
 
   if (written==5)
   {
-    Sleep(150);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
     BYTE bf[256];
     memset(bf, 0, 256);
 
@@ -1271,7 +1271,7 @@ void SportIdent::getSI5DataExt(HANDLE hComm)
         addCard(card);
       }
     }
-    //Sleep(1000);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   }
 }
 
@@ -1301,7 +1301,7 @@ void SportIdent::getSI6DataExt(HANDLE hComm)
     WriteFile(hComm, c, 7, &written, NULL);
 
     if (written==7) {
-      Sleep(50);
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
       BYTE bf[256];
       memset(bf, 0, 256);
 
@@ -1309,7 +1309,7 @@ void SportIdent::getSI6DataExt(HANDLE hComm)
 
       if (read==0) {
         debugLog(L"TIMING");
-        Sleep(300);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         read = readBytes(bf, 128+9, hComm);
       }
 
@@ -1373,7 +1373,7 @@ void SportIdent::getSI9DataExt(HANDLE hComm)
     WriteFile(hComm, c, 7, &written, NULL);
 
     if (written == 7) {
-      Sleep(50);
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
       BYTE bf[256];
       memset(bf, 0, 256);
 
@@ -1381,7 +1381,7 @@ void SportIdent::getSI9DataExt(HANDLE hComm)
 
       if (read == 0) {
         debugLog(L"TIMING");
-        Sleep(300);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         read = readBytes(bf, 128 + 9, hComm);
       }
 
@@ -1439,7 +1439,7 @@ void SportIdent::getSI9DataExt(HANDLE hComm)
       int read = readBytes(bf, 9, hComm);
       if (read == 0) {
         debugLog(L"TIMING");
-        Sleep(300);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         read = readBytes(bf, 9, hComm);
       }
 
@@ -1465,7 +1465,7 @@ void SportIdent::getSI9DataExt(HANDLE hComm)
         int read = readBytes(bf, 128 + 9, hComm);
         if (read == 0) {
           debugLog(L"TIMING");
-          Sleep(300);
+          std::this_thread::sleep_for(std::chrono::milliseconds(300));
           read = readBytes(bf, 128 + 9, hComm);
         }
 
@@ -1521,7 +1521,7 @@ bool SportIdent::readSI6Block(HANDLE hComm, BYTE *data)
 
   if (read==0){
     debugLog(L"TIMING");
-    Sleep(1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     read=readBytesDLE(bf, 4, hComm);
   }
 
@@ -1571,7 +1571,7 @@ void SportIdent::getSI6Data(HANDLE hComm)
   WriteFile(hComm, c, 4, &written, NULL);
   bool compact = false;
   if (written==4) {
-    Sleep(500);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     for(int k=0;k<8;k++){
 
@@ -1625,7 +1625,7 @@ void SportIdent::getSI5Data(HANDLE hComm)
 
   if (written==3)
   {
-    Sleep(900);
+    std::this_thread::sleep_for(std::chrono::milliseconds(900));
     BYTE bf[256];
     memset(bf, 0, 256);
 
@@ -1633,7 +1633,7 @@ void SportIdent::getSI5Data(HANDLE hComm)
 
     if (read==0)
     {
-      Sleep(1000);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       read=readBytesDLE(bf, 3, hComm);
     }
 
@@ -2170,12 +2170,12 @@ void SportIdent::startMonitorThread(const wchar_t *com) {
     si->ThreadHandle.start(start_si_thread, (void*)this);
 
     while((volatile void *)Current_SI_Info)
-      Sleep(0);
+      std::this_thread::sleep_for(std::chrono::milliseconds(0));
 
     if (si->ComPort==L"TCP") {
       // Wait up to 5 s for TCP port to open (thread sets tcpPortOpen when bound)
       for (int i = 0; i < 500 && tcpPortOpen == 0; ++i)
-        Sleep(10);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
   }
   else MessageBox(NULL, L"ERROR", 0, MB_OK);
@@ -2224,13 +2224,13 @@ bool SportIdent::autoDetect(list<int> &ComPorts)
     Ports.pop_front();
     std::thread(checkport_si_thread, (void*)&array[i]).detach();
     i++;
-    //Sleep(0);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(0));
   }
 
   int maxel=1;
   while(maxel>0)
   {
-    Sleep(300);
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
     maxel=0;
 
     for(int k=0;k<i;k++)
