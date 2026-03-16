@@ -12,6 +12,7 @@
     {
       "name": "restbed",
       "features": ["openssl"]
-    }
+    },
+    "libmysql"
   ]
 }

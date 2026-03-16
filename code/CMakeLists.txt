@@ -19,7 +19,7 @@ add_executable(MeOS WIN32
 # ---------------------------------------------------------------------------
 # Include directories
 # Flat headers: use CMAKE_CURRENT_SOURCE_DIR so that bare includes work.
-# mysql/ headers are included with their subdirectory prefix: #include "mysql/mysql.h".
+# mysql/ headers are provided by vcpkg (installed at include/mysql/mysql.h).
 # libharu and restbed headers are provided by vcpkg targets.
 # restbed umbrella header is now just #include "restbed" (no restbed/ prefix).
 # ---------------------------------------------------------------------------
@@ -59,35 +59,24 @@ set_source_files_properties(
 )
 
 # ---------------------------------------------------------------------------
-# External library paths
-# Debug uses *_db variant; Release uses the plain variant.
-# x64 (8-byte pointer) uses lib64_db / lib64.
-# Win32 (4-byte pointer) uses lib_db / lib.
-# ---------------------------------------------------------------------------
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(_MEOS_LIB_DEBUG   "${CMAKE_CURRENT_SOURCE_DIR}/lib64_db")
-    set(_MEOS_LIB_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/lib64")
-else()
-    set(_MEOS_LIB_DEBUG   "${CMAKE_CURRENT_SOURCE_DIR}/lib_db")
-    set(_MEOS_LIB_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/lib")
-endif()
-
-target_link_directories(MeOS PRIVATE
-    "$<IF:$<CONFIG:Debug>,${_MEOS_LIB_DEBUG},${_MEOS_LIB_RELEASE}>"
-)
-
-# ---------------------------------------------------------------------------
-# vcpkg-managed libraries: zlib, minizip, libpng, libharu, restbed
+# vcpkg-managed libraries: zlib, minizip, libpng, libharu, restbed, libmysql
 # zlibstat.lib / zlibstat_vc15.lib (vendored combined zlib+minizip static lib)
 # has been replaced by vcpkg's separate zlib and minizip packages.
 # libpng.lib (vendored) has been replaced by vcpkg's libpng package.
 # libharu.lib / libhpdf.lib (vendored) replaced by vcpkg's libharu package.
 # RestBed.lib (vendored) replaced by vcpkg's unofficial-restbed package.
+# libmysql.lib / libmysql.dll (vendored) replaced by vcpkg's libmysql package.
 # ---------------------------------------------------------------------------
 find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(unofficial-libharu CONFIG REQUIRED)
+
+# ---------------------------------------------------------------------------
+# MySQL Connector/C — vendored libmysql.lib replaced by vcpkg libmysql.
+# Headers installed to include/mysql/ so #include "mysql/mysql.h" still works.
+# ---------------------------------------------------------------------------
+find_package(unofficial-libmysql CONFIG REQUIRED)
 
 # ---------------------------------------------------------------------------
 # OpenSSL — RestBed links dynamically against OpenSSL.
@@ -109,8 +98,8 @@ target_link_libraries(MeOS PRIVATE
     unofficial::libharu::hpdf
     # vcpkg restbed (replaces vendored RestBed.lib)
     unofficial::restbed::restbed
-    # Vendored static libraries (path resolved by target_link_directories)
-    libmysql
+    # vcpkg MySQL Connector/C (replaces vendored libmysql.lib)
+    unofficial::libmysql::libmysql
     # OpenSSL (required by RestBed)
     OpenSSL::SSL
     OpenSSL::Crypto
