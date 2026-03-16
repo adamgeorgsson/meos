@@ -217,6 +217,9 @@
     <ClCompile Include="oFreePunch.cpp" />
     <ClCompile Include="oImportExport.cpp" />
     <ClCompile Include="oListInfo.cpp" />
+    <ClCompile Include="oListInfoFormat.cpp" />
+    <ClCompile Include="oListInfoGenerate.cpp" />
+    <ClCompile Include="oListInfoUtil.cpp" />
     <ClCompile Include="onlineinput.cpp" />
     <ClCompile Include="onlineresults.cpp" />
     <ClCompile Include="oPunch.cpp" />
