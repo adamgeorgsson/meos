@@ -21,6 +21,7 @@
 ************************************************************************/
 
 #include "StdAfx.h"
+#include <iostream>
 
 #include <vector>
 #include <set>
@@ -4213,7 +4214,7 @@ void oEvent::checkDB()
       for(int i=0;i < min<int>(err.size(), 10);i++)
         msg+=wstring(L"\n")+err[i];
 
-      MessageBox(0, msg.c_str(), L"Varning/Fel", MB_OK);
+      std::wcerr << msg << L"\n";
     }
 #endif
   }

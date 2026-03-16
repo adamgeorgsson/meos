@@ -21,6 +21,7 @@
 ************************************************************************/
 
 #include "StdAfx.h"
+#include <iostream>
 
 #include "localizer.h"
 #include <fstream>
@@ -278,7 +279,7 @@ const wstring &LocalizerImpl::translate(const wstring &str, bool &found) {
 
 void LocalizerImpl::addUnknown(const wstring& key) {
   if (unknown.emplace(key, L"").second) {
-    OutputDebugString((L"Missing resource: " + key).c_str());
+    std::wcerr << L"Missing resource: " << key;
   }
 }
 

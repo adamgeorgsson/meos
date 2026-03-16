@@ -21,6 +21,7 @@
 ************************************************************************/
 
 #include "StdAfx.h"
+#include <iostream>
 
 #include <vector>
 #include <io.h>
@@ -969,7 +970,7 @@ void oEvent::speakerList(gdioutput& gdi,
                          bool compactView,
                          int classLimit) {
 #ifdef _DEBUG
-  OutputDebugString(L"SpeakerListUpdate\n");
+  std::wcerr << L"SpeakerListUpdate\n";
 #endif
 
   DWORD clsIds = 0, cLegs = 0, cTotal = 0, cShort = 0, cCompact = 0, cClassLimit;
@@ -1112,7 +1113,7 @@ void oEvent::speakerList(gdioutput& gdi,
     }
     vector<oSpeakerObject*> sortSelection;
     for (int ix = 0; ix <= controlId.size(); ix++) {
-      OutputDebugString((L"\n**** Sorting: " + itow(ix - 1) + L"\n").c_str());
+      std::wcerr << L"\n**** Sorting: " << itow(ix - 1) << L"\n";
       sortSelection.clear();
       for (auto& so : speakerList) {
         if (so.compareResultIndex == ix - 1)
@@ -1126,10 +1127,10 @@ void oEvent::speakerList(gdioutput& gdi,
       });
 
       for (auto& ss : sortSelection) {
-        OutputDebugString((ss->names[0] + L"\n").c_str());
+        std::wcerr << ss->names[0] << L"\n";
       }
 
-      OutputDebugString((L"\n**** Merging: " + itow(ix - 1) + L"\n").c_str());
+      std::wcerr << L"\n**** Merging: " << itow(ix - 1) << L"\n";
 
       // Merge with sorted list
       auto sit = sortedList.begin();
@@ -1147,7 +1148,7 @@ void oEvent::speakerList(gdioutput& gdi,
           sit = sortedList.end();
         }
         else {
-          OutputDebugString((ss->names[0] + L" < " + (*sit)->names[0] + L"\n").c_str());
+          std::wcerr << ss->names[0] << L" < " << (*sit)->names[0] << L"\n";
           sortedList.insert(sit, ss);
         }
       }   
@@ -2254,7 +2255,7 @@ int oEvent::getTimeLineEvents(const set<int> &classes, vector<oTimeLine> &events
       eval = true;
   }
   if (eval) {
-    OutputDebugStringA("SetupTimeLine\n");
+    std::cerr << "SetupTimeLine\n";
     nextTimeLineEvent = setupTimeLineEvents(currentTime);
   }
 //  else

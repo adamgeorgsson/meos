@@ -22,6 +22,7 @@
 
 
 #include "StdAfx.h"
+#include <iostream>
 
 #include <cassert>
 #include <typeinfo>
@@ -3247,7 +3248,7 @@ OpFailStatus MeosSQL::syncUpdate(QueryWrapper &updateqry,
 {
   nUpdate++;
   if (nUpdate % 100 == 99)
-    OutputDebugStringA((itos(nUpdate) +" updates\n").c_str());
+    std::cerr << itos(nUpdate) << " updates\n";
 
   assert(ob->getEvent());
   if (!ob->getEvent())
@@ -4270,7 +4271,7 @@ void MeosSQL::synchronized(oBase &entity) {
   readTimes[make_pair(id, entity.getId())] = getTickMs32();
   readent++;
   if (readent % 100 == 99)
-    OutputDebugStringA("Read 100 entities\n");
+    std::cerr << "Read 100 entities\n";
 }
 
 bool MeosSQL::skipSynchronize(const oBase &entity) const {
@@ -4897,7 +4898,7 @@ OpFailStatus MeosSQL::storeImage(uint64_t id, const wstring& fileName, const vec
     }
   }
   catch (Exception &ex) {
-    OutputDebugStringA(ex.what());
+    std::cerr << ex.what();
     return OpFailStatus::opStatusFail;
   }
 

@@ -25,6 +25,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "StdAfx.h"
+#include <iostream>
 #define DODECLARETYPESYMBOLS
 
 #include <cassert>
@@ -3432,7 +3433,7 @@ void oClass::clearSplitAnalysis()
 {
 #ifdef _DEBUG
   if (!tSplitAnalysisData.empty())
-    OutputDebugString((L"Clear splits " + Name + L"\n").c_str());
+    std::wcerr << L"Clear splits " << Name << L"\n";
 #endif
   tFirstStart.clear();
   tLastStart.clear();

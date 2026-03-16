@@ -21,6 +21,7 @@
 ************************************************************************/
 
 #include "StdAfx.h"
+#include <iostream>
 
 #include <vector>
 #include <set>
@@ -826,7 +827,7 @@ void oEvent::loadGeneralResults(bool forceReload, bool loadFromDisc) const {
           }
 
           string db = "Retag " + newTag + "\n";
-          OutputDebugStringA(db.c_str());
+          std::cerr << db;
 
           if (rmAll[i].ctr)
             rmAll[i].ctr->retagResultModule(newTag, true);

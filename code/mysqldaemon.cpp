@@ -43,8 +43,7 @@ bool MySQLReconnect::stop() {
   if (interval==0)
     return true;
 
-  return MessageBox(0, L"If this service is stopped, MeOS will not reconnect to the network. Continue?",
-    L"Warning", MB_YESNO|MB_ICONWARNING)==IDYES;
+  return true; // Confirmation dialog removed (cross-platform: always allow stop)
 }
 
 static std::mutex CS_MySQL;
