@@ -30,7 +30,8 @@
 #include "meos.h"
 #include "SportIdent.h"
 #include <fstream>
-#include <process.h>
+#include <mutex>
+#include <thread>
 #include <winsock2.h>
 #include "localizer.h"
 #include "meos_util.h"
@@ -57,7 +58,7 @@ SI_StationData::SI_StationData() {
 
 SI_StationInfo::SI_StationInfo()
 {
-  ThreadHandle=0;
+  // ThreadHandle (CopyableThread) default-constructs to empty (not joinable)
   hComm=0;
   memset(&TimeOuts, 0, sizeof(TimeOuts));
 
@@ -71,7 +72,7 @@ SportIdent::SportIdent(HWND hWnd, DWORD Id, bool readVoltage) : readVoltage(read
 
   n_SI_Info = 0;
 
-  InitializeCriticalSection(&SyncObj);
+  // std::mutex SyncObj initializes automatically
 
   tcpPortOpen = 0;
   serverSocket = 0;
@@ -92,7 +93,7 @@ void SportIdent::resetPunchMap() {
 SportIdent::~SportIdent()
 {
   closeCom(0);
-  DeleteCriticalSection(&SyncObj);
+  // std::mutex SyncObj destructs automatically
 }
 
 // CRC algoritm used by SPORTIdent GmbH
@@ -313,7 +314,7 @@ bool SportIdent::openComListen(const wchar_t *com, DWORD BaudRate) {
 
   if (!si) {
     SI_Info[n_SI_Info].ComPort=com;
-    SI_Info[n_SI_Info].ThreadHandle=0;
+    
     si=&SI_Info[n_SI_Info];
     n_SI_Info++;
   }
@@ -372,7 +373,7 @@ bool SportIdent::tcpAddPort(int port, DWORD zeroTime)
 
   if (!si) {
     SI_Info[n_SI_Info].ComPort=L"TCP";
-    SI_Info[n_SI_Info].ThreadHandle=0;
+    
     si=&SI_Info[n_SI_Info];
     n_SI_Info++;
   }
@@ -391,7 +392,7 @@ bool SportIdent::openCom(const wchar_t *com)
 
   if (!si) {
     SI_Info[n_SI_Info].ComPort=com;
-    SI_Info[n_SI_Info].ThreadHandle=0;
+    
     si=&SI_Info[n_SI_Info];
     n_SI_Info++;
   }
@@ -572,30 +573,21 @@ void SportIdent::closeCom(const wchar_t *com)
 
     if (si && si->ComPort==L"TCP") {
       if (tcpPortOpen) {
-        EnterCriticalSection(&SyncObj);
-        shutdown(SOCKET(serverSocket), SD_BOTH);
-        LeaveCriticalSection(&SyncObj);
+        { std::lock_guard<std::mutex> lg(SyncObj);
+          shutdown(SOCKET(serverSocket), SD_BOTH); }
 
         Sleep(300);
 
-        EnterCriticalSection(&SyncObj);
-        closesocket(SOCKET(serverSocket));
-        tcpPortOpen = 0;
-        serverSocket = 0;
-        LeaveCriticalSection(&SyncObj);
+        { std::lock_guard<std::mutex> lg(SyncObj);
+          closesocket(SOCKET(serverSocket));
+          tcpPortOpen = 0;
+          serverSocket = 0; }
       }
     }
     else if (si && si->hComm)
     {
-      if (si->ThreadHandle)
-      {
-        EnterCriticalSection(&SyncObj);
-        TerminateThread(si->ThreadHandle, 0);
-        LeaveCriticalSection(&SyncObj);
-
-        CloseHandle(si->ThreadHandle);
-        si->ThreadHandle=0;
-      }
+      if (si->ThreadHandle.joinable())
+        si->ThreadHandle.detach(); // Thread exits naturally when hComm is closed below
       SetCommTimeouts(si->hComm, &si->TimeOuts); //Restore
       CloseHandle(si->hComm);
       si->hComm=0;
@@ -1227,8 +1219,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
           //We are about to kill this thread the natural way
           //Prevent forced kill
 
-          //CloseHandle(SI_Info[i].ThreadHandle);
-          SI_Info[i].ThreadHandle=0;
+          SI_Info[i].ThreadHandle.detach(); // Prevent closeCom from force-stopping this thread
 
           closeCom(SI_Info[i].ComPort.c_str());
         }
@@ -2041,15 +2032,8 @@ void SportIdent::EnumrateSerialPorts(list<int>& ports)
 
 void SportIdent::addCard(const SICard &sic)
 {
-  EnterCriticalSection(&SyncObj);
-  try {
-    ReadCards.push_front(sic);
-  }
-  catch(...) {
-    LeaveCriticalSection(&SyncObj);
-    throw;
-  }
-  LeaveCriticalSection(&SyncObj);
+  std::lock_guard<std::mutex> lg(SyncObj);
+  ReadCards.push_front(sic);
 
   PostMessage(hWndNotify, WM_USER, ClassId, 0);
 }
@@ -2132,15 +2116,13 @@ bool SportIdent::getCard(SICard &sic)
 {
   bool ret=false;
 
-  EnterCriticalSection(&SyncObj);
-
-  if (!ReadCards.empty()) {
-    sic=ReadCards.front();
-    ReadCards.pop_front();
-    ret=true;
+  { std::lock_guard<std::mutex> lg(SyncObj);
+    if (!ReadCards.empty()) {
+      sic=ReadCards.front();
+      ReadCards.pop_front();
+      ret=true;
+    }
   }
-
-  LeaveCriticalSection(&SyncObj);
 
   return ret;
 }
@@ -2152,10 +2134,11 @@ void start_si_thread(void *ptr)
   if (!si->Current_SI_Info)
     return;
 
-  EnterCriticalSection(&si->SyncObj);
-  SI_StationInfo si_info=*si->Current_SI_Info;	//Copy data.
-  si->Current_SI_Info=0;
-  LeaveCriticalSection(&si->SyncObj);
+  SI_StationInfo si_info;
+  { std::lock_guard<std::mutex> lg(si->SyncObj);
+    si_info=*si->Current_SI_Info;	//Copy data.
+    si->Current_SI_Info=0;
+  }
 
   try {
     if (si_info.ComPort == L"TCP") {
@@ -2184,15 +2167,15 @@ void SportIdent::startMonitorThread(const wchar_t *com) {
       tcpPortOpen=0;
 
     Current_SI_Info=si;
-    si->ThreadHandle=(HANDLE)_beginthread(start_si_thread, 0,  this);
+    si->ThreadHandle.start(start_si_thread, (void*)this);
 
     while((volatile void *)Current_SI_Info)
       Sleep(0);
 
     if (si->ComPort==L"TCP") {
-      DWORD ec=0;
-      while( (GetExitCodeThread(si->ThreadHandle, &ec)!=0 && ec==STILL_ACTIVE && tcpPortOpen==0))
-        Sleep(0);
+      // Wait up to 5 s for TCP port to open (thread sets tcpPortOpen when bound)
+      for (int i = 0; i < 500 && tcpPortOpen == 0; ++i)
+        Sleep(10);
     }
   }
   else MessageBox(NULL, L"ERROR", 0, MB_OK);
@@ -2239,7 +2222,7 @@ bool SportIdent::autoDetect(list<int> &ComPorts)
   {
     array[i]=Ports.front();
     Ports.pop_front();
-    (HANDLE)_beginthread(checkport_si_thread, 0,  &array[i]);
+    std::thread(checkport_si_thread, (void*)&array[i]).detach();
     i++;
     //Sleep(0);
   }

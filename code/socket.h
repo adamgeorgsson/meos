@@ -21,6 +21,8 @@
 ************************************************************************/
 
 #include <list>
+#include <mutex>
+#include <thread>
 #include <vector>
 #include <winsock2.h>
 
@@ -48,7 +50,7 @@ private:
   int competitionId;
   list<SocketPunchInfo> messageQueue;
   HWND hDestinationWindow;
-  CRITICAL_SECTION syncObj;
+  std::mutex syncObj;
   volatile bool shutDown;
   void listenDirectSocket();
   void addPunchInfo(const SocketPunchInfo &pi);

@@ -3,9 +3,30 @@
 //////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include <mutex>
+#include <thread>
 #include <set>
 #include <vector>
 #include "oPunch.h"
+
+// A thread wrapper that is copyable (copy creates an empty, non-joinable thread).
+// Needed because SI_StationInfo must be copyable in start_si_thread.
+struct CopyableThread {
+  std::thread t;
+  CopyableThread() = default;
+  CopyableThread(const CopyableThread&) {}
+  CopyableThread& operator=(const CopyableThread&) { return *this; }
+  CopyableThread(CopyableThread&&) = default;
+  CopyableThread& operator=(CopyableThread&&) = default;
+  explicit operator bool() const { return t.joinable(); }
+  bool joinable() const { return t.joinable(); }
+  void detach() { if (t.joinable()) t.detach(); }
+  void join()   { if (t.joinable()) t.join(); }
+  template<class Fn, class... Args>
+  void start(Fn&& fn, Args&&... args) {
+    t = std::thread(std::forward<Fn>(fn), std::forward<Args>(args)...);
+  }
+};
 
 /************************************************************************
     MeOS - Orienteering Software
@@ -125,7 +146,7 @@ struct SI_StationData {
 struct SI_StationInfo
 {
   SI_StationInfo();
-  HANDLE ThreadHandle;
+  CopyableThread ThreadHandle;
   wstring ComPort;
   HANDLE hComm;
   COMMTIMEOUTS TimeOuts;
@@ -163,7 +184,7 @@ protected:
   bool readSI6Block(HANDLE hComm, BYTE *data);
   bool readSystemData(SI_StationInfo *si, int retry=2);
   bool readSystemDataV2(SI_StationInfo &si);
-  CRITICAL_SECTION SyncObj;
+  std::mutex SyncObj;
 
   int readByte_delay(BYTE &byte,  HANDLE hComm);
   int readBytes_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDLE hComm);
