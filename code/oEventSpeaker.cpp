@@ -1428,7 +1428,7 @@ void oEvent::tryPrewarningSounds(const wstring &basedir, int number)
 
   wstring file=(std::filesystem::path(basedir) / wave).wstring();
 
-  if (_waccess(file.c_str(), 0)==-1)
+  if (!std::filesystem::exists(file))
     gdibase.alert(L"Fel: hittar inte filen X.#" + file);
 
   PlaySound(file.c_str(), 0, SND_SYNC|SND_FILENAME );
@@ -1448,7 +1448,7 @@ void oEvent::playPrewarningSounds(const wstring &basedir, set<int> &controls)
 
         wstring file=(std::filesystem::path(basedir) / r->getDI().getString("Nationality") / wave).wstring();
 
-        if (_waccess(file.c_str(), 0)==-1)
+        if (!std::filesystem::exists(file))
           file=(std::filesystem::path(basedir) / wave).wstring();
 
         PlaySound(file.c_str(), 0, SND_SYNC|SND_FILENAME );

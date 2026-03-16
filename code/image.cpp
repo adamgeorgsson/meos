@@ -404,9 +404,9 @@ uint64_t Image::loadFromFile(const wstring& path, ImageMethod method) {
   auto res = images.emplace(hash, Bmp());
   if (res.second) {
     wchar_t drive[20];
-    wchar_t dir[MAX_PATH];
-    wchar_t name[MAX_PATH];
-    wchar_t ext[MAX_PATH];
+    wchar_t dir[260];
+    wchar_t name[260];
+    wchar_t ext[260];
     _wsplitpath_s(path.c_str(), drive, dir, name, ext);
     Bmp &out = res.first->second;
     out.fileName = wstring(name) + ext;

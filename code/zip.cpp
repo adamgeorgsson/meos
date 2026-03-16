@@ -17,6 +17,9 @@ Ported to C++ and modified to suite MeOS.
 
 #include <direct.h>
 #include <io.h>
+#include <filesystem>
+#include <chrono>
+#include <cstdint>
 
 #include "meosexception.h"
 #include "meos_util.h"
@@ -239,10 +242,14 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
     target = base + L"zip" + itow(id) + L"\\";
     id++;
   }
-  while ( _waccess( target.c_str(), 0 ) == 0 );
+  while ( std::filesystem::exists(target) );
 
-  if (CreateDirectory(target.c_str(), NULL) == 0)
-    throw std::exception("Failed to create temporary folder");
+  {
+    std::error_code ec;
+    std::filesystem::create_directory(target, ec);
+    if (ec)
+      throw std::exception("Failed to create temporary folder");
+  }
 
   registerTempFile(target);
   do_extract(uf, target.c_str(), password, extractedFiles);
@@ -253,20 +260,32 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
 
 
 uLong filetime(const wchar_t *f, uLong *dt) {
-  int ret = 0;
-  FILETIME ftLocal;
-  HANDLE hFind;
-  WIN32_FIND_DATA ff32;
+  namespace fs = std::filesystem;
+  namespace ch = std::chrono;
 
-  hFind = FindFirstFile(f,&ff32);
-  if (hFind != INVALID_HANDLE_VALUE)
-  {
-    FileTimeToLocalFileTime(&(ff32.ftLastWriteTime),&ftLocal);
-    FileTimeToDosDateTime(&ftLocal,((LPWORD)dt)+1,((LPWORD)dt)+0);
-    FindClose(hFind);
-    ret = 1;
-  }
-  return ret;
+  std::error_code ec;
+  auto ftime = fs::last_write_time(f, ec);
+  if (ec) return 0;
+
+  // Portable C++17 conversion from file_time_type to time_t
+  auto delta = ch::duration_cast<ch::system_clock::duration>(ftime - fs::file_time_type::clock::now());
+  time_t t = ch::system_clock::to_time_t(ch::system_clock::now() + delta);
+
+  struct tm ptm{};
+#ifdef _WIN32
+  localtime_s(&ptm, &t);
+#else
+  localtime_r(&t, &ptm);
+#endif
+
+  if (ptm.tm_year < 80) return 0; // Before 1980: not representable in DOS time
+
+  // DOS date (high word): bits[15:9]=year-1980, bits[8:5]=month(1-12), bits[4:0]=day(1-31)
+  // DOS time (low word):  bits[15:11]=hours, bits[10:5]=minutes, bits[4:0]=seconds/2
+  uint16_t dosDate = (uint16_t)(((ptm.tm_year - 80) << 9) | ((ptm.tm_mon + 1) << 5) | ptm.tm_mday);
+  uint16_t dosTime = (uint16_t)((ptm.tm_hour << 11) | (ptm.tm_min << 5) | (ptm.tm_sec >> 1));
+  *dt = ((uLong)dosDate << 16) | (uLong)dosTime;
+  return 1;
 }
 
 int check_exist_file(const wchar_t* filename)

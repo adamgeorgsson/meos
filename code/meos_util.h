@@ -25,6 +25,8 @@
 #include <map>
 #include <ctime>
 #include <chrono>
+#include <string>
+#include <cwctype>
 
 class StringCache {
 private:
@@ -267,6 +269,27 @@ void convertDynamicBase(long long val, int base, wchar_t out[16]);
 
 /// Find all files in dir matching given file pattern
 bool expandDirectory(const wchar_t *dir, const wchar_t *pattern, vector<wstring> &res);
+
+/// Case-insensitive wildcard match (supports * and ?)
+inline bool matchWildcard(const wstring &str, const wstring &pattern) {
+  size_t si = 0, pi = 0;
+  size_t starPi = wstring::npos, starSi = 0;
+  while (si < str.size()) {
+    if (pi < pattern.size() && (pattern[pi] == L'?' || towlower(pattern[pi]) == towlower(str[si]))) {
+      ++si; ++pi;
+    } else if (pi < pattern.size() && pattern[pi] == L'*') {
+      starPi = pi++;
+      starSi = si;
+    } else if (starPi != wstring::npos) {
+      pi = starPi + 1;
+      si = ++starSi;
+    } else {
+      return false;
+    }
+  }
+  while (pi < pattern.size() && pattern[pi] == L'*') ++pi;
+  return pi == pattern.size();
+}
 
 enum PersonSex {sFemale = 1, sMale, sBoth, sUnknown};
 

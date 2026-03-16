@@ -30,6 +30,8 @@
 #include <WinInet.h>
 #include <chrono>
 #include <ctime>
+#include <filesystem>
+#include <fstream>
 
 using namespace std;
 
@@ -1907,44 +1909,32 @@ void convertDynamicBase(long long val, int base, wchar_t out[16]) {
 
 bool expandDirectory(const wchar_t *file, const wchar_t *filetype, vector<wstring> &res)
 {
-  WIN32_FIND_DATA fd;
+  namespace fs = std::filesystem;
 
-  wchar_t dir[MAX_PATH];
-  wchar_t fullPath[MAX_PATH];
-
-  if (file[0] == '.') {
-    GetCurrentDirectory(MAX_PATH, dir);
-    wcscat_s(dir, file+1);
+  wstring dirStr;
+  if (file[0] == L'.') {
+    dirStr = fs::current_path().wstring() + wstring(file + 1);
+  } else {
+    dirStr = file;
   }
-  else
-    wcscpy_s(dir, MAX_PATH, file);
 
-  if (dir[wcslen(dir)-1]!='\\')
-    wcscat_s(dir, MAX_PATH, L"\\");
-
-  wcscpy_s(fullPath, MAX_PATH, dir);
-  wcscat_s(dir, MAX_PATH, filetype);
-
-  HANDLE h=FindFirstFile(dir, &fd);
-
-  if (h == INVALID_HANDLE_VALUE)
+  fs::path dir(dirStr);
+  std::error_code ec;
+  if (!fs::is_directory(dir, ec))
     return false;
 
-  bool more = true;
-
-  while (more) {
-    if (fd.cFileName[0] != '.') {
-      //Avoid .. and .
-      wchar_t fullPathFile[MAX_PATH];
-      wcscpy_s(fullPathFile, MAX_PATH, fullPath);
-      wcscat_s(fullPathFile, MAX_PATH, fd.cFileName);
-      res.push_back(fullPathFile);
+  wstring pattern(filetype);
+  bool found = false;
+  for (auto &entry : fs::directory_iterator(dir, ec)) {
+    if (entry.is_regular_file()) {
+      wstring fname = entry.path().filename().wstring();
+      if (matchWildcard(fname, pattern)) {
+        res.push_back(entry.path().wstring());
+        found = true;
+      }
     }
-    more=FindNextFile(h, &fd)!=0;
   }
-
-  FindClose(h);
-  return true;
+  return found;
 }
 
 wstring encodeSex(PersonSex sex) {
@@ -2516,7 +2506,7 @@ const wstring &fromUTF8(const string &input) {
 
 void checkWriteAccess(const wstring &file) {
   int flag = CREATE_NEW;
-  if (_waccess(file.c_str(), 4) == 0) {
+  if (std::filesystem::exists(file)) {
     flag = OPEN_EXISTING;
   }
 
@@ -2537,11 +2527,12 @@ void checkWriteAccess(const wstring &file) {
 }
 
 void moveFile(const wstring& src, const wstring& dst) {
-  DeleteFile(dst.c_str());
+  std::error_code ec;
+  std::filesystem::remove(std::filesystem::path(dst), ec);
   if (!CopyFile(src.c_str(), dst.c_str(), false)) {
     throw meosException(L"Kunde inte skriva till 'X'.#" + dst);
   }
-  DeleteFile(src.c_str());
+  std::filesystem::remove(std::filesystem::path(src), ec);
 }
 
 int compareStringIgnoreCase(const wstring &a, const wstring &b) {
