@@ -97,6 +97,14 @@ Redefine common Win32 types in `src/util/win_types.h` for Linux compatibility:
 | `OffsetRect` | `inline BOOL OffsetRect(LPRECT lprc, int dx, int dy)` |
 | `_wsplitpath_s` / `_splitpath_s` | `std::filesystem::path` methods: `.stem()`, `.extension()`, `.filename()`, `.parent_path()` |
 | `GetFileAttributes` | `std::filesystem::exists` |
+| `FindFirstFile`/`FindNextFile` | `std::filesystem::directory_iterator` + `matchWildcard()` from `meos_util.h` |
+| `DeleteFile` | `std::filesystem::remove(path, ec)` (use `error_code` overload for silent error recovery) |
+| `CreateDirectory` | `std::filesystem::create_directory(path, ec)` |
+| `_wfopen_s(&fp, path, L"wb")` | `std::ofstream(std::filesystem::path(path), std::ios::binary)` |
+| `_wfopen_s(&fp, path, L"rb")` | `std::ifstream(std::filesystem::path(path), std::ios::binary)` |
+| `_waccess(path, 0)==0` (exists) | `std::filesystem::exists(path)` |
+| `GetCurrentDirectory` | `std::filesystem::current_path()` |
+| `FileTimeToDosDateTime` | Manual encoding: date=`(y-80)<<9\|m<<5\|d`, time=`h<<11\|min<<5\|sec>>1` (see zip.cpp) |
 
 Replace Win32 functions and types in domain files (`o*.cpp/h`, `generalresult.cpp/h`, `metalist.cpp/h`, `datadefiners.h`). Add `#include <cstdint>` to headers using `uint*_t` types.
 
@@ -216,6 +224,17 @@ On 64-bit Linux, `unsigned long` == `uint64_t`. Avoid redundant overloads for:
 - **`StringCache` Initialization**: Must be initialized via constructor; otherwise `wget()`/`get()` will segfault.
 - **Protected Member Access**: Use `#define protected public` before including headers to access internal state in tests.
 - **`enable_testing()`** must be in top-level `CMakeLists.txt`.
+
+### 15. Threading — CRITICAL_SECTION → std::mutex
+
+- `CRITICAL_SECTION` → `std::mutex`; no explicit Init/Delete needed (C++ RAII).
+- `EnterCriticalSection/LeaveCriticalSection` → `std::lock_guard<std::mutex>` in a scope block.
+- `_beginthread`/`_beginthreadex` → `std::thread(fn, args...).detach()` (fire-and-forget) or store `std::thread` for joinable threads.
+- **`SI_StationInfo` copyability**: `std::thread` is move-only, but `SI_StationInfo` is copied in `start_si_thread`. Use a `CopyableThread` wrapper whose copy-constructor creates an empty (not joinable) thread. The copied `ThreadHandle` is never used inside the thread, so the empty copy is safe.
+- **`TerminateThread` replacement**: Use `detach()` — the thread exits naturally when the resource it reads from (COM port, socket) is closed. Close the resource AFTER detaching.
+- **`GetExitCodeThread` equivalent**: There is none in std::thread without auxiliary state. For TCP port wait loops, use a timeout (e.g., 500×10ms) rather than polling thread exit code.
+- **`hThread` in UI class (TabAuto.h)**: If the thread handle is stored in a UI class (can't be changed), launch with `std::thread(...).detach()` and set `hThread = nullptr` — state is tracked by other atomics anyway.
+- **`initMySQLCriticalSection`**: Keep as no-op function for backward compatibility with meos.cpp call-site; `std::mutex` doesn't need explicit init/cleanup.
 
 ## Known Gotchas
 
