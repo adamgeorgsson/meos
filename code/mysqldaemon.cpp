@@ -23,7 +23,7 @@
 #include "StdAfx.h"
 
 #include "oEvent.h"
-#include "TabAuto.h"
+#include "automachine.h"
 #include "meos_util.h"
 #include "gdiconstants.h"
 #include "MeosSQL.h"

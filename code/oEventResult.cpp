@@ -33,12 +33,10 @@
 #include "oDataContainer.h"
 
 #include "meosexception.h"
-#include "TabBase.h"
 #include "meos.h"
 #include "meos_util.h"
 #include "generalresult.h"
 #include "metalist.h"
-#include "TabList.h"
 #include "listeditor.h"
 
 template<typename T> struct ResultCalcData {
@@ -776,9 +774,8 @@ void oEvent::loadGeneralResults(bool forceReload, bool loadFromDisc) const {
   vector<DynamicResultRef> rmAll;
   getListContainer().getGeneralResults(rmAll);
 
-  // Get the open list from list editor
-  TabList &tl = dynamic_cast<TabList &>(*gdibase.getTabs().get(TListTab));
-  ListEditor *le = tl.getListEditorPtr();
+  // Get the open list from list editor (via callback to decouple from TabList)
+  ListEditor *le = callGetListEditor();
   if (le) {
     MetaList *editorList = le->getCurrentList();
     if (editorList) {

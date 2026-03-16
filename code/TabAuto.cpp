@@ -42,6 +42,7 @@ static TabAuto *tabAuto = 0;
 int AutoMachine::uniqueId = 1;
 
 extern HWND hWndMain;
+extern SportIdent* gSI; // global SI handler (defined in meos.cpp)
 extern HWND hWndWorkspace;
 
 TabAuto::TabAuto(oEvent *poe):TabBase(poe)
@@ -194,7 +195,17 @@ void TabAuto::syncCallback(gdioutput& gdi)
   wstring msg;
   
   for (auto &am : machines) {
-    try {      
+    // Wire OnlineInput::cbAddCard lazily so onlineinput.cpp needs no TabSI dependency
+    if (am) {
+      if (auto* oi = dynamic_cast<OnlineInput*>(am.get())) {
+        if (!oi->cbAddCard) {
+          oi->setAddCardCallback([](const SICard& sic) {
+            if (gSI) gSI->addCard(sic);
+          });
+        }
+      }
+    }
+    try {
       if (am && am->synchronize && !am->isEditMode())
         am->process(gdi, oe, SyncDataUp);
       if (am && am->removeMe())
@@ -242,6 +253,14 @@ void TabAuto::timerCallback(gdioutput &gdi) {
 
   for (auto &am : machines) {
     if (am && am->interval && tc >= am->timeout && !am->isEditMode()) {
+      // Wire OnlineInput::cbAddCard lazily so onlineinput.cpp needs no TabSI dependency
+      if (auto* oi = dynamic_cast<OnlineInput*>(am.get())) {
+        if (!oi->cbAddCard) {
+          oi->setAddCardCallback([](const SICard& sic) {
+            if (gSI) gSI->addCard(sic);
+          });
+        }
+      }
       try {
         am->process(gdi, oe, SyncTimer);
       }

@@ -39,7 +39,7 @@
 #include "autocomplete.h"
 #include "image.h"
 #include "binencoder.h"
-#include "TabAuto.h"
+// TabAuto.h removed: use oEvent::cbRemovedList callback instead of TabAuto::removedList()
 #include "xmlparser.h"
 
 extern oEvent *gEvent;
@@ -3066,8 +3066,7 @@ void MetaListContainer::removeList(int index) {
   EStdListType typeCode = EStdListType(EStdListType::EFirstLoadedList + index);
 
   if (owner) {
-    TabAuto* ta = (TabAuto*)owner->gdiBase().getTabs().get(TAutoTab);
-    ta->removedList(typeCode);
+    owner->callRemovedList(typeCode);
   }
 
   set<int> toRemove;  

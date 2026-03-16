@@ -42,7 +42,6 @@
 
 #include "meosexception.h"
 #include "oFreeImport.h"
-#include "TabBase.h"
 #include "meos_util.h"
 #include "RunnerDB.h"
 #include "localizer.h"
@@ -4313,8 +4312,8 @@ void oEvent::clear()
     generalResults.pop_back();
 
   // Cleanup user interface
-  if (isMainEvent)
-    gdibase.getTabs().clearCompetitionData();
+  if (isMainEvent && cbClearCompetitionData)
+    cbClearCompetitionData();
   
   machineContainer.release();
   renderMaps.reset();

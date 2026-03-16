@@ -21,10 +21,13 @@
 
 ************************************************************************/
 
-#include "TabAuto.h"
+#include "automachine.h"
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include "oPunch.h"
+
+struct SICard;
 
 class InfoCompetition;
 class xmlobject;
@@ -82,6 +85,12 @@ protected:
   int mapPunch(int code) const;
 
 public:
+  // Callback to deliver a card read to the SI handler (replaces TabSI::getSI(gdi).addCard()).
+  // Registered from meos.cpp after the TabSI tab is available.
+  std::function<void(const SICard&)> cbAddCard;
+
+  void setAddCardCallback(std::function<void(const SICard&)> cb) { cbAddCard = std::move(cb); }
+
   int processButton(gdioutput &gdi, ButtonInfo &bi);
   int processListBox(gdioutput& gdi, ListBoxInfo& bi);
 

@@ -25,7 +25,7 @@
 #include "machinecontainer.h"
 #include "meos_util.h"
 #include "xmlparser.h"
-#include "TabAuto.h"
+#include "automachine.h"
 
 
 bool MachineContainer::AbstractMachine::has(const string& prop) const {

@@ -251,6 +251,11 @@ protected:
   std::function<void(gdioutput&, int, bool)> cbBaseButtons;
   std::function<void()> cbKillMachines;
   std::function<void(bool)> cbSetSubSecondMode;
+  std::function<bool()> cbHasActiveReconnectionMachine;
+  std::function<void(const class AutoMachine&)> cbTabAutoAddMachine;
+  std::function<void(EStdListType)> cbRemovedList;
+  std::function<void()> cbClearCompetitionData;
+  std::function<class ListEditor*()> cbGetListEditor;
 
   void generateFixedList(gdioutput &gdi, const oListInfo &li);
 
@@ -1622,9 +1627,17 @@ public:
   void setBaseButtonsCallback(std::function<void(gdioutput&, int, bool)> cb) { cbBaseButtons = std::move(cb); }
   void setKillMachinesCallback(std::function<void()> cb) { cbKillMachines = std::move(cb); }
   void setSubSecondModeCallback(std::function<void(bool)> cb) { cbSetSubSecondMode = std::move(cb); }
+  void setHasActiveReconnectionMachineCallback(std::function<bool()> cb) { cbHasActiveReconnectionMachine = std::move(cb); }
+  void setTabAutoAddMachineCallback(std::function<void(const class AutoMachine&)> cb) { cbTabAutoAddMachine = std::move(cb); }
+  void setRemovedListCallback(std::function<void(EStdListType)> cb) { cbRemovedList = std::move(cb); }
+  void setClearCompetitionDataCallback(std::function<void()> cb) { cbClearCompetitionData = std::move(cb); }
+  void setGetListEditorCallback(std::function<class ListEditor*()> cb) { cbGetListEditor = std::move(cb); }
 
   // Called from local classes in oEvent.cpp that cannot access protected members directly
   void callBaseButtons(gdioutput& gdi, int n, bool own) { if (cbBaseButtons) cbBaseButtons(gdi, n, own); }
+  // Called from domain files outside oEvent (e.g. metalist.cpp, listeditor.cpp)
+  void callRemovedList(EStdListType type) { if (cbRemovedList) cbRemovedList(type); }
+  class ListEditor* callGetListEditor() { return cbGetListEditor ? cbGetListEditor() : nullptr; }
 };
 
 template<typename T>

@@ -431,6 +431,22 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
   autoTask = new AutoTask(hWndMain, *gEvent, *gdi_main);
 
+  // Register AutoTask callbacks to decouple autotask.cpp from Tab* classes (US-P0f2)
+  {
+    TabAuto* ta = dynamic_cast<TabAuto*>(gdi_main->getTabs().get(TAutoTab));
+    TabSI* tsi = dynamic_cast<TabSI*>(gdi_main->getTabs().get(TSITab));
+    if (ta) {
+      autoTask->setTimerCallback([ta](gdioutput& gdi) { ta->timerCallback(gdi); });
+      autoTask->setSynchronizeCallback([ta]() { return ta->getSynchronize(); });
+      autoTask->setSynchronizePunchesCallback([ta]() { return ta->getSynchronizePunches(); });
+      autoTask->setSyncCallback([ta](gdioutput& gdi) { ta->syncCallback(gdi); });
+    }
+    if (tsi) {
+      autoTask->setCheckPrintQueueCallback([tsi](gdioutput& gdi) { return tsi->checkpPrintQueue(gdi); });
+      // OnlineInput::cbAddCard is set lazily in TabAuto::timerCallback/syncCallback
+    }
+  }
+
   autoTask->setTimers();
 
   // Install a hook procedure to monitor the message stream for mouse
@@ -1078,6 +1094,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       gEvent->setSubSecondModeCallback([](bool use) {
         TabSI::getSI(*gdi_main).setSubSecondMode(use);
       });
+
+      // Additional oEvent callbacks (US-P0f2)
+      gEvent->setHasActiveReconnectionMachineCallback([] {
+        return TabAuto::hasActiveReconnectionMachine();
+      });
+      gEvent->setTabAutoAddMachineCallback([](const AutoMachine& am) {
+        TabAuto::tabAutoAddMachinge(am);
+      });
+      gEvent->setRemovedListCallback([](EStdListType type) {
+        TabAuto* ta = dynamic_cast<TabAuto*>(gdi_main->getTabs().get(TAutoTab));
+        if (ta) ta->removedList(type);
+      });
+      gEvent->setClearCompetitionDataCallback([] {
+        gdi_main->getTabs().clearCompetitionData();
+      });
+      gEvent->setGetListEditorCallback([]() -> ListEditor* {
+        TabList* tl = dynamic_cast<TabList*>(gdi_main->getTabs().get(TListTab));
+        return tl ? tl->getListEditorPtr() : nullptr;
+      });
+
+      // AutoTask callbacks (US-P0f2) are registered below after autoTask is constructed
 
       INITCOMMONCONTROLSEX ic;
 

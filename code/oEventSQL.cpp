@@ -31,7 +31,7 @@
 #include "gdioutput.h"
 #include "oDataContainer.h"
 
-#include "TabAuto.h"
+#include "automachine.h"
 
 #include "meosexception.h"
 #include "meos_util.h"
@@ -59,7 +59,7 @@ bool oEvent::connectToServer()
 
 void oEvent::startReconnectDaemon()
 {
-  if (isThreadReconnecting() || TabAuto::hasActiveReconnectionMachine())
+  if (isThreadReconnecting() || (cbHasActiveReconnectionMachine && cbHasActiveReconnectionMachine()))
     return;
 
   string err;
@@ -68,7 +68,7 @@ void oEvent::startReconnectDaemon()
   MySQLReconnect msqlr(lang.tl("warning:dbproblem#" + err));
   msqlr.interval=5;
   hasPendingDBConnection = true;
-  TabAuto::tabAutoAddMachinge(msqlr);
+  if (cbTabAutoAddMachine) cbTabAutoAddMachine(msqlr);
 
   gdibase.setDBErrorState(false);
   gdibase.setWindowTitle(oe->getTitleName());

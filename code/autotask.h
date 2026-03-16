@@ -18,13 +18,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     Melin Software HB - software@melin.nu - www.melin.nu
-    Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
+    Eksoppsvägen 16, SE-75646 Uppsala, Sweden
 
 ************************************************************************/
 
 #include <cstdint>
 #include <vector>
 #include <deque>
+#include <functional>
 
 class oEvent;
 class gdioutput;
@@ -34,6 +35,14 @@ private:
   oEvent &oe;
   gdioutput &gdi;
   AutoTask &operator=(const AutoTask &);
+
+  // UI callbacks registered at startup (registered from meos.cpp after tabs are created).
+  // All are null-guarded so AutoTask works in test mode without a UI.
+  std::function<void(gdioutput&)> cbTimerCallback;
+  std::function<bool()> cbSynchronize;
+  std::function<bool()> cbSynchronizePunches;
+  std::function<void(gdioutput&)> cbSyncCallback;
+  std::function<bool(gdioutput&)> cbCheckPrintQueue;
 
   bool synchronizeImpl(const vector<gdioutput *> &gdi);
   bool advancePunchInformationImpl(const vector<gdioutput *> &windows);
@@ -57,6 +66,13 @@ private:
   int synchBaseTime;
   int maxDelay; // The maximal delay between syncs
 public:
+
+  // Setters for UI callbacks (called from meos.cpp after tabs are created).
+  void setTimerCallback(std::function<void(gdioutput&)> cb) { cbTimerCallback = std::move(cb); }
+  void setSynchronizeCallback(std::function<bool()> cb) { cbSynchronize = std::move(cb); }
+  void setSynchronizePunchesCallback(std::function<bool()> cb) { cbSynchronizePunches = std::move(cb); }
+  void setSyncCallback(std::function<void(gdioutput&)> cb) { cbSyncCallback = std::move(cb); }
+  void setCheckPrintQueueCallback(std::function<bool(gdioutput&)> cb) { cbCheckPrintQueue = std::move(cb); }
 
   void setTimers();
 
