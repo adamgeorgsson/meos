@@ -3,6 +3,40 @@ MeOS - A Much Easier Orienteering System
 
 Source code for the MeOS project (www.melin.nu/meos)
 
+## Legacy MeOS Windows Application
+
+The legacy Win32 MeOS application lives in `code/` and builds with CMake + MSVC on Windows.
+
+### Prerequisites
+
+- Visual Studio 2022 (with C++ desktop workload)
+- CMake 3.20+
+- vcpkg (for zlib, minizip, and other managed dependencies)
+- OpenSSL 1.1.x (via Chocolatey or installed manually)
+
+### Build
+
+```powershell
+# Install OpenSSL 1.1 (once)
+choco install openssl --version=1.1.1.2100 -y
+
+# Clone and bootstrap vcpkg (once)
+git clone https://github.com/microsoft/vcpkg.git
+cd vcpkg && .\bootstrap-vcpkg.bat -disableMetrics && cd ..
+
+# Configure — vcpkg manifest mode installs zlib, minizip, etc. from vcpkg.json
+cmake -S code -B code/build `
+  -G "Visual Studio 17 2022" -A x64 `
+  -DOPENSSL_ROOT_DIR="C:/Program Files/OpenSSL-Win64" `
+  -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake" `
+  -DVCPKG_MANIFEST_DIR="."
+
+# Build
+cmake --build code/build --config Release --parallel
+```
+
+Output: `code/build/Release/MeOS.exe`. Copy runtime DLLs from `code/dll64/` alongside the executable.
+
 ## C++ Backend
 
 ### Prerequisites

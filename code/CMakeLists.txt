@@ -64,17 +64,15 @@ set_source_files_properties(
 # External library paths
 # Debug uses *_db variant; Release uses the plain variant.
 # x64 (8-byte pointer) uses lib64_db / lib64.
-# Win32 (4-byte pointer) uses lib_db / lib — and different zlib/haru names.
+# Win32 (4-byte pointer) uses lib_db / lib — and different haru names.
 # ---------------------------------------------------------------------------
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(_MEOS_LIB_DEBUG   "${CMAKE_CURRENT_SOURCE_DIR}/lib64_db")
     set(_MEOS_LIB_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/lib64")
-    set(_MEOS_ZLIB  "zlibstat")
     set(_MEOS_HARU  "libharu")
 else()
     set(_MEOS_LIB_DEBUG   "${CMAKE_CURRENT_SOURCE_DIR}/lib_db")
     set(_MEOS_LIB_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/lib")
-    set(_MEOS_ZLIB  "zlibstat_vc15")
     set(_MEOS_HARU  "libhpdf")
 endif()
 
@@ -83,14 +81,24 @@ target_link_directories(MeOS PRIVATE
 )
 
 # ---------------------------------------------------------------------------
+# vcpkg-managed libraries: zlib and minizip
+# zlibstat.lib / zlibstat_vc15.lib (vendored combined zlib+minizip static lib)
+# has been replaced by vcpkg's separate zlib and minizip packages.
+# ---------------------------------------------------------------------------
+find_package(ZLIB REQUIRED)
+find_package(unofficial-minizip CONFIG REQUIRED)
+
+# ---------------------------------------------------------------------------
 # OpenSSL — RestBed links dynamically against OpenSSL.
 # Set OPENSSL_ROOT_DIR when invoking cmake if OpenSSL is not on PATH.
 # ---------------------------------------------------------------------------
 find_package(OpenSSL REQUIRED)
 
 target_link_libraries(MeOS PRIVATE
+    # vcpkg-managed zlib and minizip (replaced vendored zlibstat.lib)
+    ZLIB::ZLIB
+    unofficial::minizip::minizip
     # Vendored static libraries (path resolved by target_link_directories)
-    ${_MEOS_ZLIB}
     ${_MEOS_HARU}
     RestBed
     libpng
