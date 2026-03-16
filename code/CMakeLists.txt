@@ -21,8 +21,8 @@ add_executable(MeOS WIN32
 # Flat headers: use CMAKE_CURRENT_SOURCE_DIR so that bare includes work.
 # libharu headers are included by bare filename (e.g. #include "hpdf.h"),
 # so the libharu/ subdirectory is added as an additional include root.
-# All other vendored headers (minizip/, mysql/, png/, restbed/) are
-# included with their subdirectory prefix, e.g. #include "png/png.h".
+# All other vendored headers (minizip/, mysql/, restbed/) are
+# included with their subdirectory prefix, e.g. #include "mysql/mysql.h".
 # ---------------------------------------------------------------------------
 target_include_directories(MeOS PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -81,12 +81,14 @@ target_link_directories(MeOS PRIVATE
 )
 
 # ---------------------------------------------------------------------------
-# vcpkg-managed libraries: zlib and minizip
+# vcpkg-managed libraries: zlib, minizip, libpng
 # zlibstat.lib / zlibstat_vc15.lib (vendored combined zlib+minizip static lib)
 # has been replaced by vcpkg's separate zlib and minizip packages.
+# libpng.lib (vendored) has been replaced by vcpkg's libpng package.
 # ---------------------------------------------------------------------------
 find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
+find_package(PNG REQUIRED)
 
 # ---------------------------------------------------------------------------
 # OpenSSL — RestBed links dynamically against OpenSSL.
@@ -95,13 +97,13 @@ find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 target_link_libraries(MeOS PRIVATE
-    # vcpkg-managed zlib and minizip (replaced vendored zlibstat.lib)
+    # vcpkg-managed libraries (replaced vendored libs)
     ZLIB::ZLIB
     unofficial::minizip::minizip
+    PNG::PNG
     # Vendored static libraries (path resolved by target_link_directories)
     ${_MEOS_HARU}
     RestBed
-    libpng
     libmysql
     # OpenSSL (required by RestBed)
     OpenSSL::SSL

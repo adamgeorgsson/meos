@@ -22,7 +22,7 @@
 
 #include "StdAfx.h"
 #include "image.h"
-#include "png/png.h"
+#include <png.h>
 #include <vector>
 #include <algorithm>
 #include <Wincodec.h>
