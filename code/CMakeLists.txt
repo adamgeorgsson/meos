@@ -19,9 +19,9 @@ add_executable(MeOS WIN32
 # ---------------------------------------------------------------------------
 # Include directories
 # Flat headers: use CMAKE_CURRENT_SOURCE_DIR so that bare includes work.
-# All other vendored headers (mysql/, restbed/) are included with their
-# subdirectory prefix, e.g. #include "mysql/mysql.h".
-# libharu headers are provided by vcpkg (unofficial::libharu::hpdf target).
+# mysql/ headers are included with their subdirectory prefix: #include "mysql/mysql.h".
+# libharu and restbed headers are provided by vcpkg targets.
+# restbed umbrella header is now just #include "restbed" (no restbed/ prefix).
 # ---------------------------------------------------------------------------
 target_include_directories(MeOS PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -77,11 +77,12 @@ target_link_directories(MeOS PRIVATE
 )
 
 # ---------------------------------------------------------------------------
-# vcpkg-managed libraries: zlib, minizip, libpng, libharu
+# vcpkg-managed libraries: zlib, minizip, libpng, libharu, restbed
 # zlibstat.lib / zlibstat_vc15.lib (vendored combined zlib+minizip static lib)
 # has been replaced by vcpkg's separate zlib and minizip packages.
 # libpng.lib (vendored) has been replaced by vcpkg's libpng package.
 # libharu.lib / libhpdf.lib (vendored) replaced by vcpkg's libharu package.
+# RestBed.lib (vendored) replaced by vcpkg's unofficial-restbed package.
 # ---------------------------------------------------------------------------
 find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
@@ -94,14 +95,21 @@ find_package(unofficial-libharu CONFIG REQUIRED)
 # ---------------------------------------------------------------------------
 find_package(OpenSSL REQUIRED)
 
+# ---------------------------------------------------------------------------
+# restbed — vendored RestBed.lib replaced by vcpkg unofficial-restbed.
+# Built with openssl feature so TLS support is included.
+# ---------------------------------------------------------------------------
+find_package(unofficial-restbed CONFIG REQUIRED)
+
 target_link_libraries(MeOS PRIVATE
     # vcpkg-managed libraries (replaced vendored libs)
     ZLIB::ZLIB
     unofficial::minizip::minizip
     PNG::PNG
     unofficial::libharu::hpdf
+    # vcpkg restbed (replaces vendored RestBed.lib)
+    unofficial::restbed::restbed
     # Vendored static libraries (path resolved by target_link_directories)
-    RestBed
     libmysql
     # OpenSSL (required by RestBed)
     OpenSSL::SSL

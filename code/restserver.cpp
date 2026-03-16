@@ -29,7 +29,7 @@ Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 #include "oEvent.h"
 #include "xmlparser.h"
 
-#include "restbed/restbed"
+#include "restbed"
 #include "meosexception.h"
 #include "restserver.h"
 #include "infoserver.h"
