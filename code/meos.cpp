@@ -1068,6 +1068,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
       tabList->emplace_back(gdi_main->getTabs().get(TSITab), L"SportIdent", 9);
 
+      // Register UI callbacks in oEvent to decouple domain from Tab* classes (US-P0f1)
+      gEvent->setBaseButtonsCallback([](gdioutput& gdi, int n, bool own) {
+        TabList::baseButtons(gdi, n, own);
+      });
+      gEvent->setKillMachinesCallback([] {
+        TabAuto::tabAutoKillMachines();
+      });
+      gEvent->setSubSecondModeCallback([](bool use) {
+        TabSI::getSI(*gdi_main).setSubSecondMode(use);
+      });
+
       INITCOMMONCONTROLSEX ic;
 
       ic.dwSize=sizeof(ic);

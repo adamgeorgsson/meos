@@ -47,6 +47,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <functional>
 
 #define cVacantId 888888888
 #define cNoClubId 999999999
@@ -245,7 +246,12 @@ protected:
   bool isMainEvent = false;
 
   gdioutput &gdibase;
-  
+
+  // UI callbacks registered at startup to decouple domain from Tab* classes
+  std::function<void(gdioutput&, int, bool)> cbBaseButtons;
+  std::function<void()> cbKillMachines;
+  std::function<void(bool)> cbSetSubSecondMode;
+
   void generateFixedList(gdioutput &gdi, const oListInfo &li);
 
   void startReconnectDaemon();
@@ -1612,6 +1618,13 @@ public:
   friend class TestMeOS;
 
   gdioutput &gdiBase() const {return gdibase;}
+
+  void setBaseButtonsCallback(std::function<void(gdioutput&, int, bool)> cb) { cbBaseButtons = std::move(cb); }
+  void setKillMachinesCallback(std::function<void()> cb) { cbKillMachines = std::move(cb); }
+  void setSubSecondModeCallback(std::function<void(bool)> cb) { cbSetSubSecondMode = std::move(cb); }
+
+  // Called from local classes in oEvent.cpp that cannot access protected members directly
+  void callBaseButtons(gdioutput& gdi, int n, bool own) { if (cbBaseButtons) cbBaseButtons(gdi, n, own); }
 };
 
 template<typename T>
