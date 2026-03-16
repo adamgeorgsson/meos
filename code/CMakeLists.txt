@@ -19,14 +19,12 @@ add_executable(MeOS WIN32
 # ---------------------------------------------------------------------------
 # Include directories
 # Flat headers: use CMAKE_CURRENT_SOURCE_DIR so that bare includes work.
-# libharu headers are included by bare filename (e.g. #include "hpdf.h"),
-# so the libharu/ subdirectory is added as an additional include root.
-# All other vendored headers (minizip/, mysql/, restbed/) are
-# included with their subdirectory prefix, e.g. #include "mysql/mysql.h".
+# All other vendored headers (mysql/, restbed/) are included with their
+# subdirectory prefix, e.g. #include "mysql/mysql.h".
+# libharu headers are provided by vcpkg (unofficial::libharu::hpdf target).
 # ---------------------------------------------------------------------------
 target_include_directories(MeOS PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/libharu
 )
 
 # ---------------------------------------------------------------------------
@@ -64,16 +62,14 @@ set_source_files_properties(
 # External library paths
 # Debug uses *_db variant; Release uses the plain variant.
 # x64 (8-byte pointer) uses lib64_db / lib64.
-# Win32 (4-byte pointer) uses lib_db / lib — and different haru names.
+# Win32 (4-byte pointer) uses lib_db / lib.
 # ---------------------------------------------------------------------------
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(_MEOS_LIB_DEBUG   "${CMAKE_CURRENT_SOURCE_DIR}/lib64_db")
     set(_MEOS_LIB_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/lib64")
-    set(_MEOS_HARU  "libharu")
 else()
     set(_MEOS_LIB_DEBUG   "${CMAKE_CURRENT_SOURCE_DIR}/lib_db")
     set(_MEOS_LIB_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/lib")
-    set(_MEOS_HARU  "libhpdf")
 endif()
 
 target_link_directories(MeOS PRIVATE
@@ -81,14 +77,16 @@ target_link_directories(MeOS PRIVATE
 )
 
 # ---------------------------------------------------------------------------
-# vcpkg-managed libraries: zlib, minizip, libpng
+# vcpkg-managed libraries: zlib, minizip, libpng, libharu
 # zlibstat.lib / zlibstat_vc15.lib (vendored combined zlib+minizip static lib)
 # has been replaced by vcpkg's separate zlib and minizip packages.
 # libpng.lib (vendored) has been replaced by vcpkg's libpng package.
+# libharu.lib / libhpdf.lib (vendored) replaced by vcpkg's libharu package.
 # ---------------------------------------------------------------------------
 find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
+find_package(unofficial-libharu CONFIG REQUIRED)
 
 # ---------------------------------------------------------------------------
 # OpenSSL — RestBed links dynamically against OpenSSL.
@@ -101,8 +99,8 @@ target_link_libraries(MeOS PRIVATE
     ZLIB::ZLIB
     unofficial::minizip::minizip
     PNG::PNG
+    unofficial::libharu::hpdf
     # Vendored static libraries (path resolved by target_link_directories)
-    ${_MEOS_HARU}
     RestBed
     libmysql
     # OpenSSL (required by RestBed)
