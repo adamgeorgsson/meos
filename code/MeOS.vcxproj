@@ -220,6 +220,8 @@
     <ClCompile Include="oPunch.cpp" />
     <ClCompile Include="oReport.cpp" />
     <ClCompile Include="oRunner.cpp" />
+    <ClCompile Include="oRunnerResult.cpp" />
+    <ClCompile Include="oRunnerStats.cpp" />
     <ClCompile Include="oTeam.cpp" />
     <ClCompile Include="oTeamEvent.cpp" />
     <ClCompile Include="parser.cpp" />
