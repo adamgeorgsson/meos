@@ -2,7 +2,7 @@ name: Build legacy MeOS
 
 on:
   push:
-    branches: [base, 'build-infrastructure-*']
+    branches: [base, 'legacy-preparation-*']
     paths:
       - 'code/**'
       - '.github/workflows/build-legacy.yml'

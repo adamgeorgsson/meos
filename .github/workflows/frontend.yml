@@ -1,6 +1,16 @@
 name: Frontend CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - base
+      - migration-*
+      - web-frontend-*
+  pull_request:
+    branches:
+      - base
+      - migration-*
+      - web-frontend-*
 
 defaults:
   run:
