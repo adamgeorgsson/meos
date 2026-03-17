@@ -23,7 +23,7 @@ This migration is **iterative and disposable**. The entire migration will be run
 6. Update AGENTS.md files if you discover reusable patterns (see below)
 7. **Write your full progress report** to `plan/progress.txt` BEFORE committing (see format below). Never use placeholders like "..." or "TODO" — write the real content now.
 8. Update the PRD to set `passes: true` for the completed story
-9. Commit all **source code changes** with message: `feat: [Story ID] - [Story Title]`. **Do NOT commit `plan/prd.json`, `plan/progress.txt`, or `plan/metrics.csv`** — these are tracked outside of git and must not be included in commits. Use `git reset HEAD plan/prd.json plan/progress.txt plan/metrics.csv` before committing if they are staged.
+9. Commit all **source code changes** with message: `feat: [Story ID] - [Story Title]`. **Do NOT commit `plan/prd.json` or `plan/progress.txt`** — these are tracked outside of git and must not be included in commits. Use `git reset HEAD plan/prd.json plan/progress.txt` before committing if they are staged.
 
 ## Writing to plan/ files — IMPORTANT
 
