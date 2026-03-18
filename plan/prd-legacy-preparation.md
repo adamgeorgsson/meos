@@ -181,7 +181,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 
 ### US-P0h: Replace Win32 Time APIs with std::chrono
 
-**Description:** Replace Windows-specific time functions (`GetLocalTime`, `SYSTEMTIME`, `GetTickCount64`, `FileTimeToLocalFileTime`, `SystemTimeToFileTime`) with `std::chrono` equivalents in domain code.
+**Description:** Replace Windows-specific time functions (`GetLocalTime`, `SYSTEMTIME`, `GetTickCount64`, `FileTimeToLocalFileTime`, `SystemTimeToFileTime`, `TzSpecificLocalTimeToSystemTime`) with `std::chrono` equivalents in domain code.
 
 **Acceptance Criteria:**
 - [ ] No `GetLocalTime()`, `SYSTEMTIME`, `GetTickCount64()`, `FileTimeToLocalFileTime()`, or `SystemTimeToFileTime()` in domain `.cpp/.h` files
@@ -203,6 +203,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - `SYSTEMTIME.wMilliseconds` has no direct `std::tm` equivalent — use `duration_cast<milliseconds>` on the time_point
 - `meos_util.cpp` has heavily-used functions (`getLocalTime`, `getLocalDate`, `getLocalTimeOnly`) — changing their internals is safe, but signatures must be preserved
 - `SystemTimeToFileTime` is timezone-independent — use `timegm`/`_mkgmtime` instead of `mktime`
+- Excluded files (`Tab*`, `gdioutput`) still call utility functions whose signatures changed — grep for `SYSTEMTIME` in excluded files after running the script
 
 ### US-P0i: Replace Win32 File APIs with std::filesystem
 

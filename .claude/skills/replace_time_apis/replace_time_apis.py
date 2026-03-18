@@ -167,6 +167,7 @@ def find_complex_patterns(filepath, lines):
         (r'FileTimeToSystemTime', 'Replace with chrono conversion'),
         (r'SystemTimeToInt64TenthSecond', 'Rewrite using std::tm + mktime'),
         (r'Int64TenthSecondToSystemTime', 'Rewrite using localtime'),
+        (r'TzSpecificLocalTimeToSystemTime', 'Replace with mktime + gmtime for local-to-UTC conversion'),
         (r'\bFILETIME\b', 'Replace with std::chrono::system_clock::time_point or time_t'),
         (r'convertSystemTime[^N]', 'Update signature from SYSTEMTIME to std::tm'),
         (r'convertSystemTimeN', 'Update signature from SYSTEMTIME to std::tm'),

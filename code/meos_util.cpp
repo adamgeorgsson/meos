@@ -2080,8 +2080,8 @@ bool checkValidDate(const wstring &date) {
     return false;
 
   st.tm_hour = 12;
-  std::tm utc = {};
-  if (!TzSpecificLocalTimeToSystemTime(0, &st, &utc)) {
+  st.tm_isdst = -1;
+  if (mktime(&st) == (time_t)-1) {
     return false;
   }
 
@@ -2101,11 +2101,14 @@ int getTimeZoneInfo(const wstring &date) {
   std::tm st = {};
   convertDateYMD(date, st, false);
   st.tm_hour = 12;
-  std::tm utc = {};
-  if (!TzSpecificLocalTimeToSystemTime(0, &st, &utc)) {
+  st.tm_isdst = -1;
+  time_t t_epoch = mktime(&st);
+  if (t_epoch == (time_t)-1) {
     lastValue = 0;
     return 0;
   }
+  std::tm utc = {};
+  meos_gmtime(&t_epoch, &utc);
 
   int datecode = (((st.tm_year + 1900) * 12 + (st.tm_mon + 1)) * 31) + st.tm_mday;
   int datecodeUTC = (((utc.tm_year + 1900) * 12 + (utc.tm_mon + 1)) * 31) + utc.tm_mday;
