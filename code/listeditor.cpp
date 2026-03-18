@@ -37,6 +37,7 @@
 #include "gdiconstants.h"
 #include "autocomplete.h"
 #include "image.h"
+#include <cstdint>
 
 extern Image image;
 
@@ -543,7 +544,7 @@ int ListEditor::editList(gdioutput &gdi, GuiEventType type, BaseInfo &data) {
       show(gdi);
     }
     else if (bi.id == "Remove") {
-      DWORD id;
+      uint32_t id;
       gdi.getData("CurrentId", id);
       getPosFromId(id, groupIx, lineIx, ix);
       currentList->removeMLP(groupIx, lineIx, ix);
@@ -575,7 +576,7 @@ int ListEditor::editList(gdioutput &gdi, GuiEventType type, BaseInfo &data) {
     }
     else if (bi.id == "Apply" || bi.id == "MoveLeft" || bi.id == "MoveRight") {
       bool image = gdi.hasData("IsEditingImage");
-      DWORD id;
+      uint32_t id;
       gdi.getData("CurrentId", id);
       getPosFromId(id, groupIx, lineIx, ix);
 
@@ -1092,7 +1093,7 @@ void ListEditor::updateType(int iType, gdioutput & gdi) {
 
 bool ListEditor::checkUnsaved(gdioutput& gdi) {
   if (gdi.hasData("IsEditing")) {
-    DWORD id;
+    uint32_t id;
     gdi.getData("CurrentId", id);
     int groupIx, lineIx, ix;
     getPosFromId(id, groupIx, lineIx, ix);
@@ -1100,7 +1101,7 @@ bool ListEditor::checkUnsaved(gdioutput& gdi) {
     return saveListPost(gdi, mlp);
   }
   else if (gdi.hasData("IsEditingImage")) {
-    DWORD id;
+    uint32_t id;
     gdi.getData("CurrentId", id);
     int groupIx, lineIx, ix;
     getPosFromId(id, groupIx, lineIx, ix);

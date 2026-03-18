@@ -35,6 +35,7 @@
 #include "metalist.h"
 #include "Table.h"
 #include "generalresult.h"
+#include <cstdint>
 
 void registerTests(TestMeOS &tm);
 
@@ -254,7 +255,7 @@ TestMeOS &TestMeOS::registerTest(const TestMeOS &test) {
   return *subTests.back();
 }
 
-void mainMessageLoop(HACCEL hAccelTable, DWORD time);
+void mainMessageLoop(HACCEL hAccelTable, uint32_t time);
 
 void TestMeOS::showTab(TabType type) const {
   if (gdi_main->canClear()) {

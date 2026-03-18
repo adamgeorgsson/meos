@@ -35,6 +35,7 @@
 #include <fcntl.h>
 
 #include <process.h>
+#include <cstdint>
 
 #pragma comment(lib, "IPHLPAPI.lib")
 #define INET_ADDRSTRLEN 16
@@ -121,14 +122,14 @@ void Download::initInternet() {
   hInternet = InternetOpen(L"MeOS", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 
   if (hInternet==NULL) {
-    DWORD ec = GetLastError();
+    uint32_t ec = GetLastError();
     wstring error = lang.tl(L"Error: X#" + getErrorMessage(ec));
     throw meosException(error);
   }
 
-  DWORD dwTimeOut = 60 * 10 * 1000;
-  InternetSetOption(hInternet, INTERNET_OPTION_RECEIVE_TIMEOUT, &dwTimeOut, sizeof(DWORD));
-  InternetSetOption(hInternet, INTERNET_OPTION_SEND_TIMEOUT, &dwTimeOut, sizeof(DWORD));
+  uint32_t dwTimeOut = 60 * 10 * 1000;
+  InternetSetOption(hInternet, INTERNET_OPTION_RECEIVE_TIMEOUT, &dwTimeOut, sizeof(uint32_t));
+  InternetSetOption(hInternet, INTERNET_OPTION_SEND_TIMEOUT, &dwTimeOut, sizeof(uint32_t));
 }
 
 void Download::downloadFile(const wstring &url, const wstring &file, const vector< pair<wstring, wstring> > &headers)
@@ -149,7 +150,7 @@ void Download::downloadFile(const wstring &url, const wstring &file, const vecto
   if (!hURL) {
     int err = GetLastError();
     wstring msg2 = getErrorMessage(err);
-    DWORD em = 0, blen = 256;
+    uint32_t em = 0, blen = 256;
     wchar_t bf2[256];
     InternetGetLastResponseInfo(&em, bf2, &blen);
     wstring msg = L"Failed to connect to: " + url2;
@@ -160,9 +161,9 @@ void Download::downloadFile(const wstring &url, const wstring &file, const vecto
   }
 
 
-  DWORD dwContentLen = 0;
-  DWORD dwBufLen = sizeof(dwContentLen);
-  BOOL vsuccess = HttpQueryInfo(hURL,
+  uint32_t dwContentLen = 0;
+  uint32_t dwBufLen = sizeof(dwContentLen);
+  bool vsuccess = HttpQueryInfo(hURL,
                           HTTP_QUERY_CONTENT_LENGTH | HTTP_QUERY_FLAG_NUMBER,
                           (LPVOID)&dwContentLen, &dwBufLen, 0);
 
@@ -171,7 +172,7 @@ void Download::downloadFile(const wstring &url, const wstring &file, const vecto
   else
     setBytesToDownload(0);
 
-  DWORD dwStatus = 0;
+  uint32_t dwStatus = 0;
   dwBufLen = sizeof(dwStatus);
   vsuccess = HttpQueryInfo(hURL, HTTP_QUERY_STATUS_CODE|HTTP_QUERY_FLAG_NUMBER,
                           (LPVOID)&dwStatus, &dwBufLen, 0);
@@ -237,7 +238,7 @@ bool Download::doDownload()
   if (hURL && hInternet) {
     char buffer[512];
 
-    DWORD bRead;
+    uint32_t bRead;
     if (InternetReadFile(hURL, buffer, 512, &bRead)) {
       //Success!
       if (bRead==0) {
@@ -258,7 +259,7 @@ bool Download::doDownload()
   return false;
 }
 
-void Download::setBytesToDownload(DWORD btd)
+void Download::setBytesToDownload(uint32_t btd)
 {
   bytesToLoad = btd;
 }
@@ -333,7 +334,7 @@ bool Download::httpSendReqEx(HINTERNET hConnect, bool https, const wstring &dest
   TCHAR szAccept[] = L"*/*";
   LPCTSTR AcceptTypes[2] = { 0, 0 };
   AcceptTypes[0] = szAccept;
-  DWORD flags = INTERNET_FLAG_NO_CACHE_WRITE |
+  uint32_t flags = INTERNET_FLAG_NO_CACHE_WRITE |
     INTERNET_FLAG_IGNORE_CERT_DATE_INVALID |
     INTERNET_FLAG_IGNORE_CERT_CN_INVALID |
     INTERNET_FLAG_KEEP_CONNECTION;
@@ -344,8 +345,8 @@ bool Download::httpSendReqEx(HINTERNET hConnect, bool https, const wstring &dest
   HINTERNET hRequest = HttpOpenRequest (hConnect, L"POST", dest.c_str(), HTTP_VERSION, NULL, AcceptTypes,
                                         flags, 0);
 
-  DWORD dwBytesRead = 0;
-  DWORD dwBytesWritten = 0;
+  uint32_t dwBytesRead = 0;
+  uint32_t dwBytesWritten = 0;
   BYTE pBuffer[4*1024]; // Read from file in 4K chunks
 
   wstring hdr;
@@ -377,7 +378,7 @@ bool Download::httpSendReqEx(HINTERNET hConnect, bool https, const wstring &dest
       return false;
     }
 
-    DWORD sum = 0;
+    uint32_t sum = 0;
     do {
       if (!ReadFile (hFile, pBuffer, sizeof(pBuffer), &dwBytesRead, NULL)) {
         errorCode = GetLastError();
@@ -410,7 +411,7 @@ bool Download::httpSendReqEx(HINTERNET hConnect, bool https, const wstring &dest
     CloseHandle(hFile);
 
     if (!HttpEndRequest(hRequest, NULL, 0, 0)) {
-      DWORD error = GetLastError();
+      uint32_t error = GetLastError();
       errorCode = error;
       if (error == ERROR_INTERNET_FORCE_RETRY)
         retry--;      
@@ -429,8 +430,8 @@ bool Download::httpSendReqEx(HINTERNET hConnect, bool https, const wstring &dest
       retry = 0; // Done
   }
 
-  DWORD dwStatus = 0;
-  DWORD dwBufLen = sizeof(dwStatus);
+  uint32_t dwStatus = 0;
+  uint32_t dwBufLen = sizeof(dwStatus);
   int vsuccess = HttpQueryInfo(hRequest, HTTP_QUERY_STATUS_CODE|HTTP_QUERY_FLAG_NUMBER,
                                         (LPVOID)&dwStatus, &dwBufLen, 0);
 
@@ -494,13 +495,13 @@ void ListIpAddresses(vector<string>& ipAddrs)
   // Start with a 16 KB buffer and resize if needed -
   // multiple attempts in case interfaces change while
   // we are in the middle of querying them.
-  DWORD adapter_addresses_buffer_size = 16 * 1024;
+  uint32_t adapter_addresses_buffer_size = 16 * 1024;
   for (int attempts = 0; attempts != 3; ++attempts)
   {
     adapter_addresses = (IP_ADAPTER_ADDRESSES*)malloc(adapter_addresses_buffer_size);
     assert(adapter_addresses);
 
-    DWORD error = ::GetAdaptersAddresses(
+    uint32_t error = ::GetAdaptersAddresses(
       AF_UNSPEC,
       GAA_FLAG_SKIP_ANYCAST |
       GAA_FLAG_SKIP_MULTICAST |

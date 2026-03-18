@@ -25,6 +25,7 @@ Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 #include "gdioutput.h"
 #include <thread>
 #include <atomic>
+#include <cstdint>
 
 class AnimationData : public GuiHandler {
   vector<RenderedPage> pages;
@@ -37,7 +38,7 @@ class AnimationData : public GuiHandler {
   int page;
   uint64_t lastTime;
   uint64_t nextTime;
-  DWORD timeOut;
+  uint32_t timeOut;
   bool doAnimation;
   std::atomic_bool errorState;
   gdioutput *gdiRef;

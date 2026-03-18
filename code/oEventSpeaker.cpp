@@ -35,6 +35,7 @@
 #include "localizer.h"
 #include "gdifonts.h"
 #include "meosexception.h"
+#include <cstdint>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -438,7 +439,7 @@ int SpeakerCB(gdioutput *gdi, GuiEventType type, BaseInfo* data) {
   if (!oe)
     return false;
 
-  DWORD classId=0, previousControlId, leg=0, totalResult=0, shortNames = 0, compactView = 0, classLimit = 0;
+  uint32_t classId=0, previousControlId, leg=0, totalResult=0, shortNames = 0, compactView = 0, classLimit = 0;
   string controlId;
   gdi->getData("ClassId", classId);
   gdi->getData("ControlId", controlId);
@@ -466,7 +467,7 @@ int SpeakerCB(gdioutput *gdi, GuiEventType type, BaseInfo* data) {
       int trueIndex = -1;
       int start = 0;
       for (size_t k = 0; k < stages.size(); k++) {
-        if (leg <= DWORD(stages[k].first)) {
+        if (leg <= uint32_t(stages[k].first)) {
           trueIndex = k;
           if (k > 0)
             start = stages[k - 1].first + 1;
@@ -512,10 +513,10 @@ int MovePriorityCB(gdioutput *gdi, GuiEventType type, BaseInfo* data) {
       oRunner *r= oe->getRunner(rid, 0);
       if (!r) return false;
 
-      DWORD classId=0, previousControlId = 0;
+      uint32_t classId=0, previousControlId = 0;
       string controlId;
       if (gdi->getData("ClassId", classId) && gdi->getData("ControlId", controlId) && gdi->getData("PreviousControlId", previousControlId)){
-        DWORD leg = 0, totalResult = 0, shortNames = 0, compactView = 0, classLimit;
+        uint32_t leg = 0, totalResult = 0, shortNames = 0, compactView = 0, classLimit;
         gdi->getData("LegNo", leg);
         gdi->getData("TotalResult", totalResult);
         gdi->getData("ShortNames", shortNames);
@@ -660,7 +661,7 @@ int renderRowSpeakerList(const oSpeakerObject& r, const oSpeakerObject* next_r,
         rows[0].emplace_back();
     }
     else if (r[0].status == StatusUnknown) {
-      DWORD timeOut = NOTIMEOUT;
+      uint32_t timeOut = NOTIMEOUT;
 
       if (r[0].runningTimeLeg.preliminary >= -timeConstSecond && !r.missingStartTime) {
 
@@ -765,7 +766,7 @@ int renderRowSpeakerList(const oSpeakerObject& r, const oSpeakerObject* next_r,
         else {
           hasShownTimer = true;
 #          // No result yet
-          DWORD timeOut = NOTIMEOUT;          
+          uint32_t timeOut = NOTIMEOUT;          
           if (r[j].runningTimeLeg.preliminary >= -timeConstSecond && !r.missingStartTime) {
             // Waiting for competitor
             if (next_r && (*next_r)[j].status == StatusOK && (*next_r)[j].runningTime.preliminary > r[j].runningTime.preliminary)
@@ -969,7 +970,7 @@ void oEvent::speakerList(gdioutput& gdi,
   OutputDebugString(L"SpeakerListUpdate\n");
 #endif
 
-  DWORD clsIds = 0, cLegs = 0, cTotal = 0, cShort = 0, cCompact = 0, cClassLimit;
+  uint32_t clsIds = 0, cLegs = 0, cTotal = 0, cShort = 0, cCompact = 0, cClassLimit;
   string ctrlIds;
   gdi.getData("ClassId", clsIds);
   gdi.getData("ControlId", ctrlIds);
