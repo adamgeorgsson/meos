@@ -82,6 +82,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 **Known Pitfalls:**
 - When replacing `sprintf_s`/`swprintf_s` with `snprintf`/`swprintf`, always verify whether the buffer is a fixed-size array or a pointer — `sizeof(buf)` only works correctly on arrays, not pointers
 - `lang.tl` returns `const wstring&`, which is directly compatible with `std::stoi` and `swprintf` — no intermediate conversion needed
+- The `swprintf_s` 2-arg vs 3-arg heuristic must detect the format string (starts with `L"` or `lang.`) — not the size arg — to avoid duplicating size arguments when constants like `MAX_PATH` are used
 
 ### US-P0d: Replace Win32 Types with Standard Types in Domain Code
 

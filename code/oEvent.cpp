@@ -822,7 +822,7 @@ bool oEvent::save()
     int toDelete = maxBackup;
 
     for(int k = 0; k <= maxBackup; k++) {
-      swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), MAX_PATH, L"%s.bu%d", CurrentFile, k);
+      swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), L"%s.bu%d", CurrentFile, k);
       struct _stat st;
       int ret = _wstat(fn1, &st);
       if (ret==0) {
@@ -847,12 +847,12 @@ bool oEvent::save()
       }
     }
 
-    swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), MAX_PATH, L"%s.bu%d", CurrentFile, toDelete);
+    swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), L"%s.bu%d", CurrentFile, toDelete);
     ::_wremove(fn1);
 
     for(int k=toDelete;k>0;k--) {
-      swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), MAX_PATH, L"%s.bu%d", CurrentFile, k-1);
-      swprintf(fn2, sizeof(fn2)/sizeof(wchar_t), MAX_PATH, L"%s.bu%d", CurrentFile, k);
+      swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), L"%s.bu%d", CurrentFile, k-1);
+      swprintf(fn2, sizeof(fn2)/sizeof(wchar_t), L"%s.bu%d", CurrentFile, k);
       _wrename(fn1, fn2);
     }
 
