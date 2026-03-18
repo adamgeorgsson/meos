@@ -18,20 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
-
       - name: Install OpenSSL 1.1
         run: choco install openssl --version=1.1.1.2100 -y --no-progress
 
+      - name: Configure
+        run: cmake -S code -B code/build -A x64
+
       - name: Build
-        working-directory: code
-        run: msbuild MeOS.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+        run: cmake --build code/build --config ${{ matrix.configuration }}
 
       - name: Package release
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path code -Recurse -Filter MeOS.exe | Select-Object -First 1
+          $exe = Get-ChildItem -Path code/build -Recurse -Filter MeOS.exe | Select-Object -First 1
           $outDir = $exe.DirectoryName
 
           Copy-Item code/dll64/libharu.dll  $outDir
@@ -51,12 +50,12 @@ jobs:
         with:
           name: MeOS-${{ matrix.configuration }}-${{ matrix.platform }}
           path: |
-            code/**/MeOS.exe
-            code/**/libharu.dll
-            code/**/libmysql.dll
-            code/**/libssl-1_1-x64.dll
-            code/**/libcrypto-1_1-x64.dll
-            code/**/MSVCP140.dll
-            code/**/VCRUNTIME140.dll
-            code/**/VCRUNTIME140_1.dll
+            code/build/**/MeOS.exe
+            code/build/**/libharu.dll
+            code/build/**/libmysql.dll
+            code/build/**/libssl-1_1-x64.dll
+            code/build/**/libcrypto-1_1-x64.dll
+            code/build/**/MSVCP140.dll
+            code/build/**/VCRUNTIME140.dll
+            code/build/**/VCRUNTIME140_1.dll
           if-no-files-found: warn

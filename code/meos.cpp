@@ -351,7 +351,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         processed.insert(fullFile);
         xmlparser xml;
 
-        wcscpy_s(listpath, res[k].c_str());
+        wcscpy_s(listpath, MAX_PATH, res[k].c_str());
         xml.read(listpath);
 
         xmlobject xlist = xml.getObject(0);
@@ -383,9 +383,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
   }
 
   gEvent->openRunnerDatabase(L"database");
-  wcscpy_s(szTitle, L"MeOS");
-  wcscpy_s(szWindowClass, L"MeosMainClass");
-  wcscpy_s(szWorkSpaceClass, L"MeosWorkSpace");
+  wcscpy_s(szTitle, MAX_LOADSTRING, L"MeOS");
+  wcscpy_s(szWindowClass, MAX_LOADSTRING, L"MeosMainClass");
+  wcscpy_s(szWorkSpaceClass, MAX_LOADSTRING, L"MeosWorkSpace");
   MyRegisterClass(hInstance);
   registerToolbar(hInstance);
 
