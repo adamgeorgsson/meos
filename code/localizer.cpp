@@ -31,15 +31,6 @@
 
 using namespace std;
 
-const string &toUTF8(const wstring &winput) {
-  string &output = StringCache::getInstance().get();
-  size_t alloc = winput.length()*2;
-  output.resize(alloc);
-  WideCharToMultiByte(CP_UTF8, 0, winput.c_str(), winput.length()+1, (char *)output.c_str(), alloc, 0, 0);
-  output.resize(strlen(output.c_str()));
-  return output;
-}
-
 const wstring &fromUTF(const string &input) {
   wstring &output = StringCache::getInstance().wget();
   output.resize(input.length()+2, 0);

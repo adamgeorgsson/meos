@@ -59,6 +59,9 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - Moving functions to `meos_util.h` is preferable to creating a new header (fewer changes needed)
 - `gdioutput.h` should re-export or `using`-declare the moved functions so existing callers don't break
 
+**Known Pitfalls:**
+- When moving function definitions to `meos_util.cpp`, **remove the original definitions** from their source files (e.g., `localizer.cpp`). Leaving both causes LNK2005 "multiply defined symbol" linker errors. After moving, grep for the function name across all `.cpp` files to confirm exactly one definition remains.
+
 ### US-P0c: Replace Win32-Specific String Functions in Domain Code
 
 **Description:** Replace Windows-only string functions with standard C++ equivalents in domain files (`oEvent`, `oRunner`, `oClass`, `oDataContainer`, etc.). UI files (Tab*, gdioutput) are **out of scope**.
