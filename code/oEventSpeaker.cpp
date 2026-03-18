@@ -439,7 +439,7 @@ int SpeakerCB(gdioutput *gdi, GuiEventType type, BaseInfo* data) {
   if (!oe)
     return false;
 
-  uint32_t classId=0, previousControlId, leg=0, totalResult=0, shortNames = 0, compactView = 0, classLimit = 0;
+  DWORD classId=0, previousControlId, leg=0, totalResult=0, shortNames = 0, compactView = 0, classLimit = 0;
   string controlId;
   gdi->getData("ClassId", classId);
   gdi->getData("ControlId", controlId);
@@ -467,7 +467,7 @@ int SpeakerCB(gdioutput *gdi, GuiEventType type, BaseInfo* data) {
       int trueIndex = -1;
       int start = 0;
       for (size_t k = 0; k < stages.size(); k++) {
-        if (leg <= uint32_t(stages[k].first)) {
+        if (leg <= DWORD(stages[k].first)) {
           trueIndex = k;
           if (k > 0)
             start = stages[k - 1].first + 1;
@@ -513,10 +513,10 @@ int MovePriorityCB(gdioutput *gdi, GuiEventType type, BaseInfo* data) {
       oRunner *r= oe->getRunner(rid, 0);
       if (!r) return false;
 
-      uint32_t classId=0, previousControlId = 0;
+      DWORD classId=0, previousControlId = 0;
       string controlId;
       if (gdi->getData("ClassId", classId) && gdi->getData("ControlId", controlId) && gdi->getData("PreviousControlId", previousControlId)){
-        uint32_t leg = 0, totalResult = 0, shortNames = 0, compactView = 0, classLimit;
+        DWORD leg = 0, totalResult = 0, shortNames = 0, compactView = 0, classLimit;
         gdi->getData("LegNo", leg);
         gdi->getData("TotalResult", totalResult);
         gdi->getData("ShortNames", shortNames);
@@ -970,7 +970,7 @@ void oEvent::speakerList(gdioutput& gdi,
   OutputDebugString(L"SpeakerListUpdate\n");
 #endif
 
-  uint32_t clsIds = 0, cLegs = 0, cTotal = 0, cShort = 0, cCompact = 0, cClassLimit;
+  DWORD clsIds = 0, cLegs = 0, cTotal = 0, cShort = 0, cCompact = 0, cClassLimit;
   string ctrlIds;
   gdi.getData("ClassId", clsIds);
   gdi.getData("ControlId", ctrlIds);

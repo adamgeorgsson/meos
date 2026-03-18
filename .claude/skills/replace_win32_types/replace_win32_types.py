@@ -15,10 +15,16 @@ Replacements:
 
 Skips:
     - UI files: Tab*.cpp/h, gdioutput*, meos.cpp, Table.*, progress.cpp, printer.cpp
+    - Win32 API-heavy files: SportIdent.cpp/h, download.cpp/h, listeditor.cpp
     - Third-party dirs: mysql/, restbed/, png/, libharu/, minizip/
     - Occurrences inside string literals (e.g., SQL strings in MeosSQL.cpp)
     - Occurrences inside // comments
     - Adds #include <cstdint> where DWORD was replaced
+
+IMPORTANT: On MSVC, DWORD (unsigned long) and uint32_t (unsigned int) are different
+types. Variables passed to Win32 APIs via LPDWORD or to gdioutput::getData(DWORD&)
+must remain DWORD. After running this script, manually verify that domain files
+calling Win32 APIs (GetComputerName, etc.) still use DWORD for those specific variables.
 """
 
 import os
@@ -36,6 +42,13 @@ EXCLUDE_PATTERNS = [
     re.compile(r'^Table\.(cpp|h)$'),
     re.compile(r'^progress\.cpp$'),
     re.compile(r'^printer\.cpp$'),
+    # Non-domain files that heavily use Win32 APIs (WriteFile, ReadFile,
+    # InternetReadFile, HttpQueryInfo, GetAdaptersAddresses, WaitCommEvent, etc.)
+    # DWORD and uint32_t are different types on MSVC (unsigned long vs unsigned int),
+    # so Win32 functions expecting LPDWORD will reject uint32_t*.
+    re.compile(r'^SportIdent\.(cpp|h)$'),
+    re.compile(r'^download\.(cpp|h)$'),
+    re.compile(r'^listeditor\.cpp$'),
 ]
 EXCLUDE_DIRS = {'mysql', 'restbed', 'png', 'libharu', 'minizip'}
 

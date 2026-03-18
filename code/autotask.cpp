@@ -239,7 +239,7 @@ bool AutoTask::synchronizeImpl(const vector<gdioutput *> &windows) {
     return false;
   lock = true;
 
-  uint32_t d=0;
+  DWORD d=0;
   bool doSync = false;
   bool doSyncPunch = false;
   TabAuto *tabAuto = dynamic_cast<TabAuto *>(gdi.getTabs().get(TAutoTab));
@@ -313,7 +313,7 @@ bool AutoTask::synchronizeImpl(const vector<gdioutput *> &windows) {
 }
 
 bool AutoTask::advancePunchInformationImpl(const vector<gdioutput *> &windows) {
-  uint32_t d=0;
+  DWORD d=0;
   bool doSync = false;
   bool doSyncPunch = false;
 

@@ -99,6 +99,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 
 **Known Pitfalls:**
 - `MeosSQL.cpp` contains `DWORD` and `BOOL` inside SQL string literals — these must NOT be replaced. The script handles this by skipping content inside string literals.
+- On MSVC, `DWORD` (`unsigned long`) and `uint32_t` (`unsigned int`) are **different types**. Do NOT replace `DWORD` in files that pass variables to Win32 APIs via `LPDWORD` — the script now excludes `SportIdent.cpp/h`, `download.cpp/h`, and `listeditor.cpp`. In domain files, variables passed to `gdioutput::getData(DWORD&)` or Win32 APIs like `GetComputerName` must remain `DWORD` — fix manually after script.
 
 ### US-P0e: Normalize Path Separators in Domain Code
 

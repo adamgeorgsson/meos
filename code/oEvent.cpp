@@ -118,7 +118,7 @@ oEvent::oEvent(gdioutput &gdi) : oBase(nullptr), gdibase(gdi) {
   openFileLock = new MeOSFileLock();
 
   wchar_t cp[MAX_COMPUTERNAME_LENGTH + 1];
-  uint32_t size = MAX_COMPUTERNAME_LENGTH + 1;
+  DWORD size = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(cp, &size);
   clientName = cp;
 
@@ -3236,9 +3236,9 @@ void oEvent::generateInForestList(gdioutput& gdi, GUICALLBACK cb, GUICALLBACK cb
   calcUseStartSeconds();
   const int ct = getComputerTime();
 
-  uint32_t filter = 0;
+  DWORD filter = 0;
   bool hasFilter = gdi.getData("FilterSetting", filter);
-  static uint32_t lastFilter = 0;
+  static DWORD lastFilter = 0;
 
   int y = gdi.getCY();
   int x = gdi.getCX();
@@ -3276,7 +3276,7 @@ void oEvent::generateInForestList(gdioutput& gdi, GUICALLBACK cb, GUICALLBACK cb
         if (type == GuiEventType::GUI_LISTBOX) {
           ListBoxInfo lbi = dynamic_cast<ListBoxInfo &>(info);
           gdi.setData("FilterSetting", lbi.data);
-          lastFilter = uint32_t(lbi.data);
+          lastFilter = DWORD(lbi.data);
           oe.generateInForestList(gdi, cb, nullptr);
           TabList::baseButtons(gdi, 1, false);
           gdi.refreshFast();
@@ -5379,7 +5379,7 @@ const string &oEvent::getPropertyString(const char *name, const string &def)
 string oEvent::getPropertyStringDecrypt(const char *name, const string &def)
 {
   wchar_t bf[MAX_COMPUTERNAME_LENGTH + 1];
-  uint32_t len = MAX_COMPUTERNAME_LENGTH + 1;
+  DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(bf, &len);
   string prop = getPropertyString(name, def);
   string prop2;
@@ -5402,7 +5402,7 @@ string oEvent::getPropertyStringDecrypt(const char *name, const string &def)
 
 void oEvent::setPropertyEncrypt(const char *name, const string &prop) {
   wchar_t bf[MAX_COMPUTERNAME_LENGTH + 1];
-  uint32_t len = MAX_COMPUTERNAME_LENGTH + 1;
+  DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(bf, &len);
   string prop2;
   int code = 0;

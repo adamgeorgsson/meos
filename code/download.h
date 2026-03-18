@@ -33,7 +33,6 @@
 #endif // _MSC_VER > 1000
 
 #include <vector>
-#include <cstdint>
 typedef HANDLE HINTERNET;
 
 class dwException : public std::exception {
@@ -56,8 +55,8 @@ private:
 
   int fileno;
 
-  uint32_t bytesLoaded;
-  uint32_t bytesToLoad;
+  DWORD bytesLoaded;
+  DWORD bytesToLoad;
   bool success;
   void initThread();
 
@@ -71,7 +70,7 @@ public:
   int processMessages();
   bool successful();
   bool isWorking();
-  void setBytesToDownload(uint32_t btd);
+  void setBytesToDownload(DWORD btd);
   void endDownload();
   void downloadFile(const wstring &url, const wstring &file, const vector< pair<wstring, wstring> > &headers);
   void initInternet();

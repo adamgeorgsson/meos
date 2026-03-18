@@ -39,7 +39,6 @@
 #include <algorithm>
 
 #include <iostream>
-#include <cstdint>
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -65,7 +64,7 @@ SI_StationInfo::SI_StationInfo()
   localZeroTime=0;
 }
 
-SportIdent::SportIdent(HWND hWnd, uint32_t Id, bool readVoltage) : readVoltage(readVoltage) {
+SportIdent::SportIdent(HWND hWnd, DWORD Id, bool readVoltage) : readVoltage(readVoltage) {
   ClassId = Id;
   hWndNotify = hWnd;
 
@@ -97,7 +96,7 @@ SportIdent::~SportIdent()
 
 // CRC algoritm used by SPORTIdent GmbH
 // implemented for MeOS in C++
-WORD SportIdent::calcCRC(BYTE *data, uint32_t count)
+WORD SportIdent::calcCRC(BYTE *data, DWORD count)
 {
   // Return 0 for no or one data byte
   if (count<2)
@@ -139,15 +138,15 @@ WORD SportIdent::calcCRC(BYTE *data, uint32_t count)
 
 void SportIdent::setCRC(BYTE *bf)
 {
-  uint32_t len=bf[1];
+  DWORD len=bf[1];
   WORD crc=calcCRC(bf, len+2);
   bf[len+2]=HIBYTE(crc);
   bf[len+3]=LOBYTE(crc);
 }
 
-bool SportIdent::checkCRC(BYTE *bf, uint32_t maxLen)
+bool SportIdent::checkCRC(BYTE *bf, DWORD maxLen)
 {
-  uint32_t len=min(uint32_t(bf[1]), maxLen);
+  DWORD len=min(DWORD(bf[1]), maxLen);
   WORD crc=calcCRC(bf, len+2);
 
   return bf[len+2]==HIBYTE(crc) && bf[len+3]==LOBYTE(crc);
@@ -168,11 +167,11 @@ bool SportIdent::readSystemData(SI_StationInfo *si, int retry)
   setCRC(c+1);
   c[7]=ETX;
 
-  uint32_t written=0;
+  DWORD written=0;
   WriteFile(si->hComm, c, 8, &written, NULL);
   Sleep(100);
   memset((void *)buff, 0, 30);
-  uint32_t offset = 0;
+  DWORD offset = 0;
   readBytes_delay(buff, sizeof(buff), 15, si->hComm);
   if (buff[0] == 0xFF && buff[1] == STX)
     offset++;
@@ -222,7 +221,7 @@ bool SportIdent::readSystemDataV2(SI_StationInfo &si)
   setCRC(c+1);
   c[7]=ETX;
 
-  uint32_t written=0;
+  DWORD written=0;
   WriteFile(si.hComm, c, 8, &written, NULL);
   Sleep(100);
   memset((void *)buff, 0, sizeof(buff) );
@@ -253,10 +252,10 @@ bool SportIdent::readSystemDataV2(SI_StationInfo &si)
 }
 
 int SportIdent::analyzeStation(BYTE *db, SI_StationData &si) {
-  uint32_t size = 0;
-  uint32_t addr = 0x70;
+  DWORD size = 0;
+  DWORD addr = 0x70;
   if (checkCRC(LPBYTE(db+1), 256)) {
-    size = uint32_t(db[2]) + 6;
+    size = DWORD(db[2]) + 6;
 
     bool dongle = db[0x11] == 0x6f && db[0x12] == 0x21;
 
@@ -306,7 +305,7 @@ string decode(BYTE *bf, int read)
   return st;
 }
 
-bool SportIdent::openComListen(const wchar_t *com, uint32_t BaudRate) {
+bool SportIdent::openComListen(const wchar_t *com, DWORD BaudRate) {
   closeCom(com);
 
   SI_StationInfo *si = findStationInt(com);
@@ -353,7 +352,7 @@ bool SportIdent::openComListen(const wchar_t *com, uint32_t BaudRate) {
   memset(&dcb, 0, sizeof(dcb));
   dcb.DCBlength=sizeof(dcb);
   dcb.BaudRate=BaudRate;
-  dcb.fBinary=true;
+  dcb.fBinary=TRUE;
   dcb.fDtrControl=DTR_CONTROL_DISABLE;
   dcb.fRtsControl=RTS_CONTROL_DISABLE;
   dcb.Parity=NOPARITY;
@@ -364,7 +363,7 @@ bool SportIdent::openComListen(const wchar_t *com, uint32_t BaudRate) {
   return true;
 }
 
-bool SportIdent::tcpAddPort(int port, uint32_t zeroTime)
+bool SportIdent::tcpAddPort(int port, DWORD zeroTime)
 {
   closeCom(L"TCP");
 
@@ -430,7 +429,7 @@ bool SportIdent::openCom(const wchar_t *com)
   memset(&dcb, 0, sizeof(dcb));
   dcb.DCBlength=sizeof(dcb);
   dcb.BaudRate=CBR_38400;
-  dcb.fBinary=true;
+  dcb.fBinary=TRUE;
   dcb.fDtrControl=DTR_CONTROL_DISABLE;
   dcb.fRtsControl=RTS_CONTROL_DISABLE;
   dcb.Parity=NOPARITY;
@@ -451,12 +450,12 @@ bool SportIdent::openCom(const wchar_t *com)
 
   c[8]=ETX;
 
-  uint32_t written;
+  DWORD written;
 
   WriteFile(si->hComm, c, 9, &written, NULL);
   Sleep(700);
   //c[6]=
-  uint32_t read;
+  DWORD read;
   BYTE buff[128];
   memset(buff, 0, sizeof(buff));
   read = readBytes(buff, 1, si->hComm);
@@ -479,7 +478,7 @@ bool SportIdent::openCom(const wchar_t *com)
     WriteFile(si->hComm, c, 9, &written, NULL);
     Sleep(600);
     //c[6]=
-    uint32_t read;
+    DWORD read;
     BYTE buff[128];
 
     read=readByte(*buff, si->hComm);
@@ -618,7 +617,7 @@ int SportIdent::readByte(BYTE &byte, HANDLE hComm)
   if (!hComm)
     return -1;
 
-  uint32_t dwRead;
+  DWORD dwRead;
 
   if (ReadFile(hComm, &byte, 1, &dwRead, NULL))
   {
@@ -636,7 +635,7 @@ int SportIdent::readByte(BYTE &byte, HANDLE hComm)
 
 
 
-int SportIdent::readBytes_delay(BYTE *byte, uint32_t buffSize, uint32_t len,  HANDLE hComm) {
+int SportIdent::readBytes_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDLE hComm) {
   int read=0;
   int d;
   bool autoLen = false;
@@ -690,12 +689,12 @@ int SportIdent::readBytes_delay(BYTE *byte, uint32_t buffSize, uint32_t len,  HA
   return read;
 }
 
-int SportIdent::readBytes(BYTE *byte, uint32_t len,  HANDLE hComm)
+int SportIdent::readBytes(BYTE *byte, DWORD len,  HANDLE hComm)
 {
   if (!hComm)
     return -1;
 
-  uint32_t dwRead;
+  DWORD dwRead;
 
   if (ReadFile(hComm, byte, len, &dwRead, NULL))
   {
@@ -712,7 +711,7 @@ int SportIdent::readBytes(BYTE *byte, uint32_t len,  HANDLE hComm)
 }
 
 
-int SportIdent::readBytesDLE_delay(BYTE *byte, uint32_t buffSize, uint32_t len,  HANDLE hComm)
+int SportIdent::readBytesDLE_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDLE hComm)
 {
   int read=0;
   int toread=len;
@@ -742,19 +741,19 @@ int SportIdent::readBytesDLE_delay(BYTE *byte, uint32_t buffSize, uint32_t len, 
 }
 
 
-int SportIdent::readBytesDLE(BYTE *byte, uint32_t len,  HANDLE hComm)
+int SportIdent::readBytesDLE(BYTE *byte, DWORD len,  HANDLE hComm)
 {
   if (!hComm)
     return -1;
 
-  uint32_t dwRead;
+  DWORD dwRead;
 
   if (ReadFile(hComm, byte, len, &dwRead, NULL))
   {
     if (dwRead > 0)
     {
-      uint32_t ip=0;
-      uint32_t op=0;
+      DWORD ip=0;
+      DWORD op=0;
 
       for (ip=0;ip<dwRead-1;ip++) {
         if (byte[ip]==DLE)
@@ -783,9 +782,9 @@ int SportIdent::readBytesDLE(BYTE *byte, uint32_t len,  HANDLE hComm)
 struct SIOnlinePunch {
   BYTE Type;  //0=punch, 255=Triggered time
   WORD CodeNo;  //2 byte 0-65K
-  uint32_t SICardNo; //4 byte integer  -2GB until +2GB
-  uint32_t CodeDay; //Obsolete, not used anymore
-  uint32_t CodeTime;  //Time
+  DWORD SICardNo; //4 byte integer  -2GB until +2GB
+  DWORD CodeDay; //Obsolete, not used anymore
+  DWORD CodeTime;  //Time
 };
 
 int SportIdent::MonitorTCPSI(WORD port, int localZeroTime)
@@ -891,9 +890,9 @@ int SportIdent::MonitorTCPSI(WORD port, int localZeroTime)
           //memcpy(temp, c, 15);
           op.Type=temp[0];
           op.CodeNo=*(WORD*)(&temp[1]);
-          op.SICardNo=*(uint32_t *)(&temp[3]);
-          op.CodeDay=*(uint32_t *)(&temp[7]);
-          op.CodeTime=*(uint32_t *)(&temp[11]);
+          op.SICardNo=*(DWORD *)(&temp[3]);
+          op.CodeDay=*(DWORD *)(&temp[7]);
+          op.CodeTime=*(DWORD *)(&temp[11]);
 
           if (op.Type == 64 &&  op.CodeNo>1 &&  op.CodeNo<=192 && op.CodeTime == 0) {
             // Recieved card
@@ -996,8 +995,8 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
   if (!hComm)
     return false;
 
-  uint32_t dwCommEvent;
-  uint32_t dwRead;
+  DWORD dwCommEvent;
+  DWORD dwRead;
   BYTE  chRead;
 
   if (!SetCommMask(hComm, EV_RXCHAR))
@@ -1026,8 +1025,8 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
             {
               WORD Station=MAKEWORD(bf[3], bf[2]);
 
-              uint32_t ShortCard=MAKEWORD(bf[7], bf[6]);
-              uint32_t Series=bf[5];
+              DWORD ShortCard=MAKEWORD(bf[7], bf[6]);
+              DWORD Series=bf[5];
 
               /*for (int i = 0; i < 32; i++) {
                 uint32_t c = bf[i];
@@ -1037,12 +1036,12 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
               }
               OutputDebugStringA("\n");*/
 
-              uint32_t Card=MAKELONG(MAKEWORD(bf[7], bf[6]), MAKEWORD(bf[5], bf[4]));
+              DWORD Card=MAKELONG(MAKEWORD(bf[7], bf[6]), MAKEWORD(bf[5], bf[4]));
 
               if (Series <= 4 && Series >= 1)
                 Card = ShortCard + 100000 * Series;
 
-              uint32_t Time=0;
+              DWORD Time=0;
               if (bf[8] & 0x1) Time = timeConstHour * 12;
               Time += MAKEWORD(bf[10], bf[9])*timeConstSecond;
               uint8_t tss = bf[11]; // Sub second 1/256 seconds
@@ -1082,7 +1081,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
             WORD Card=MAKEWORD(bf[5], bf[4]);
 
 
-            uint32_t DCard;
+            DWORD DCard;
 
             if (Series==1)
               DCard=Card;
@@ -1094,7 +1093,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
             //if (Series!=1)
             //	Card+=100000*Series;
 
-            uint32_t Time = MAKEWORD(bf[8], bf[7]) * timeConstSecond;
+            DWORD Time = MAKEWORD(bf[8], bf[7]) * timeConstSecond;
             BYTE p=bf[1];
             if (p&0x1) Time+=timeConstHour*12;
 
@@ -1256,7 +1255,7 @@ void SportIdent::getSI5DataExt(HANDLE hComm)
   setCRC(c+1);
   c[5]=ETX;
 
-  uint32_t written=0;
+  DWORD written=0;
   WriteFile(hComm, c, 5, &written, NULL);
 
   if (written==5)
@@ -1295,7 +1294,7 @@ void SportIdent::getSI6DataExt(HANDLE hComm)
   debugLog(L"STARTREAD EXT-");
 
   int blocks[7]={0,6,7,2,3,4,5};
-  uint32_t written=0;
+  DWORD written=0;
 
   for(int k=0;k<7;k++)
   {
@@ -1368,7 +1367,7 @@ void SportIdent::getSI9DataExt(HANDLE hComm)
   int limit = 1;
   int *blocks = blocks_8_9_p_t;
   bool readBattery = false;
-  uint32_t written=0;
+  DWORD written=0;
 
   for (int k = 0; k < limit; k++) {
     c[0] = STX;
@@ -1568,7 +1567,7 @@ void SportIdent::getSI6Data(HANDLE hComm)
   debugLog(L"STARTREAD-");
 
   //int blocks[3]={0,6,7};
-  uint32_t written=0;
+  DWORD written=0;
 
 
   c[0]=STX;
@@ -1629,7 +1628,7 @@ void SportIdent::getSI5Data(HANDLE hComm)
   c[1]=0x31;
   c[2]=ETX;
 
-  uint32_t written=0;
+  DWORD written=0;
   WriteFile(hComm, c, 3, &written, NULL);
 
   if (written==3)
@@ -1685,7 +1684,7 @@ bool SportIdent::getCard5Data(BYTE *data, SICard &card)
     if (m%16==0) fout << endl;
 
     char bf[16];
-    sprintf(bf, "%02x ", (uint32_t)data[m]);
+    sprintf(bf, "%02x ", (DWORD)data[m]);
     fout << bf;
   }
 
@@ -1694,7 +1693,7 @@ bool SportIdent::getCard5Data(BYTE *data, SICard &card)
 */
   memset(&card, 0, sizeof(card));
 
-  uint32_t number=MAKEWORD(data[5], data[4]);
+  DWORD number=MAKEWORD(data[5], data[4]);
 
   if (data[6]==1)
     card.CardNumber=number;
@@ -1712,12 +1711,12 @@ bool SportIdent::getCard5Data(BYTE *data, SICard &card)
 
   data+=16;
 
-  for (uint32_t k=0;k<card.nPunch;k++) {
+  for (DWORD k=0;k<card.nPunch;k++) {
     if (k<30) {
-      uint32_t basepointer=3*(k%5)+1+(k/5)*16;
-      uint32_t code=data[basepointer];
-      uint32_t time;
-      uint32_t slask;
+      DWORD basepointer=3*(k%5)+1+(k/5)*16;
+      DWORD code=data[basepointer];
+      DWORD time;
+      DWORD slask;
       analyseSI5Time(data+basepointer+1, time, slask);
 
       card.Punch[k].Code=code;
@@ -1732,8 +1731,8 @@ bool SportIdent::getCard5Data(BYTE *data, SICard &card)
   return true;
 }
 
-uint32_t SportIdent::GetExtCardNumber(const BYTE *data) const {
-  uint32_t cnr = 0;
+DWORD SportIdent::GetExtCardNumber(const BYTE *data) const {
+  DWORD cnr = 0;
   BYTE *p = (BYTE *)&cnr;
   p[0] = data[27];
   p[1] = data[26];
@@ -1751,7 +1750,7 @@ bool SportIdent::getCard9Data(BYTE *data, SICard &card)
     if (m%16==0) fout << endl;
 
     char bf[16];
-    sprintf_s(bf, 16, "%02x ", (uint32_t)data[m]);
+    sprintf_s(bf, 16, "%02x ", (DWORD)data[m]);
     fout << bf;
   }
 
@@ -1817,7 +1816,7 @@ bool SportIdent::getCard9Data(BYTE *data, SICard &card)
 }
 
 // Method by Pavel Kazakov.
-void SportIdent::analyseTPunch(BYTE *data, uint32_t &time, uint32_t &control) {
+void SportIdent::analyseTPunch(BYTE *data, DWORD &time, DWORD &control) {
   if (*LPDWORD(data)!=0xEEEEEEEE) {
     BYTE cn=data[0];
 //    BYTE dt1=data[3];
@@ -1847,7 +1846,7 @@ bool SportIdent::getCard6Data(BYTE *data, SICard &card)
     if (m%16==0) fout << endl;
 
     char bf[16];
-    sprintf_s(bf, 16, "%02x ", (uint32_t)data[m]);
+    sprintf_s(bf, 16, "%02x ", (DWORD)data[m]);
     fout << bf;
   }
 
@@ -1917,7 +1916,7 @@ bool SportIdent::getCard6Data(BYTE *data, SICard &card)
 }
 int cn2;
 
-bool SportIdent::analysePunch(BYTE *data, uint32_t &time, uint32_t &control, bool subSecond) {
+bool SportIdent::analysePunch(BYTE *data, DWORD &time, DWORD &control, bool subSecond) {
   if (*LPDWORD(data)!=0xEEEEEEEE && *LPDWORD(data)!=0x0)
   {
     BYTE ptd=data[0];
@@ -1949,7 +1948,7 @@ bool SportIdent::analysePunch(BYTE *data, uint32_t &time, uint32_t &control, boo
   }
 }
 
-void SportIdent::analyseSI5Time(BYTE* data, uint32_t& time, uint32_t& control)
+void SportIdent::analyseSI5Time(BYTE* data, DWORD& time, DWORD& control)
 {
   if (*LPWORD(data) != 0xEEEE) {
     time = MAKEWORD(data[1], data[0]) * timeConstSecond;
@@ -1961,20 +1960,20 @@ void SportIdent::analyseSI5Time(BYTE* data, uint32_t& time, uint32_t& control)
   }
 }
 
-void SICard::analyseHour12Time(uint32_t zeroTime) {
+void SICard::analyseHour12Time(DWORD zeroTime) {
   if (convertedTime != ConvertedTimeStatus::Hour12)
     return;
 
   StartPunch.analyseHour12Time(zeroTime);
   CheckPunch.analyseHour12Time(zeroTime);
   FinishPunch.analyseHour12Time(zeroTime);
-  for (uint32_t k = 0; k < nPunch; k++)
+  for (DWORD k = 0; k < nPunch; k++)
     Punch[k].analyseHour12Time(zeroTime);
 
   convertedTime = ConvertedTimeStatus::Hour24;
 }
 
-void SIPunch::analyseHour12Time(uint32_t zeroTime) {
+void SIPunch::analyseHour12Time(DWORD zeroTime) {
   if (Code != -1 && Time>=0 && Time <=12*timeConstHour) {
     if (zeroTime < 12 * timeConstHour) {
       //Förmiddag
@@ -2000,7 +1999,7 @@ void SportIdent::EnumrateSerialPorts(list<int>& ports)
     //Use QueryDosDevice to look for all devices of the form COMx. This is a better
     //solution as it means that no ports have to be opened at all.
   TCHAR szDevices[65535];
-  uint32_t dwChars = QueryDosDevice(NULL, szDevices, 65535);
+  DWORD dwChars = QueryDosDevice(NULL, szDevices, 65535);
   if (dwChars)
   {
     int i = 0;
@@ -2054,7 +2053,7 @@ void SportIdent::addCard(const SICard &sic)
   PostMessage(hWndNotify, WM_USER, ClassId, 0);
 }
 
-void SportIdent::addPunch(uint32_t Time, int Station, int Card, int Mode) {
+void SportIdent::addPunch(DWORD Time, int Station, int Card, int Mode) {
   if (!useSubsecondMode)
     Time -= (Time % timeConstSecond);
 
@@ -2190,7 +2189,7 @@ void SportIdent::startMonitorThread(const wchar_t *com) {
       Sleep(0);
 
     if (si->ComPort==L"TCP") {
-      uint32_t ec=0;
+      DWORD ec=0;
       while( (GetExitCodeThread(si->ThreadHandle, &ec)!=0 && ec==STILL_ACTIVE && tcpPortOpen==0))
         Sleep(0);
     }
@@ -2548,7 +2547,7 @@ string SICard::serializePunches() const {
     if (!ser.empty()) ser += ";";
     ser += "S-" + itos(StartPunch.Time);
   }
-  for (uint32_t i = 0; i < nPunch; i++) {
+  for (DWORD i = 0; i < nPunch; i++) {
     if (!ser.empty()) ser += ";";
     ser += itos(Punch[i].Code) + "-" + itos(Punch[i].Time);
   }
@@ -2580,7 +2579,7 @@ void SICard::deserializePunches(const string &arg) {
     split(out[k], "-", mark);
     if (mark.size() != 2 || mark[0].empty())
       throw std::exception("Invalid string");
-    uint32_t *tp = 0;
+    DWORD *tp = 0;
     if (mark[0][0] == 'F') {
       FinishPunch.Code = atoi(mark[0].c_str() + 1);
       tp = &FinishPunch.Time;
