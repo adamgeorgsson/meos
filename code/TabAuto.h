@@ -23,6 +23,7 @@
 
 #include "TabBase.h"
 #include "gdioutput.h"
+#include <functional>
 #include <string>
 #include "oListInfo.h"
 #include "importformats.h"
@@ -254,6 +255,7 @@ protected:
   bool toRemove = false;
 
 public:
+  std::function<bool()> confirmStop; // Callback for stop confirmation; nullptr = allow stop
   void settings(gdioutput &gdi, oEvent &oe, State state);
   shared_ptr<AutoMachine> clone() const final { 
     return make_shared<MySQLReconnect>(*this);

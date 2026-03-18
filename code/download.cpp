@@ -37,6 +37,7 @@
 #include <process.h>
 #include <chrono>
 #include <thread>
+#include <iostream>
 
 #pragma comment(lib, "IPHLPAPI.lib")
 #define INET_ADDRSTRLEN 16
@@ -101,7 +102,7 @@ void Download::shutDown()
     }
     //If unsuccessful ending thread, do it violently
     if (hThread) {
-      OutputDebugString(L"Terminate thread...\n");
+      std::cerr << "Terminate thread..." << '\n';
       TerminateThread(HANDLE(hThread), 0);
       CloseHandle(HANDLE(hThread));
     }

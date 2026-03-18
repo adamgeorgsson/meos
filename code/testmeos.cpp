@@ -36,6 +36,7 @@
 #include "Table.h"
 #include "generalresult.h"
 #include <cstdint>
+#include <iostream>
 
 void registerTests(TestMeOS &tm);
 
@@ -144,7 +145,7 @@ void TestMeOS::runProtected(bool protect) const {
   tsi->clearQueue();
   tsi->getSI(*gdi_main).resetPunchMap();
 
-  OutputDebugString((L"Running test" + gdi_main->widen(test) + L"\n").c_str());
+  std::cerr << narrow((L"Running test" + gdi_main->widen(test) + L"\n"));
   try {
     status = RUNNING;
     run();
@@ -160,7 +161,7 @@ void TestMeOS::runProtected(bool protect) const {
     gdi_main->isTestMode = false;
   }
   catch (const meosAssertionFailure & ex) {
-    OutputDebugString(L"Test FAILED (assert)\n");
+    std::cerr << "Test FAILED (assert)" << '\n';
     status = FAILED;
     oe_main->restoreRunnerDatabase();
     oe_main->useDefaultProperties(false);
@@ -174,7 +175,7 @@ void TestMeOS::runProtected(bool protect) const {
   }
   catch (const std::exception &ex) {
     status = FAILED;
-    OutputDebugString(L"Test FAILED (std)\n");
+    std::cerr << "Test FAILED (std)" << '\n';
     oe_main->restoreRunnerDatabase();
     oe_main->useDefaultProperties(false);
     gdi_main->clearDialogAnswers(false);
@@ -187,7 +188,7 @@ void TestMeOS::runProtected(bool protect) const {
       throw;
   }
   catch (...) {
-    OutputDebugString(L"Test FAILED (...)\n");
+    std::cerr << "Test FAILED (...)" << '\n';
 
     status = FAILED;
     oe_main->restoreRunnerDatabase();
@@ -207,7 +208,7 @@ void TestMeOS::runProtected(bool protect) const {
   for (size_t k = 0; k < tmpFiles.size(); k++)
     removeTempFile(tmpFiles[k]);
   tmpFiles.clear();
-  OutputDebugString(L"Test PASSED\n");
+  std::cerr << "Test PASSED" << '\n';
   if (protect) {
     cleanup();
   }

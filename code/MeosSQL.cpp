@@ -41,6 +41,7 @@
 #include "xmlparser.h"
 #include "maprenderer.h"
 #include <cstdint>
+#include <iostream>
 
 extern oEvent* gEvent;
 
@@ -2265,7 +2266,7 @@ OpFailStatus MeosSQL::syncUpdate(oRunner *r, bool forceWriteAll) {
 
   /*
   wstring str = L"write runner " + r->sName + L", st = " + itow(r->startTime) + L"\n";
-  OutputDebugString(str.c_str());
+  std::cerr << narrow(str);
   */
   OpFailStatus res = syncUpdate(queryset, "oRunner", r);
   if (res != OpFailStatus::opStatusFail) {

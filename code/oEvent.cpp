@@ -68,6 +68,7 @@
 #include <sys/stat.h>
 #include "Table.h"
 #include <cstdint>
+#include <iostream>
 
 extern Image image;
 
@@ -3930,10 +3931,10 @@ bool oEvent::enumerateCompetitions(const wchar_t *file, const wchar_t *filetype)
   }
   sort(cc.begin(), cc.end());
   for (auto &c : cc) {
-    OutputDebugString(c.first.c_str());
-    OutputDebugString(L", ");
-    OutputDebugString(c.second.c_str());
-    OutputDebugString(L"\n");
+    std::cerr << narrow(c.first);
+    std::cerr << ", ";
+    std::cerr << narrow(c.second);
+    std::cerr << "" << '\n';
   }
 */
   return true;
@@ -4207,7 +4208,7 @@ void oEvent::checkDB()
       for(int i=0;i < min<int>(err.size(), 10);i++)
         msg+=wstring(L"\n")+err[i];
 
-      MessageBox(0, msg.c_str(), L"Varning/Fel", MB_OK);
+      std::cerr << narrow(msg) << '\n';
     }
 #endif
   }
@@ -4649,7 +4650,7 @@ void oEvent::reCalculateLeaderTimes(int classId)
 #ifdef _DEBUG
   wchar_t bf[128];
   swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Calculate leader times %d\n", classId);
-  OutputDebugString(bf);
+  std::cerr << bf;
 #endif
   for (oClassList::iterator it=Classes.begin(); it != Classes.end(); ++it) {
     if (!it->isRemoved() && (classId==it->getId() || classId==0))

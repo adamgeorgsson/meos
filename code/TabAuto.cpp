@@ -421,9 +421,12 @@ int TabAuto::processButton(gdioutput& gdi, const ButtonInfo& bu)
     loadPage(gdi, false);
   }
   else if (bu.id == "Stop") {
-    if (bu.getExtraInt())
-      stopMachine(getMachine(bu.getExtraInt()));
-
+    if (bu.getExtraInt()) {
+      AutoMachine *am = getMachine(bu.getExtraInt());
+      if (auto *mr = dynamic_cast<MySQLReconnect *>(am))
+        mr->confirmStop = [&gdi]() { return gdi.ask(L"If this service is stopped, MeOS will not reconnect to the network. Continue?"); };
+      stopMachine(am);
+    }
     updateSyncInfo();
     loadPage(gdi, false);
   }

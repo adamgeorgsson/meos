@@ -44,8 +44,10 @@ bool MySQLReconnect::stop() {
   if (interval==0)
     return true;
 
-  return MessageBox(0, L"If this service is stopped, MeOS will not reconnect to the network. Continue?",
-    L"Warning", MB_YESNO|MB_ICONWARNING)==IDYES;
+  if (confirmStop)
+    return confirmStop();
+
+  return true; // No UI callback registered: allow stop
 }
 
 static CRITICAL_SECTION CS_MySQL;

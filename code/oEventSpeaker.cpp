@@ -36,6 +36,7 @@
 #include "gdifonts.h"
 #include "meosexception.h"
 #include <cstdint>
+#include <iostream>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -967,7 +968,7 @@ void oEvent::speakerList(gdioutput& gdi,
                          bool compactView,
                          int classLimit) {
 #ifdef _DEBUG
-  OutputDebugString(L"SpeakerListUpdate\n");
+  std::cerr << "SpeakerListUpdate" << '\n';
 #endif
 
   DWORD clsIds = 0, cLegs = 0, cTotal = 0, cShort = 0, cCompact = 0, cClassLimit;
@@ -1110,7 +1111,7 @@ void oEvent::speakerList(gdioutput& gdi,
     }
     vector<oSpeakerObject*> sortSelection;
     for (int ix = 0; ix <= controlId.size(); ix++) {
-      OutputDebugString((L"\n**** Sorting: " + itow(ix - 1) + L"\n").c_str());
+      std::cerr << narrow((L"\n**** Sorting: " + itow(ix - 1) + L"\n"));
       sortSelection.clear();
       for (auto& so : speakerList) {
         if (so.compareResultIndex == ix - 1)
@@ -1124,10 +1125,10 @@ void oEvent::speakerList(gdioutput& gdi,
       });
 
       for (auto& ss : sortSelection) {
-        OutputDebugString((ss->names[0] + L"\n").c_str());
+        std::cerr << narrow((ss->names[0] + L"\n"));
       }
 
-      OutputDebugString((L"\n**** Merging: " + itow(ix - 1) + L"\n").c_str());
+      std::cerr << narrow((L"\n**** Merging: " + itow(ix - 1) + L"\n"));
 
       // Merge with sorted list
       auto sit = sortedList.begin();
@@ -1145,7 +1146,7 @@ void oEvent::speakerList(gdioutput& gdi,
           sit = sortedList.end();
         }
         else {
-          OutputDebugString((ss->names[0] + L" < " + (*sit)->names[0] + L"\n").c_str());
+          std::cerr << narrow((ss->names[0] + L" < " + (*sit)->names[0] + L"\n"));
           sortedList.insert(sit, ss);
         }
       }   
