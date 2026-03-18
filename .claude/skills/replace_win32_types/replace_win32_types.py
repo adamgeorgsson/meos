@@ -39,6 +39,9 @@ EXCLUDE_PATTERNS = [
     re.compile(r'^gdistructures\.h$'),
     re.compile(r'^gdiimpl\.h$'),
     re.compile(r'^meos\.cpp$'),
+    # testmeos.cpp forward-declares functions from meos.cpp — replacing DWORD
+    # in the declaration but not the definition causes LNK2001 on MSVC.
+    re.compile(r'^testmeos\.cpp$'),
     re.compile(r'^Table\.(cpp|h)$'),
     re.compile(r'^progress\.cpp$'),
     re.compile(r'^printer\.cpp$'),

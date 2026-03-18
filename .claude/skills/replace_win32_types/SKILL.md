@@ -19,7 +19,7 @@ Replace Win32-specific type aliases with standard C++ types in domain code (US-P
 - `MeosSQL.cpp/h`, `restserver.cpp`, `xmlparser.cpp`, etc.
 
 **Out of scope:**
-- `Tab*.cpp/h`, `gdioutput.*`, `meos.cpp`, `Table.*`, `progress.cpp`, `printer.cpp`
+- `Tab*.cpp/h`, `gdioutput.*`, `meos.cpp`, `testmeos.cpp`, `Table.*`, `progress.cpp`, `printer.cpp`
 - Third-party: `mysql/`, `restbed/`, `png/`, `libharu/`, `minizip/`
 
 ## Procedure
