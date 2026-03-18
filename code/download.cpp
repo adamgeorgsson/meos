@@ -35,6 +35,8 @@
 #include <fcntl.h>
 
 #include <process.h>
+#include <chrono>
+#include <thread>
 
 #pragma comment(lib, "IPHLPAPI.lib")
 #define INET_ADDRSTRLEN 16
@@ -93,8 +95,8 @@ void Download::shutDown()
 
     int m=0;
     while(m<100 && hThread) {
-      Sleep(0);
-      Sleep(10);
+      std::this_thread::sleep_for(std::chrono::milliseconds(0));
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
       m++;
     }
     //If unsuccessful ending thread, do it violently
