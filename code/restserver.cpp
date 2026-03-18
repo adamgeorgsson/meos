@@ -218,7 +218,7 @@ void RestServer::compute(oEvent &ref) {
   waitForCompletion.notify_all();
 }
 
-extern wchar_t programPath[MAX_PATH];
+extern wchar_t programPath[260];
 
 void RestServer::computeInternal(oEvent &ref, shared_ptr<RestServer::EventRequest> &rq) {
   if (rq->parameters.empty()) {

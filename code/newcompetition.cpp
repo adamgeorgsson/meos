@@ -427,7 +427,7 @@ void TabCompetition::entryChoice(gdioutput &gdi) {
 }
 
 wstring getHiredCardDefault() {
-  wchar_t path[_MAX_PATH];
+  wchar_t path[260];
   getUserFile(path, L"hired_card_default.csv");
   return path;
 }

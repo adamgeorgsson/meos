@@ -27,6 +27,7 @@
 #include <cwchar>
 #include <chrono>
 #include <ctime>
+#include <filesystem>
 
 /// Returns monotonic milliseconds (replaces GetTickCount64)
 inline uint64_t meos_steady_clock_ms() {
@@ -74,6 +75,34 @@ inline time_t meos_timegm(std::tm* t) {
 
 /// Portable replacement for _wtoi: convert wide C-string to int.
 inline int wtoi(const wchar_t* s) { return static_cast<int>(std::wcstol(s, nullptr, 10)); }
+
+/// Convert std::filesystem::file_time_type to time_t (C++17 portable workaround).
+inline time_t meos_file_time_to_time_t(std::filesystem::file_time_type ftime) {
+  auto delta = ftime - std::filesystem::file_time_type::clock::now();
+  auto sctp = std::chrono::system_clock::now() +
+    std::chrono::duration_cast<std::chrono::system_clock::duration>(delta);
+  return std::chrono::system_clock::to_time_t(sctp);
+}
+
+/// Simple wildcard matching supporting '*' (any sequence) and '?' (any single char).
+inline bool glob_match(const std::wstring& pattern, const std::wstring& name) {
+  size_t pi = 0, ni = 0, star_pi = std::wstring::npos, star_ni = 0;
+  while (ni < name.size()) {
+    if (pi < pattern.size() && (pattern[pi] == L'?' || towlower(pattern[pi]) == towlower(name[ni]))) {
+      ++pi; ++ni;
+    } else if (pi < pattern.size() && pattern[pi] == L'*') {
+      star_pi = pi++;
+      star_ni = ni;
+    } else if (star_pi != std::wstring::npos) {
+      pi = star_pi + 1;
+      ni = ++star_ni;
+    } else {
+      return false;
+    }
+  }
+  while (pi < pattern.size() && pattern[pi] == L'*') ++pi;
+  return pi == pattern.size();
+}
 
 class StringCache {
 private:

@@ -14,6 +14,7 @@ Ported to C++ and modified to suite MeOS.
 #include <errno.h>
 #include <fcntl.h>
 #include <vector>
+#include <filesystem>
 
 #include <direct.h>
 #include <io.h>
@@ -239,10 +240,14 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
     target = base + L"zip" + itow(id) + L"/";
     id++;
   }
-  while ( _waccess( target.c_str(), 0 ) == 0 );
+  while (std::filesystem::exists(target));
 
-  if (CreateDirectory(target.c_str(), NULL) == 0)
-    throw std::exception("Failed to create temporary folder");
+  {
+    std::error_code ec;
+    std::filesystem::create_directories(target, ec);
+    if (ec)
+      throw std::exception("Failed to create temporary folder");
+  }
 
   registerTempFile(target);
   do_extract(uf, target.c_str(), password, extractedFiles);
@@ -254,20 +259,20 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
 
 uLong filetime(const wchar_t *f, uLong *dt) {
 #ifdef _WIN32
-  int ret = 0;
-  FILETIME ftLocal;
-  HANDLE hFind;
-  WIN32_FIND_DATA ff32;
-
-  hFind = FindFirstFile(f,&ff32);
-  if (hFind != INVALID_HANDLE_VALUE)
-  {
-    FileTimeToLocalFileTime(&(ff32.ftLastWriteTime),&ftLocal);
-    FileTimeToDosDateTime(&ftLocal,((LPWORD)dt)+1,((LPWORD)dt)+0);
-    FindClose(hFind);
-    ret = 1;
-  }
-  return ret;
+  std::error_code ec;
+  auto ftime = std::filesystem::last_write_time(f, ec);
+  if (ec)
+    return 0;
+  // On MSVC, file_time_type epoch is 1601-01-01 (same as FILETIME), 100ns ticks
+  auto ticks = std::chrono::duration_cast<
+    std::chrono::duration<ULONGLONG, std::ratio<1, 10000000>>>(
+      ftime.time_since_epoch()).count();
+  FILETIME ft, ftLocal;
+  ft.dwLowDateTime  = (DWORD)(ticks & 0xFFFFFFFFULL);
+  ft.dwHighDateTime = (DWORD)(ticks >> 32);
+  FileTimeToLocalFileTime(&ft, &ftLocal);
+  FileTimeToDosDateTime(&ftLocal, ((LPWORD)dt)+1, ((LPWORD)dt)+0);
+  return 1;
 #else
   (void)f; (void)dt;
   return 0;

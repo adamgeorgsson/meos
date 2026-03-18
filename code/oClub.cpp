@@ -61,10 +61,10 @@ oClub::~oClub() = default;
 
 map<wstring, wstring> oClub::manualCompactNameMap;
 
-extern wchar_t exePath[MAX_PATH];
+extern wchar_t exePath[260];
 
 void oClub::loadNameMap() {
-  wchar_t ccpath[MAX_PATH];
+  wchar_t ccpath[260];
   // To run in debugger, copy this file (from the installation) to MeOS data directory or to the folder of the exe file
   getUserFile(ccpath, L"clubnamemap.csv");  
   wstring path = ccpath;
