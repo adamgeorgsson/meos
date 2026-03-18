@@ -253,6 +253,7 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
 
 
 uLong filetime(const wchar_t *f, uLong *dt) {
+#ifdef _WIN32
   int ret = 0;
   FILETIME ftLocal;
   HANDLE hFind;
@@ -267,6 +268,10 @@ uLong filetime(const wchar_t *f, uLong *dt) {
     ret = 1;
   }
   return ret;
+#else
+  (void)f; (void)dt;
+  return 0;
+#endif
 }
 
 int check_exist_file(const wchar_t* filename)
