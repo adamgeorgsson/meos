@@ -311,7 +311,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - Preserve `/GL` + `/LTCG` and `/MP` for Release
 
 **Known Pitfalls:**
-- `find_package(OpenSSL)` may need `OPENSSL_ROOT_DIR` set to the Chocolatey install path on CI
+- Do NOT add `find_package(OpenSSL)` or link `OpenSSL::SSL`/`OpenSSL::Crypto` — MeOS does not use OpenSSL directly. It is a transitive dependency of RestBed and is handled by that library's linkage.
 - `WIN32` flag in `add_executable(MeOS WIN32 ...)` needed for GUI app (no console window)
 - Library search order matters: `code/lib64/` must be found before system-installed versions
 
