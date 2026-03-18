@@ -24,6 +24,10 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <cwchar>
+
+/// Portable replacement for _wtoi: convert wide C-string to int.
+inline int wtoi(const wchar_t* s) { return static_cast<int>(std::wcstol(s, nullptr, 10)); }
 
 class StringCache {
 private:

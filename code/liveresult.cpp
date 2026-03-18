@@ -48,7 +48,7 @@ wstring LiveResult::getFont(const gdioutput &gdi, double relScale) const {
 
   double size = relScale * fact;
   wchar_t ss[32];
-  swprintf_s(ss, L"%f", size);
+  swprintf(ss, sizeof(ss)/sizeof(wchar_t), L"%f", size);
   wstring font = baseFont + L";" + ss;
   return font;
 }

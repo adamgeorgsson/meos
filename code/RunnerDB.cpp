@@ -770,11 +770,11 @@ string RunnerDB::getDataDate() const
 {
   char bf[128];
   if (dataTime<=0 && dataDate>0)
-    sprintf_s(bf, "%04d-%02d-%02d", dataDate/10000,
+    snprintf(bf, sizeof(bf), "%04d-%02d-%02d", dataDate/10000,
                                     (dataDate/100)%100,
                                     dataDate%100);
   else if (dataDate>0)
-    sprintf_s(bf, "%04d-%02d-%02d %02d:%02d:%02d", dataDate/10000,
+    snprintf(bf, sizeof(bf), "%04d-%02d-%02d %02d:%02d:%02d", dataDate/10000,
                                                  (dataDate/100)%100,
                                                  dataDate%100,
                                                  (dataTime/3600)%24,
@@ -1498,7 +1498,7 @@ pair<int, bool>  oDBRunnerEntry::inputData(int id, const wstring &input,
       break;
     case TID_CARD:
       db->rhash.remove(rd.cardNo);
-      rd.cardNo = _wtoi(input.c_str());
+      rd.cardNo = wtoi(input.c_str());
       db->rhash.insert(rd.cardNo, index);
       if (rd.cardNo)
         output = itow(rd.cardNo);
@@ -1948,7 +1948,7 @@ const wstring& RunnerDBEntry::getBirthDate() const {
     int day = getBirthDay();
     if (day > 0 && day <= 31) {
       wchar_t bf[16];
-      swprintf_s(bf, L"%d-%02d-%02d", year, month, day);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d", year, month, day);
       wstring& res = StringCache::getInstance().wget();
       res = bf;
       return res;
@@ -1965,7 +1965,7 @@ void RunnerDBEntry::setBirthDate(const wstring& in) {
     setBirthDay(st.wDay);
   }
   else {
-    int year = _wtoi(in.c_str());
+    int year = wtoi(in.c_str());
     if (year > 1900 && year < 9999) 
       setBirthYear(year);
     else

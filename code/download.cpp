@@ -181,25 +181,25 @@ void Download::downloadFile(const wstring &url, const wstring &file, const vecto
       char bf[256];
       switch (dwStatus) {
         case HTTP_STATUS_BAD_REQUEST:
-          sprintf_s(bf, "HTTP Error 400: The request could not be processed by the server due to invalid syntax.");
+          snprintf(bf, sizeof(bf), "HTTP Error 400: The request could not be processed by the server due to invalid syntax.");
           break;
         case HTTP_STATUS_DENIED:
-          sprintf_s(bf, "HTTP Error 401: The requested resource requires user authentication.");
+          snprintf(bf, sizeof(bf), "HTTP Error 401: The requested resource requires user authentication.");
           break;
         case HTTP_STATUS_FORBIDDEN:
-          sprintf_s(bf, "HTTP Error 403: Åtkomst nekad (access is denied).");
+          snprintf(bf, sizeof(bf), "HTTP Error 403: Åtkomst nekad (access is denied).");
           break;
         case HTTP_STATUS_NOT_FOUND:
-          sprintf_s(bf, "HTTP Error 404: Resursen kunde ej hittas (not found).");
+          snprintf(bf, sizeof(bf), "HTTP Error 404: Resursen kunde ej hittas (not found).");
           break;
         case HTTP_STATUS_NOT_SUPPORTED:
-          sprintf_s(bf, "HTTP Error 501: Förfrågan stöds ej (not supported).");
+          snprintf(bf, sizeof(bf), "HTTP Error 501: Förfrågan stöds ej (not supported).");
           break;
         case HTTP_STATUS_SERVER_ERROR:
-          sprintf_s(bf, "HTTP Error 500: Internt serverfel (server error).");
+          snprintf(bf, sizeof(bf), "HTTP Error 500: Internt serverfel (server error).");
           break;
         default:
-          sprintf_s(bf, "HTTP Status Error %d", dwStatus);
+          snprintf(bf, sizeof(bf), "HTTP Status Error %d", dwStatus);
       }
       throw dwException(bf, dwStatus);
     }
@@ -211,7 +211,7 @@ void Download::downloadFile(const wstring &url, const wstring &file, const vecto
     fileno = 0;
     endDownload();
     wchar_t bf[256];
-    swprintf_s(bf, L"Error opening '%s' for writing", file.c_str());
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Error opening '%s' for writing", file.c_str());
     throw meosException(bf);
   }
 
@@ -439,25 +439,25 @@ bool Download::httpSendReqEx(HINTERNET hConnect, bool https, const wstring &dest
       char bf[256];
       switch (dwStatus) {
         case HTTP_STATUS_BAD_REQUEST:
-          sprintf_s(bf, "HTTP Error 400: The request could not be processed by the server due to invalid syntax.");
+          snprintf(bf, sizeof(bf), "HTTP Error 400: The request could not be processed by the server due to invalid syntax.");
           break;
         case HTTP_STATUS_DENIED:
-          sprintf_s(bf, "HTTP Error 401: The requested resource requires user authentication.");
+          snprintf(bf, sizeof(bf), "HTTP Error 401: The requested resource requires user authentication.");
           break;
         case HTTP_STATUS_FORBIDDEN:
-          sprintf_s(bf, "HTTP Error 403: Åtkomst nekad (access is denied).");
+          snprintf(bf, sizeof(bf), "HTTP Error 403: Åtkomst nekad (access is denied).");
           break;
         case HTTP_STATUS_NOT_FOUND:
-          sprintf_s(bf, "HTTP Error 404: Resursen kunde ej hittas (not found).");
+          snprintf(bf, sizeof(bf), "HTTP Error 404: Resursen kunde ej hittas (not found).");
           break;
         case HTTP_STATUS_NOT_SUPPORTED:
-          sprintf_s(bf, "HTTP Error 501: Förfrågan stöds ej (not supported).");
+          snprintf(bf, sizeof(bf), "HTTP Error 501: Förfrågan stöds ej (not supported).");
           break;
         case HTTP_STATUS_SERVER_ERROR:
-          sprintf_s(bf, "HTTP Error 500: Internt serverfel (server error).");
+          snprintf(bf, sizeof(bf), "HTTP Error 500: Internt serverfel (server error).");
           break;
         default:
-          sprintf_s(bf, "HTTP Status Error %d", dwStatus);
+          snprintf(bf, sizeof(bf), "HTTP Status Error %d", dwStatus);
       }
       throw dwException(bf, dwStatus);
     }
@@ -557,7 +557,7 @@ void ListIpAddresses(vector<string>& ipAddrs)
         auto &id = ipv4->sin_addr.S_un.S_un_b;
         if (id.s_b1 == 169 && id.s_b2 == 254)
           continue; // Not usable
-        sprintf_s(str_buffer, "%u.%u.%u.%u", id.s_b1, id.s_b2, id.s_b3, id.s_b4);
+        snprintf(str_buffer, sizeof(str_buffer), "%u.%u.%u.%u", id.s_b1, id.s_b2, id.s_b3, id.s_b4);
         ipAddrs.emplace_back(str_buffer);
       }
       else if (AF_INET6 == family)

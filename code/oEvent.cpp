@@ -107,7 +107,7 @@ oEvent::oEvent(gdioutput &gdi) : oBase(nullptr), gdibase(gdi) {
   GetLocalTime(&st);
 
   wchar_t bf[64];
-  swprintf_s(bf, 64, L"%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
+  swprintf(bf, 64, L"%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
 
   Date=bf;
   ZeroTime=st.wHour*timeConstHour;
@@ -735,7 +735,7 @@ void oEvent::duplicate(const wstring &annotationIn, bool keepTags) {
   SYSTEMTIME st;
   GetLocalTime(&st);
 
-  swprintf_s(filename, 64, L"meos_%d%02d%02d_%02d%02d%02d_%X.meos",
+  swprintf(filename, 64, L"meos_%d%02d%02d_%02d%02d%02d_%X.meos",
     st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 
   getUserFile(file, filename);
@@ -760,7 +760,7 @@ void oEvent::duplicate(const wstring &annotationIn, bool keepTags) {
   if (!keepTags)
     currentNameId = nameid;
 
-  swprintf_s(filename, L"%d/%d %d:%02d",
+  swprintf(filename, sizeof(filename)/sizeof(wchar_t), L"%d/%d %d:%02d",
                       st.wDay, st.wMonth, st.wHour, st.wMinute);
 
   if (annotationIn.empty()) {
@@ -822,7 +822,7 @@ bool oEvent::save()
     int toDelete = maxBackup;
 
     for(int k = 0; k <= maxBackup; k++) {
-      swprintf_s(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, k);
+      swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), MAX_PATH, L"%s.bu%d", CurrentFile, k);
       struct _stat st;
       int ret = _wstat(fn1, &st);
       if (ret==0) {
@@ -847,12 +847,12 @@ bool oEvent::save()
       }
     }
 
-    swprintf_s(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, toDelete);
+    swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), MAX_PATH, L"%s.bu%d", CurrentFile, toDelete);
     ::_wremove(fn1);
 
     for(int k=toDelete;k>0;k--) {
-      swprintf_s(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, k-1);
-      swprintf_s(fn2, MAX_PATH, L"%s.bu%d", CurrentFile, k);
+      swprintf(fn1, sizeof(fn1)/sizeof(wchar_t), MAX_PATH, L"%s.bu%d", CurrentFile, k-1);
+      swprintf(fn2, sizeof(fn2)/sizeof(wchar_t), MAX_PATH, L"%s.bu%d", CurrentFile, k);
       _wrename(fn1, fn2);
     }
 
@@ -1130,7 +1130,7 @@ namespace {
 
     wchar_t file[260];
     wchar_t filename[64];
-    swprintf_s(filename, 64, L"meos_%d%02d%02d_%02d%02d%02d_%X.meos",
+    swprintf(filename, 64, L"meos_%d%02d%02d_%02d%02d%02d_%X.meos",
                st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 
     //strcpy_s(CurrentNameId, filename);
@@ -1896,7 +1896,7 @@ pRunner oEvent::addRunner(const wstring &name, int clubId, int classId,
 {
   int birthYear = 0;
   if (!birthDate.empty()) {
-    int numY = _wtoi(birthDate.c_str());
+    int numY = wtoi(birthDate.c_str());
     if (numY > 0 || (numY==0 && birthDate[0]=='0'))
       birthYear = extendYear(numY);
   }
@@ -2074,7 +2074,7 @@ int oEvent::getFreeControlId()
 wstring oEvent::getAutoCourseName() const
 {
   wchar_t bf[32];
-  swprintf_s(bf, lang.tl("Bana %d").c_str(), Courses.size()+1);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl("Bana %d").c_str(), Courses.size()+1);
   return bf;
 }
 
@@ -2119,21 +2119,21 @@ int oEvent::getFreePunchId()
 wstring oEvent::getAutoClassName() const
 {
   wchar_t bf[32];
-  swprintf_s(bf, 32, lang.tl(L"Klass %d").c_str(), Classes.size()+1);
+  swprintf(bf, 32, lang.tl(L"Klass %d").c_str(), Classes.size()+1);
   return bf;
 }
 
 wstring oEvent::getAutoTeamName() const
 {
   wchar_t bf[32];
-  swprintf_s(bf, 32, lang.tl("Lag %d").c_str(), Teams.size()+1);
+  swprintf(bf, 32, lang.tl("Lag %d").c_str(), Teams.size()+1);
   return bf;
 }
 
 wstring oEvent::getAutoRunnerName() const
 {
   wchar_t bf[32];
-  swprintf_s(bf, 32, lang.tl(L"Deltagare %d").c_str(), Runners.size()+1);
+  swprintf(bf, 32, lang.tl(L"Deltagare %d").c_str(), Runners.size()+1);
   return bf;
 }
 
@@ -2475,19 +2475,19 @@ wstring oEvent::getAbsDateTimeISO(uint32_t time, bool includeDate, bool useGMT) 
         extraDay = t / (timeConstHour*24);
       }
       wchar_t bf[64];
-      swprintf_s(bf, L"%02d:%02d:%02d", (t/timeConstHour)%24, (t/timeConstMinute)%60, (t/timeConstSecond)%60);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%02d:%02d:%02d", (t/timeConstHour)%24, (t/timeConstMinute)%60, (t/timeConstSecond)%60);
       timeS = bf;
     }
     else {
       wchar_t bf[64];
       extraDay = t / (timeConstHour*24);
-      swprintf_s(bf, L"%02d:%02d:%02d", (t/timeConstHour)%24, (t/timeConstMinute)%60, (t/timeConstSecond)%60);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%02d:%02d:%02d", (t/timeConstHour)%24, (t/timeConstMinute)%60, (t/timeConstSecond)%60);
       timeS = bf;
     }
 
     if (timeConstSecond > 1 && useSubSecond()) {
       wchar_t bf[64];
-      swprintf_s(bf, L".%03d", (t%10) * (1000/timeConstSecond));
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L".%03d", (t%10) * (1000/timeConstSecond));
       timeS += bf;
     }
 
@@ -2562,7 +2562,7 @@ int oEvent::convertScore(const wstring &score) const {
   int nDeci = scoreFactor.get();
   switch (scoreFactor.get()) {
   case 0:
-    return _wtoi(score.c_str());
+    return wtoi(score.c_str());
   case 1:
     factor = 10;
     break;
@@ -2573,7 +2573,7 @@ int oEvent::convertScore(const wstring &score) const {
     factor = 1000;
     break;
   default:
-    return _wtoi(score.c_str());
+    return wtoi(score.c_str());
   }
 
   int base = 0;
@@ -2632,7 +2632,7 @@ const wstring &oEvent::getAbsTimeHM(uint32_t time) const {
     return makeDash(L"-");
 
   wchar_t bf[32];
-  swprintf_s(bf, L"%02d:%02d", (t/timeConstHour)%24, (t/timeConstMinute)%60);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%02d:%02d", (t/timeConstHour)%24, (t/timeConstMinute)%60);
 
   wstring &res = StringCache::getInstance().wget();
   res = bf;
@@ -2723,7 +2723,7 @@ int oEvent::convertAbsoluteTime(const wstring &m)
     }
   }
 
-  int hour=_wtoi(m.c_str());
+  int hour=wtoi(m.c_str());
 
   if (!anyColon && hour>=0 && len>=5) {
     int second = hour % 100;
@@ -2746,7 +2746,7 @@ int oEvent::convertAbsoluteTime(const wstring &m)
   if (kp>0)
   {
     wstring mtext=m.substr(kp+1);
-    minute=_wtoi(mtext.c_str());
+    minute=wtoi(mtext.c_str());
 
     if (minute<0 || minute>60)
       minute=0;
@@ -2754,7 +2754,7 @@ int oEvent::convertAbsoluteTime(const wstring &m)
     kp=mtext.find_last_of(':');
 
     if (kp>0) {
-      second=_wtoi(mtext.substr(kp+1).c_str());
+      second=wtoi(mtext.substr(kp+1).c_str());
 
       if (second<0 || second>60)
         second=0;
@@ -2763,7 +2763,7 @@ int oEvent::convertAbsoluteTime(const wstring &m)
   int t = hour * timeConstHour + minute * timeConstMinute + second * timeConstSecond;
 
   if (timeConstSecond > 1 && firstComma > 0) {
-    int sub = std::abs(_wtoi(m.c_str() + firstComma + 1));
+    int sub = std::abs(wtoi(m.c_str() + firstComma + 1));
     while (sub >= timeConstSecond)
       sub /= timeConstSecond;
     t += sub;
@@ -2826,7 +2826,7 @@ int oEvent::getRelativeTime(const wstring &m) const {
     atime = convertAbsoluteTime(m);
   else {
     atime = convertAbsoluteTime(m.substr(dayIndex));
-    days = _wtoi(m.c_str());
+    days = wtoi(m.c_str());
   }
   if (atime>=0 && atime <= timeConstHour*24){
     int rtime = atime-ZeroTime;
@@ -3630,11 +3630,11 @@ void oEvent::generateMinuteStartlist(gdioutput &gdi) {
 
     gdi.addStringUT(boldLarge|Capitalize, lang.tl(L"Minutstartlista", true) +  makeDash(L" - ") + getName());
     if (!starts[k].empty()) {
-      swprintf_s(bf, lang.tl("%s, block: %d").c_str(), starts[k].c_str(), blocks[k]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl("%s, block: %d").c_str(), starts[k].c_str(), blocks[k]);
       gdi.addStringUT(fontMedium, bf);
     }
     else if (blocks[k]!=0) {
-      swprintf_s(bf, lang.tl("Startblock: %d").c_str(),  blocks[k]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl("Startblock: %d").c_str(),  blocks[k]);
       gdi.addStringUT(fontMedium, bf);
     }
 
@@ -4202,7 +4202,7 @@ void oEvent::checkDB()
 #ifdef _DEBUG
     if (k>0) {
       wchar_t bf[256];
-      swprintf_s(bf, L"Databasen innehåller %d osynkroniserade ändringar.", k);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Databasen innehåller %d osynkroniserade ändringar.", k);
       wstring msg(bf);
       for(int i=0;i < min<int>(err.size(), 10);i++)
         msg+=wstring(L"\n")+err[i];
@@ -4648,7 +4648,7 @@ void oEvent::reCalculateLeaderTimes(int classId)
   /*
 #ifdef _DEBUG
   wchar_t bf[128];
-  swprintf_s(bf, L"Calculate leader times %d\n", classId);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Calculate leader times %d\n", classId);
   OutputDebugString(bf);
 #endif
   for (oClassList::iterator it=Classes.begin(); it != Classes.end(); ++it) {
@@ -4678,7 +4678,7 @@ wstring oEvent::getCurrentTimeS() const
   GetLocalTime(&st);
 
   wchar_t bf[64];
-  swprintf_s(bf, 64, L"%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+  swprintf(bf, 64, L"%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
   return bf;
 }
 
@@ -4989,7 +4989,7 @@ void oEvent::addBib(int ClassId, int leg, const wstring& firstNumber, int limit,
         if ((ClassId == 0 || r.getClassId(true) == ClassId) && (r.legToRun() == leg || leg == -1)) {
           bool skip = !assignToVacant && r.isVacant();
           wchar_t bib[32];
-          swprintf_s(bib, pattern, num);
+          swprintf(bib, sizeof(bib)/sizeof(wchar_t), pattern, num);
 
           pClass pc = r.getClassRef(true);
           if ((limit == 0 || count < limit) && !skip) {
@@ -5061,7 +5061,7 @@ void oEvent::addBib(int ClassId, int leg, const wstring& firstNumber, int limit,
 
           count++;
           wchar_t bib[32];
-          swprintf_s(bib, pattern, num);
+          swprintf(bib, sizeof(bib)/sizeof(wchar_t), pattern, num);
           bool lockedStartNo = it->Class && it->Class->lockedForking();
           if (lockedStartNo) {
             it->setBib(bib, num, false);
@@ -5232,7 +5232,7 @@ void oEvent::addAutoBib() {
           }
           else {
             wchar_t buff[32];
-            swprintf_s(buff, pattern, number);
+            swprintf(buff, sizeof(buff)/sizeof(wchar_t), pattern, number);
 
             if (lockedForking) {
               tl[k]->setBib(buff, number, false);
@@ -5265,7 +5265,7 @@ void oEvent::addAutoBib() {
       for (size_t k = 0; k < rl.size(); k++) {
         if (pattern[0] && (!noBibToVacant || !rl[k]->isVacant()) && k < numBibPerClass) {
           wchar_t buff[32];
-          swprintf_s(buff, pattern, number);
+          swprintf(buff, sizeof(buff)/sizeof(wchar_t), pattern, number);
           rl[k]->setBib(buff, number, !locked);
           number += interval;
         }
@@ -5343,7 +5343,7 @@ const vector< pair<wstring, size_t> > &oEvent::fillStatus(vector< pair<wstring, 
 int oEvent::getPropertyInt(const char *name, int def)
 {
   if (eventProperties.count(name)==1)
-    return _wtoi(eventProperties[name].c_str());
+    return wtoi(eventProperties[name].c_str());
   else {
     setProperty(name, def);
     return def;
@@ -5592,7 +5592,7 @@ void oEvent::assignCardInteractive(gdioutput& gdi, GUICALLBACK cb, SortOrder& or
     gdi.pushX();
     gdi.addStringUT(0, r);
     char id[24];
-    sprintf_s(id, "*%d", k++);
+    snprintf(id, sizeof(id), "*%d", k++);
 
     gdi.addInput(max(gdi.getCX(), px450), gdi.getCY() - px4,
       id, L"", 10, cb).setExtra(it->getId());
@@ -5878,7 +5878,7 @@ pCourse oEvent::generateTestCourse(int nCtrl)
 {
   wchar_t bf[64];
   static int sk=0;
-  swprintf_s(bf, lang.tl("Bana %d").c_str(), ++sk);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl("Bana %d").c_str(), ++sk);
   pCourse pc=addCourse(bf, 4000+(rand()%1000)*10);
 
   int i=0;
@@ -5988,7 +5988,7 @@ void oEvent::generateTestCompetition(int nClasses, int nRunners,
   const vector<oDBClubEntry> &oc = runnerDB->getClubDB(false);
   for(int k=0;k<nClubs;k++) {
     if (oc.empty()) {
-      swprintf_s(bfw, L"Klubb %d", k);
+      swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"Klubb %d", k);
       addClub(bfw, k+1);
     }
     else {
@@ -6015,11 +6015,11 @@ void oEvent::generateTestCompetition(int nClasses, int nRunners,
       else
         age=30+(k-9)*5;
 
-      swprintf_s(bfw, L"HD %d", age);
+      swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"HD %d", age);
       cls=generateTestClass(1,1, bfw, L"");
     }
     else {
-      swprintf_s(bfw, L"Klass %d", k);
+      swprintf(bfw, sizeof(bfw)/sizeof(wchar_t), L"Klass %d", k);
       int nleg=k%5+1;
       int nrunner=k%3+1;
       nrunner = nrunner == 3 ? nleg:nrunner;
@@ -6205,7 +6205,7 @@ void oEvent::fillLegNumbers(const set<int> &cls,
         int sub = it->second - 1000;
         char bf[64];
         char symb = 'a' + sub;
-        sprintf_s(bf, "Sträcka X#%d%c", leg+1, symb);
+        snprintf(bf, sizeof(bf), "Sträcka X#%d%c", leg+1, symb);
         out.push_back( make_pair(lang.tl(bf), (leg + 1) * 10000 + sub));
       }
     }
@@ -6423,7 +6423,7 @@ bool oEvent::checkCardUsed(gdioutput &gdi, oRunner &runnerToAssignCard, int card
   wchar_t bf[1024];
 
   if (pold) {
-    swprintf_s(bf, (L"#" + lang.tl("Bricka %d används redan av %s och kan inte tilldelas.")).c_str(),
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), (L"#" + lang.tl("Bricka %d används redan av %s och kan inte tilldelas.")).c_str(),
                   cardNo, pold->getCompleteIdentification(oRunner::IDType::OnlyThis).c_str());
     gdi.alert(bf);
     return true;
@@ -6611,7 +6611,7 @@ wstring oEvent::formatCurrency(int c, bool includeSymbol) const {
   else {
     wchar_t bf[32];
     if (includeSymbol) {
-      swprintf_s(bf, 32, L"%d%s%02d", c/tCurrencyFactor,
+      swprintf(bf, 32, L"%d%s%02d", c/tCurrencyFactor,
                  tCurrencySeparator.c_str(), c%tCurrencyFactor);
 
       if (tCurrencyPreSymbol)
@@ -6620,7 +6620,7 @@ wstring oEvent::formatCurrency(int c, bool includeSymbol) const {
         return bf + tCurrencySymbol;
     }
     else {
-      swprintf_s(bf, 32, L"%d.%02d", c/tCurrencyFactor, c%tCurrencyFactor);
+      swprintf(bf, 32, L"%d.%02d", c/tCurrencyFactor, c%tCurrencyFactor);
       return bf;
     }
   }
@@ -6628,7 +6628,7 @@ wstring oEvent::formatCurrency(int c, bool includeSymbol) const {
 
 int oEvent::interpretCurrency(const wstring &c) const {
   if (tCurrencyFactor == 1 && tCurrencyPreSymbol == false)
-    return _wtoi(c.c_str());
+    return wtoi(c.c_str());
 
   size_t s = 0;
   while (s < c.length() && (c[s]<'0' || c[s]>'9'))
@@ -6748,7 +6748,7 @@ void oEvent::getExtraLines(const char *attrib, vector< pair<wstring, int> > &lin
   lines.clear();
   lines.reserve(splt.size() / 2);
   for (size_t k = 0; k + 1 < splt.size(); k+=2) {
-    lines.push_back(make_pair(splt[k], _wtoi(splt[k+1].c_str())));
+    lines.push_back(make_pair(splt[k], wtoi(splt[k+1].c_str())));
   }
 
   while(!lines.empty()) {
@@ -7223,7 +7223,7 @@ map<oEvent::ExtraFields, wstring> oEvent::getExtraFields(oEvent::ExtraFieldConte
   split(ws, L"|", sp);
 
   for (const wstring& w : sp) {
-    int code = _wtoi(w.c_str());
+    int code = wtoi(w.c_str());
     auto cc = decodeExtra(code);
     if (cc.first != context)
       continue;
@@ -7243,7 +7243,7 @@ map<oEvent::ExtraFields, wstring> oEvent::getExtraFieldNames() const {
   split(ws, L"|", sp);
 
   for (const wstring& w : sp) {
-    int code = _wtoi(w.c_str());
+    int code = wtoi(w.c_str());
     auto cc = decodeExtra(code);
     if (cc.second != ExtraFields::DataA &&
       cc.second != ExtraFields::DataB &&
@@ -7303,7 +7303,7 @@ void oEvent::updateExtraFields(ExtraFieldContext context, const map<ExtraFields,
   vector<wstring> spOut;
   set<ExtraFields> used;
   for (const wstring& w : sp) {
-    int code = _wtoi(w.c_str());
+    int code = wtoi(w.c_str());
     auto cc = decodeExtra(code);
     if (cc.first == ExtraFieldContext::MaxContext)
       continue;
@@ -7363,12 +7363,12 @@ map<int, oPunch::SpecialPunch> oEvent::getPunchMapping() const {
   map<int, oPunch::SpecialPunch> res;
   size_t pos = 0;
   while (pos < cMap.size()) {
-    int code = _wtoi(cMap.data() + pos);
+    int code = wtoi(cMap.data() + pos);
     pos = cMap.find_first_of('-', pos);
     if (code <= 0 || pos == wstring::npos)
       break;
     pos++;
-    int value = _wtoi(cMap.data() + pos);
+    int value = wtoi(cMap.data() + pos);
     
     if (value == oPunch::PunchCheck || 
         value == oPunch::PunchStart || 

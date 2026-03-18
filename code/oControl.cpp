@@ -273,7 +273,7 @@ wstring oControl::codeNumbers(char sep) const
   wchar_t bf[16];
 
   for(int i=0;i<nNumbers;i++){
-    _itow_s(Numbers[i], bf, 16, 10);
+    swprintf(bf, 16, L"%d", Numbers[i]);
     n+=bf;
     if (i+1<nNumbers)
       n+=sep;
@@ -338,7 +338,7 @@ const wstring &oControl::getName() const {
 /// Get name or [id]
 const wstring &oControl::getDefaultName() const {
   wchar_t bf[16];
-  swprintf_s(bf, L"[%d]", Id);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"[%d]", Id);
   wstring &res = StringCache::getInstance().wget();
   res = bf;
   return res;
@@ -351,7 +351,7 @@ wstring oControl::getIdS() const
 		return Name;
 	else {
 		wchar_t bf[16];
-		swprintf_s(bf, L"%d", Id);
+		swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d", Id);
 		return bf;
 	}
 }
@@ -427,7 +427,7 @@ const vector<pair<wstring, size_t>>& oEvent::fillControls(vector< pair<wstring, 
         if (oControl::isSpecialControl(it->Status))
           continue;
 
-        swprintf_s(bf, lang.tl("Kontroll %s").c_str(), it->codeNumbers(' ').c_str());
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl("Kontroll %s").c_str(), it->codeNumbers(' ').c_str());
         b = bf;
 
         if (!it->Name.empty())
@@ -440,7 +440,7 @@ const vector<pair<wstring, size_t>>& oEvent::fillControls(vector< pair<wstring, 
           continue;
 
         for (int i = 0; i < it->getNumberDuplicates(); i++) {
-          swprintf_s(bf, lang.tl("Kontroll %s").c_str(), it->codeNumbers(' ').c_str());
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl("Kontroll %s").c_str(), it->codeNumbers(' ').c_str());
           b = bf;
 
           if (it->getNumberDuplicates() > 1)
@@ -505,7 +505,7 @@ const vector< pair<wstring, size_t> > &oEvent::fillControlTypes(vector< pair<wst
   out.push_back(make_pair(lang.tl("Mål"), oPunch::PunchFinish));
 
   for (sit = sicodes.begin(); sit!=sicodes.end(); ++sit) {
-    swprintf_s(bf, lang.tl("Kontroll %s").c_str(), itow(*sit).c_str());
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl("Kontroll %s").c_str(), itow(*sit).c_str());
     //gdi.addItem(name, bf, *sit);
     out.push_back(make_pair(bf, *sit));
   }

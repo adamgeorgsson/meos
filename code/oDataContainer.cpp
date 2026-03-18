@@ -439,7 +439,7 @@ bool oDataContainer::setDate(void *data, const char *Name, const wstring &V)
 
   int C = convertDateYMD(V, true);
   if (C <= 0) {
-    C = _wtoi(V.c_str());
+    C = wtoi(V.c_str());
     if (V.length() >= 2 && (C > 0 && C < 100) || (C == 0 && V[0] == '0' && V[1] == '0'))
       C = extendYear(C);
 
@@ -470,19 +470,19 @@ const wstring& oDataContainer::getDate(const void* data, const char* name) const
   wchar_t bf[24];
   if (odi->SubType == oISDateOrYear) {
     if (C > 9999 && C % 10000 != 0)
-      swprintf_s(bf, L"%04d-%02d-%02d", C / 10000, (C / 100) % 100, C % 100);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%04d-%02d-%02d", C / 10000, (C / 100) % 100, C % 100);
     else if (C > 9999)
-      swprintf_s(bf, L"%04d", C / 10000);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%04d", C / 10000);
     else if (C > 1900)
-      swprintf_s(bf, L"%04d", C );
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%04d", C );
     else
-      swprintf_s(bf, L"");
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"");
   }
   else {
     if (C % 10000 != 0 || C == 0)
-      swprintf_s(bf, L"%04d-%02d-%02d", C / 10000, (C / 100) % 100, C % 100);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%04d-%02d-%02d", C / 10000, (C / 100) % 100, C % 100);
     else
-      swprintf_s(bf, L"%04d", C / 10000);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%04d", C / 10000);
   }
   wstring& res = StringCache::getInstance().wget();
   res = bf;
@@ -536,7 +536,7 @@ bool oDataContainer::write(const oBase* ob, xmlparser& xml) const {
           xml.write(di.Name, nr);
         else {
           char date[20];
-          sprintf_s(date, "%d-%02d-%02d", nr / 10000, (nr / 100) % 100, nr % 100);
+          snprintf(date, sizeof(date), "%d-%02d-%02d", nr / 10000, (nr / 100) % 100, nr % 100);
           xml.write(di.Name, date);
         }
       }
@@ -918,7 +918,7 @@ string oDataContainer::C_STRING(const string &name, int len)
 {
   if (len>0) {
     char bf[16];
-    sprintf_s(bf, "%d", len);
+    snprintf(bf, sizeof(bf), "%d", len);
     return " `"+name+"` VARCHAR("+ bf +") NOT NULL DEFAULT '', ";
   }
   else {
@@ -1098,31 +1098,31 @@ string oDataContainer::generateSQLSet(const oBase *ob, bool forceSetAll) const {
     if (di.Type==oDTInt) {
       LPBYTE vd=LPBYTE(data)+di.Index;
       if (di.SubType == oIS8U) {
-        sprintf_s(bf, alloc, ", `%s`=%u", di.Name, (*((int *)vd))&0xFF);
+        snprintf(bf, alloc, ", `%s`=%u", di.Name, (*((int *)vd))&0xFF);
         sql+=bf;
       }
       else if (di.SubType == oIS16U) {
-        sprintf_s(bf, alloc, ", `%s`=%u", di.Name, (*((int *)vd))&0xFFFF);
+        snprintf(bf, alloc, ", `%s`=%u", di.Name, (*((int *)vd))&0xFFFF);
         sql+=bf;
       }
       else if (di.SubType == oIS8) {
         char r = (*((int *)vd))&0xFF;
-        sprintf_s(bf, alloc, ", `%s`=%d", di.Name, (int)r);
+        snprintf(bf, alloc, ", `%s`=%d", di.Name, (int)r);
         sql+=bf;
       }
       else if (di.SubType == oIS16) {
         short r = (*((int *)vd))&0xFFFF;
-        sprintf_s(bf, alloc, ", `%s`=%d", di.Name, (int)r);
+        snprintf(bf, alloc, ", `%s`=%d", di.Name, (int)r);
         sql+=bf;
       }
       else if (di.SubType != oIS64) {
-        sprintf_s(bf, alloc, ", `%s`=%d", di.Name, *((int *)vd));
+        snprintf(bf, alloc, ", `%s`=%d", di.Name, *((int *)vd));
         sql+=bf;
       }
       else {
         char tmp[32];
         _i64toa_s(*((__int64 *)vd), tmp, 32, 10);
-        sprintf_s(bf, alloc, ", `%s`=%s", di.Name, tmp);
+        snprintf(bf, alloc, ", `%s`=%s", di.Name, tmp);
         sql+=bf;
       }
     }
@@ -1130,24 +1130,24 @@ string oDataContainer::generateSQLSet(const oBase *ob, bool forceSetAll) const {
       LPBYTE vd = LPBYTE(data) + di.Index;
       char tmp[64];
       formatDouble(*(double*)vd, tmp, false);
-      sprintf_s(bf, alloc, ", `%s`=%s", di.Name, tmp);
+      snprintf(bf, alloc, ", `%s`=%s", di.Name, tmp);
       sql += bf;
     }
     else if (di.Type==oDTString) {
       LPBYTE vd=LPBYTE(data)+di.Index;
-      sprintf_s(bf, alloc, ", `%s`='%s'", di.Name, SQL_quote((wchar_t *)vd).c_str());
+      snprintf(bf, alloc, ", `%s`='%s'", di.Name, SQL_quote((wchar_t *)vd).c_str());
       sql+=bf;
     }
     else if (di.Type==oDTStringDynamic) {
       const wstring &str = (*strptr)[0][di.Index];
       bf = ensureCapacity(2 * str.length() + 30, bfData, alloc);
-      sprintf_s(bf, alloc, ", `%s`='%s'", di.Name, SQL_quote(str.c_str()).c_str());
+      snprintf(bf, alloc, ", `%s`='%s'", di.Name, SQL_quote(str.c_str()).c_str());
       sql+=bf;
     }
     else if (di.Type==oDTStringArray) {
       const wstring str = encodeArray((*strptr)[di.Index]);
       bf = ensureCapacity(2 * str.length() + 30, bfData, alloc);
-      sprintf_s(bf, alloc, ", `%s`='%s'", di.Name, SQL_quote(str.c_str()).c_str());
+      snprintf(bf, alloc, ", `%s`='%s'", di.Name, SQL_quote(str.c_str()).c_str());
       sql+=bf;
     }
   }
@@ -1469,9 +1469,9 @@ void eraseTrail(CH* bf, bool keepDecimalPoint, int last) {
 void oDataContainer::formatDouble(double nr, wchar_t bf[64], bool keepDecimalPoint) {
   int last;
   if (nr > 1e7 || nr < -1e7)
-    last = swprintf_s(bf, 64, L"%#.16e", nr);
+    last = swprintf(bf, 64, L"%#.16e", nr);
   else
-    last = swprintf_s(bf, 64, L"%#.16g", nr);
+    last = swprintf(bf, 64, L"%#.16g", nr);
   eraseTrail(bf, keepDecimalPoint, last);
   return;
 }
@@ -1479,9 +1479,9 @@ void oDataContainer::formatDouble(double nr, wchar_t bf[64], bool keepDecimalPoi
 void oDataContainer::formatDouble(double nr, char bf[64], bool keepDecimalPoint) {
   int last;
   if (nr > 1e7 || nr < -1e7)
-    last = sprintf_s(bf, 64, "%#.16e", nr);
+    last = snprintf(bf, 64, "%#.16e", nr);
   else
-    last = sprintf_s(bf, 64, "%#.16g", nr);
+    last = snprintf(bf, 64, "%#.16g", nr);
   eraseTrail(bf, keepDecimalPoint, last);
   return;
 }
@@ -1497,9 +1497,9 @@ bool oDataContainer::formatNumber(int nr, const oDataInfo &di, wchar_t bf[64]) c
     if (nr == 0)
       bf[0] = 0;
     else if ((nr < 99999999 && nr % 10000 != 0) || nr == 0)
-      swprintf_s(bf, 64, L"%d-%02d-%02d", nr / (100 * 100), (nr / 100) % 100, nr % 100);
+      swprintf(bf, 64, L"%d-%02d-%02d", nr / (100 * 100), (nr / 100) % 100, nr % 100);
     else if (nr > 0  && nr < 9999)
-      swprintf_s(bf, 64, L"%04d", nr / 10000);
+      swprintf(bf, 64, L"%04d", nr / 10000);
     else {
       bf[0] = '-';
       bf[1] = 0;
@@ -1510,11 +1510,11 @@ bool oDataContainer::formatNumber(int nr, const oDataInfo &di, wchar_t bf[64]) c
     if (nr == 0)
       bf[0] = 0;
     else if (nr > 9999 && nr % 10000 != 0)
-      swprintf_s(bf, 64, L"%04d-%02d-%02d", nr / 10000, (nr / 100) % 100, nr % 100);
+      swprintf(bf, 64, L"%04d-%02d-%02d", nr / 10000, (nr / 100) % 100, nr % 100);
     else if (nr > 9999)
-      swprintf_s(bf, 64, L"%04d", nr / 10000);
+      swprintf(bf, 64, L"%04d", nr / 10000);
     else if (nr > 1900)
-      swprintf_s(bf, 64, L"%04d", nr);
+      swprintf(bf, 64, L"%04d", nr);
     else {
       bf[0] = '-';
       bf[1] = 0;
@@ -1525,15 +1525,15 @@ bool oDataContainer::formatNumber(int nr, const oDataInfo &di, wchar_t bf[64]) c
     if (nr>0 && nr<(30*24*timeConstHour)) {
       int cnt = 0;
       if (nr < 24*timeConstHour)
-        cnt = swprintf_s(bf, 64, L"%02d:%02d:%02d", nr/timeConstHour, (nr/timeConstMinute)%60, (nr/timeConstSecond)%60);
+        cnt = swprintf(bf, 64, L"%02d:%02d:%02d", nr/timeConstHour, (nr/timeConstMinute)%60, (nr/timeConstSecond)%60);
       else {
         int days = nr / (24*timeConstHour);
         nr = nr % (24*timeConstHour);
-        cnt = swprintf_s(bf, 64, L"%d+%02d:%02d:%02d", days, nr/timeConstHour, (nr/timeConstSecond)%60, (nr/timeConstSecond)%60);
+        cnt = swprintf(bf, 64, L"%d+%02d:%02d:%02d", days, nr/timeConstHour, (nr/timeConstSecond)%60, (nr/timeConstSecond)%60);
       }
       if (timeConstSecond > 1) {
         if (nr % 10 != 0) {
-          swprintf_s(bf + cnt, 64-cnt, L".%01d", nr % 10);
+          swprintf(bf + cnt, 64-cnt, L".%01d", nr % 10);
         }
       }
     }
@@ -1553,15 +1553,15 @@ bool oDataContainer::formatNumber(int nr, const oDataInfo &di, wchar_t bf[64]) c
         nr = -nr;
       }
       if (nr < 24 * timeConstHour)
-        cnt += swprintf_s(bf + cnt, 64 - cnt, L"%02d:%02d:%02d", nr / timeConstHour, (nr / timeConstMinute) % 60, (nr / timeConstSecond) % 60);
+        cnt += swprintf(bf + cnt, 64 - cnt, L"%02d:%02d:%02d", nr / timeConstHour, (nr / timeConstMinute) % 60, (nr / timeConstSecond) % 60);
       else {
         int days = nr / (24 * timeConstHour);
         nr = nr % (24 * timeConstHour);
-        cnt += swprintf_s(bf + cnt, 64 - cnt, L"%d+%02d:%02d:%02d", days, nr / timeConstHour, (nr / timeConstSecond) % 60, (nr / timeConstSecond) % 60);
+        cnt += swprintf(bf + cnt, 64 - cnt, L"%d+%02d:%02d:%02d", days, nr / timeConstHour, (nr / timeConstSecond) % 60, (nr / timeConstSecond) % 60);
       }
       if (timeConstSecond > 1) {
         if (nr % 10 != 0) {
-          swprintf_s(bf + cnt, 64 - cnt, L".%01d", nr % 10);
+          swprintf(bf + cnt, 64 - cnt, L".%01d", nr % 10);
         }
       }
     }
@@ -1577,7 +1577,7 @@ bool oDataContainer::formatNumber(int nr, const oDataInfo &di, wchar_t bf[64]) c
       int part = nr - whole * di.decimalScale;
       wstring deci = L",";
       wstring ptrn = L"%d" + deci + L"%0" + itow(di.decimalSize) + L"d";
-      swprintf_s(bf, 64, ptrn.c_str(), whole, abs(part));
+      swprintf(bf, 64, ptrn.c_str(), whole, abs(part));
     }
     else
       bf[0] = 0;
@@ -1586,7 +1586,7 @@ bool oDataContainer::formatNumber(int nr, const oDataInfo &di, wchar_t bf[64]) c
   }
   else {
     if (nr)
-      swprintf_s(bf, 64, L"%d", nr);
+      swprintf(bf, 64, L"%d", nr);
     else
       bf[0] = 0;
     return true;
@@ -1701,7 +1701,7 @@ pair<int, bool>  oDataContainer::inputData(oBase *ob, int id,
         else if (di.SubType == oISDateOrYear) {
           no = convertDateYMD(input, true);
           if (no <= 0) {
-            no = _wtoi(input.c_str());
+            no = wtoi(input.c_str());
             if (input.length() >= 2 && (no > 0 && no < 100) || (no == 0 && input[0] == '0' && input[1] == '0'))
               no = extendYear(no);
 
@@ -1765,7 +1765,7 @@ pair<int, bool>  oDataContainer::inputData(oBase *ob, int id,
           return make_pair(0, false);
         }
         else
-          no = _wtoi(input.c_str());
+          no = wtoi(input.c_str());
 
         int k;
         memcpy(&k, vd, sizeof(int));

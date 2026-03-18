@@ -267,7 +267,7 @@ void QualificationFinal::init(const wstring &def) {
   for (size_t k = 0; k < races.size(); k++) {
     if (races[k].size() > 0 && races[k][0] == '@') {
       // Explicit level, since 4.0
-      classDefinition[k].level = _wtoi(races[k].c_str() + 1);
+      classDefinition[k].level = wtoi(races[k].c_str() + 1);
       int mx = 1;
       while (mx < races[k].size() && races[k][mx] != '@')
         mx++;
@@ -294,7 +294,7 @@ void QualificationFinal::init(const wstring &def) {
       classDefinition[k].extraQualification = QFClass::deserialType(races[k][0]);
       if (classDefinition[k].extraQualification == QFClass::ExtraQualType::NBest ||
         classDefinition[k].extraQualification == QFClass::ExtraQualType::TimeLimit) {
-        classDefinition[k].extraQualData = _wtoi(races[k].c_str() + 1);
+        classDefinition[k].extraQualData = wtoi(races[k].c_str() + 1);
       }
       int end = 1;
       while (end < races[k].size() && races[k][end-1] != ';')
@@ -319,13 +319,13 @@ void QualificationFinal::init(const wstring &def) {
       continue;
 
     for (size_t j = 0; j < rdef.size(); j+=2) {
-      int src = _wtoi(rdef[j].c_str());
+      int src = wtoi(rdef[j].c_str());
       if (src > k || src <= 0) {
         thisValid = false;
         break;
       }
       const wstring &rd = rdef[j + 1];
-      int d1 = _wtoi(rd.c_str());
+      int d1 = wtoi(rd.c_str());
       if (d1 < 1 || d1>1000) {
         thisValid = false;
         break;
@@ -333,7 +333,7 @@ void QualificationFinal::init(const wstring &def) {
       int d2 = d1;
       size_t range = rd.find_first_of('-', 0);
       if (range < rd.size())
-        d2 = _wtoi(rd.c_str()+range+1);
+        d2 = wtoi(rd.c_str()+range+1);
 
       if (d1 > d2) {
         thisValid = false;
@@ -350,7 +350,7 @@ void QualificationFinal::init(const wstring &def) {
       classDefinition[k].qualificationMap.clear();
 
     if (rtdef.size() > 1) {
-      int numTime = _wtoi(rtdef[1].c_str());
+      int numTime = wtoi(rtdef[1].c_str());
       classDefinition[k].numTimeQualifications = numTime;
     }
   }

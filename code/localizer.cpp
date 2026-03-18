@@ -257,7 +257,7 @@ const wstring &LocalizerImpl::translate(const wstring &str, bool &found) {
     return value[i];
   }
 #ifdef _DEBUG
-  if (key.length() > 1 && _wtoi(key.c_str()) == 0)
+  if (key.length() > 1 && wtoi(key.c_str()) == 0)
     addUnknown(key);
 #endif
 
@@ -330,7 +330,7 @@ void Localizer::LocalizerInternal::loadLangResource(const wstring &name) {
 
   wstring &res = it->second;
 
-  int i = _wtoi(res.c_str());
+  int i = wtoi(res.c_str());
   if (i > 0)
     impl->loadTable(i, name);
   else
@@ -341,7 +341,7 @@ void Localizer::LocalizerInternal::addLangResource(const wstring &name, const ws
   langResource[name] = resource;
   if (implBase == 0) {
     implBase = new LocalizerImpl();
-    implBase->loadTable(_wtoi(resource.c_str()), name);
+    implBase->loadTable(wtoi(resource.c_str()), name);
   }
 }
 
