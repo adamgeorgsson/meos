@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include "mysql/mysql.h"
 #include "mysqlwrapper.h"

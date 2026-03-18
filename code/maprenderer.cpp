@@ -21,7 +21,7 @@
 ************************************************************************/
 #define _USE_MATH_DEFINES
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <algorithm>
 #include <string>

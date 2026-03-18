@@ -24,7 +24,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "oPunch.h"
 #include "oEvent.h"
 #include "meos_util.h"

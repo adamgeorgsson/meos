@@ -20,12 +20,12 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "oEvent.h"
 #include "gdioutput.h"
 #include "meos_util.h"
 #include <cassert>
-#include "Localizer.h"
+#include "localizer.h"
 #include <algorithm>
 #include "gdifonts.h"
 #include "meosexception.h"

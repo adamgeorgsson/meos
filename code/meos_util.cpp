@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include <vector>
 #include "meos_util.h"
 #include "localizer.h"

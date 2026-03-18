@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "meos_util.h"
 #include <vector>
 #include <cassert>

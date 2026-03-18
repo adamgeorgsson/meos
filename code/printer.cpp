@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <commdlg.h>
 #include "gdioutput.h"

@@ -23,7 +23,7 @@
 // meos.cpp : Defines the entry point for the application.
 //
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "resource.h"
 #include <shlobj.h>
 

@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <cassert>
 
@@ -29,7 +29,7 @@
 #include "gdioutput.h"
 #include "csvparser.h"
 #include "gdifonts.h"
-#include "IOF30Interface.h"
+#include "iof30interface.h"
 #include "meosexception.h"
 #include "MeOSFeatures.h"
 #include "oEventDraw.h"

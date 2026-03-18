@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <vector>
 #include <set>
@@ -31,7 +31,7 @@
 #include "oEvent.h"
 #include "oDataContainer.h"
 
-#include "meosException.h"
+#include "meosexception.h"
 #include "TabBase.h"
 #include "meos.h"
 #include "meos_util.h"

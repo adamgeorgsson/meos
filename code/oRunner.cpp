@@ -24,20 +24,20 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "oRunner.h"
 
 #include "oEvent.h"
 #include "gdioutput.h"
 #include "gdifonts.h"
-#include "table.h"
+#include "Table.h"
 #include "meos_util.h"
 #include <cassert>
 #include "localizer.h"
 #include "SportIdent.h"
 #include <cmath>
 #include "intkeymapimpl.hpp"
-#include "runnerdb.h"
+#include "RunnerDB.h"
 #include "meosexception.h"
 #include <algorithm>
 #include "socket.h"

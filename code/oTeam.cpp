@@ -20,13 +20,13 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "meos_util.h"
 #include "oEvent.h"
 #include <algorithm>
 #include "Table.h"
 #include "localizer.h"
-#include "meosException.h"
+#include "meosexception.h"
 #include "gdioutput.h"
 #include "xmlparser.h"
 

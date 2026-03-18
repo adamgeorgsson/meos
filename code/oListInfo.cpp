@@ -20,14 +20,14 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "oListInfo.h"
 #include "oEvent.h"
 #include "gdioutput.h"
 #include "meos_util.h"
 #include <cassert>
 #include <cmath>
-#include "Localizer.h"
+#include "localizer.h"
 #include "metalist.h"
 #include <algorithm>
 #include "gdifonts.h"

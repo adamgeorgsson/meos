@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <vector>
 #include <set>
@@ -32,12 +32,12 @@
 #include "gdioutput.h"
 #include "gdifonts.h"
 #include "oDataContainer.h"
-#include "MetaList.h"
+#include "metalist.h"
 #include "cardsystem.h"
 
 #include "SportIdent.h"
 
-#include "meosException.h"
+#include "meosexception.h"
 #include "oFreeImport.h"
 #include "TabBase.h"
 #include "meos_util.h"

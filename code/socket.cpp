@@ -21,7 +21,7 @@
 ************************************************************************/
 
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include <fstream>
 #include <process.h>
 #include "socket.h"
