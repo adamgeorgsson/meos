@@ -25,7 +25,6 @@
 #include "machinecontainer.h"
 #include "meos_util.h"
 #include "xmlparser.h"
-#include "gdioutput.h"
 #include "TabAuto.h"
 
 
@@ -137,7 +136,7 @@ void MachineContainer::AbstractMachine::load(const string &data) {
   vector<string> parts;
   split(data, "|", parts);
   for (int j = 0; j < parts.size(); j+=2) {
-    const wstring &w = gdioutput::fromUTF8(decode(parts[j + 1]));
+    const wstring &w = fromUTF8(decode(parts[j + 1]));
     props[parts[j]] = w;
   }
 }
@@ -149,7 +148,7 @@ string  MachineContainer::AbstractMachine::save() const {
       out += "|";
     out.append(p.first);
     out += "|";
-    out.append(encode(gdioutput::toUTF8(p.second)));
+    out.append(encode(toUTF8(p.second)));
   }
   return out;
 }
@@ -186,7 +185,7 @@ void MachineContainer::load(const xmlobject &data) {
 
 void MachineContainer::save(xmlparser &data) {
   for (auto &m : machines) {
-    vector<wstring> p({ wstring(L"type"), gdioutput::widen(m.first.first), 
+    vector<wstring> p({ wstring(L"type"), widen(m.first.first), 
                         wstring(L"name"), m.first.second });
     data.startTag("Machine", p);
     m.second.save(data);
@@ -210,7 +209,7 @@ void MachineContainer::load(const string &data) {
     if (AutoMachine::getType(type) == Machines::Unknown)
       continue;
 
-    wstring tag = gdioutput::fromUTF8(decode(parts[j + 1]));
+    wstring tag = fromUTF8(decode(parts[j + 1]));
     auto res = machines.emplace(make_pair(type, tag), MachineContainer::AbstractMachine());
     if (res.second)
       res.first->second.load(parts[j+2]);
@@ -224,7 +223,7 @@ string MachineContainer::save() {
   for (auto &m : machines) {
     ml.push_back(m.first.first);
     tSize += ml.back().length() + 2;
-    ml.push_back(encode(gdioutput::toUTF8(m.first.second)));
+    ml.push_back(encode(toUTF8(m.first.second)));
     tSize += ml.back().length() + 2;
     ml.push_back(m.second.save());
     tSize += ml.back().length() + 2;

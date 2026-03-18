@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include "subcommand.h"
+#include "meos_util.h"
 
 class Toolbar;
 class MapDataRenderer;
@@ -355,11 +356,10 @@ public:
   static const wstring& recodeToWide(const string& input);
   static const string& recodeToNarrow(const wstring& input);
 
-  static const wstring& widen(const string& input);
-  static const string& narrow(const wstring& input);
-
-  static const string& toUTF8(const wstring& input);
-  static const wstring& fromUTF8(const string& input);
+  static const wstring& widen(const string& input) { return ::widen(input); }
+  static const string& narrow(const wstring& input) { return ::narrow(input); }
+  static const string& toUTF8(const wstring& input) { return ::toUTF8(input); }
+  static const wstring& fromUTF8(const string& input) { return ::fromUTF8(input); }
 
   
   void updateTabFont();
