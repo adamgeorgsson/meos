@@ -462,10 +462,10 @@ string TestMeOS::getTestFile(const char *relPath) const {
   string tp = oe_main->getPropertyString("TestPath", "");
   if (tp.length() == 0)
     return relPath;
-  else if (*tp.rbegin() == '\\')
+  else if (*tp.rbegin() == '\\' || *tp.rbegin() == '/')
     return tp + relPath;
   else
-    return tp + "\\" + relPath;
+    return tp + "/" + relPath;
 }
 
 wstring TestMeOS::getTempFile() const {

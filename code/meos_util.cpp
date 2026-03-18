@@ -1906,8 +1906,8 @@ bool expandDirectory(const wchar_t *file, const wchar_t *filetype, vector<wstrin
   else
     wcscpy_s(dir, MAX_PATH, file);
 
-  if (dir[wcslen(dir)-1]!='\\')
-    wcscat_s(dir, MAX_PATH, L"\\");
+  if (dir[wcslen(dir)-1]!='\\' && dir[wcslen(dir)-1]!='/')
+    wcscat_s(dir, MAX_PATH, L"/");
 
   wcscpy_s(fullPath, MAX_PATH, dir);
   wcscat_s(dir, MAX_PATH, filetype);
