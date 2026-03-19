@@ -1068,6 +1068,67 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
       tabList->emplace_back(gdi_main->getTabs().get(TSITab), L"SportIdent", 9);
 
+      // --- Register Tab-decoupling callbacks on gEvent ---
+      {
+        TabAuto *ta = dynamic_cast<TabAuto*>(gdi_main->getTabs().get(TAutoTab));
+        TabSI *tsi = dynamic_cast<TabSI*>(gdi_main->getTabs().get(TSITab));
+        TabList *tl = dynamic_cast<TabList*>(gdi_main->getTabs().get(TListTab));
+
+        gEvent->cbBaseButtons = [](gdioutput &gdi, int extra, bool ownWin) {
+          return TabList::baseButtons(gdi, extra, ownWin);
+        };
+
+        gEvent->cbKillMachines = []() {
+          TabAuto::tabAutoKillMachines();
+        };
+
+        if (tsi) {
+          gEvent->cbSetSubSecondMode = [](bool use) {
+            TabSI::getSI(*gdi_main).setSubSecondMode(use);
+          };
+          gEvent->cbAddCard = [](const SICard &sic) {
+            TabSI::getSI(*gdi_main).addCard(sic);
+          };
+          gEvent->cbCheckPrintQueue = [tsi](gdioutput &gdi) -> bool {
+            return tsi->checkpPrintQueue(gdi);
+          };
+        }
+
+        if (ta) {
+          gEvent->cbTimerCallback = [ta](gdioutput &gdi) {
+            ta->timerCallback(gdi);
+          };
+          gEvent->cbSyncCallback = [ta](gdioutput &gdi) {
+            ta->syncCallback(gdi);
+          };
+          gEvent->cbGetSynchronize = [ta]() -> bool {
+            return ta->synchronize;
+          };
+          gEvent->cbGetSynchronizePunches = [ta]() -> bool {
+            return ta->synchronizePunches;
+          };
+          gEvent->cbRemovedList = [ta](int typeCode) {
+            ta->removedList(EStdListType(typeCode));
+          };
+        }
+
+        gEvent->cbHasReconnectionMachine = []() -> bool {
+          return TabAuto::hasActiveReconnectionMachine();
+        };
+
+        gEvent->cbStartReconnectMachine = [](const wstring &error, int interval) {
+          MySQLReconnect msqlr(error);
+          msqlr.interval = interval;
+          TabAuto::tabAutoAddMachinge(msqlr);
+        };
+
+        if (tl) {
+          gEvent->cbGetListEditor = [tl]() -> ListEditor* {
+            return tl->getListEditorPtr();
+          };
+        }
+      }
+
       INITCOMMONCONTROLSEX ic;
 
       ic.dwSize=sizeof(ic);
