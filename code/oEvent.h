@@ -47,6 +47,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <cstdint>
+#include <functional>
 
 #define cVacantId 888888888
 #define cNoClubId 999999999
@@ -57,6 +58,7 @@ constexpr int MaxRankingConstant = numeric_limits<int>::max();
 class MeOSFileLock;
 class RunnerDB;
 class gdioutput;
+class ListEditor;
 class oDataContainer;
 class oListInfo;
 struct oListParam;
@@ -1593,6 +1595,47 @@ public:
 
   void hasWarnedModifiedId(bool hasWarned) { hasWarnedModifiedExtId = hasWarned; }
   bool hasWarnedModifiedId() const { return hasWarnedModifiedExtId; }
+
+  // --- Tab-decoupling callbacks (registered by UI layer in meos.cpp) ---
+
+  // TabList::baseButtons(gdi, extraButtons, ownWindow)
+  std::function<int(gdioutput&, int, bool)> cbBaseButtons;
+
+  // TabAuto::tabAutoKillMachines()
+  std::function<void()> cbKillMachines;
+
+  // TabSI::getSI(gdi).setSubSecondMode(use)
+  std::function<void(bool)> cbSetSubSecondMode;
+
+  // tabAuto->timerCallback(gdi)
+  std::function<void(gdioutput&)> cbTimerCallback;
+
+  // tabSI->checkpPrintQueue(gdi) — returns true if more items in queue
+  std::function<bool(gdioutput&)> cbCheckPrintQueue;
+
+  // tabAuto->syncCallback(gdi)
+  std::function<void(gdioutput&)> cbSyncCallback;
+
+  // tabAuto->synchronize
+  std::function<bool()> cbGetSynchronize;
+
+  // tabAuto->synchronizePunches
+  std::function<bool()> cbGetSynchronizePunches;
+
+  // TabAuto::hasActiveReconnectionMachine()
+  std::function<bool()> cbHasReconnectionMachine;
+
+  // Abstracts: MySQLReconnect msqlr(error); msqlr.interval=interval; TabAuto::tabAutoAddMachinge(msqlr);
+  std::function<void(const wstring&, int)> cbStartReconnectMachine;
+
+  // dynamic_cast<TabList&>(...).getListEditorPtr()
+  std::function<ListEditor*()> cbGetListEditor;
+
+  // tabAuto->removedList(typeCode)  — typeCode is int cast of EStdListType
+  std::function<void(int)> cbRemovedList;
+
+  // TabSI::getSI(gdi).addCard(sic)
+  std::function<void(const SICard&)> cbAddCard;
 
   friend class oAbstractRunner;
   friend class oCourse;
