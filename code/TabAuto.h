@@ -251,7 +251,6 @@ protected:
   wstring error;
   wstring timeError;
   wstring timeReconnect;
-  HANDLE hThread;
   bool toRemove = false;
 
 public:
