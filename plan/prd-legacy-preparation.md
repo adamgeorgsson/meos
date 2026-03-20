@@ -152,6 +152,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - `newcompetition.cpp` implements `TabCompetition::` methods — it IS UI code, not domain code. Do not try to remove its TabCompetition.h include
 - `machinecontainer.cpp`, `mysqldaemon.cpp`, `onlineinput.h` need `AutoMachine` from `TabAuto.h` — extracting `AutoMachine` to own header is a separate follow-up
 - Lambdas in meos.cpp capture raw Tab pointers — safe because Tab objects live for entire application lifetime
+- **US-P0f8 requires making `TabAuto` members public:** The callback lambdas access `timerCallback`, `syncCallback`, `synchronize`, and `synchronizePunches` which are private. These must be moved to `public:` in `TabAuto.h` before registering callbacks, or MSVC will error with `C2248`
 
 ### US-P0g: Split Large Files
 

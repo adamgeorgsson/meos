@@ -331,15 +331,19 @@ private:
   int currentMachineEditId = -1;
   bool wasCreated = false;
   bool wasSaved = false;
-  bool synchronize = false;
-  bool synchronizePunches = false;
+
   void updateSyncInfo();
 
   list<shared_ptr<AutoMachine>> machines;
   void setTimer(AutoMachine *am);
 
+public:
+  bool synchronize = false;
+  bool synchronizePunches = false;
   void timerCallback(gdioutput &gdi);
   void syncCallback(gdioutput &gdi);
+
+private:
 
   void settings(gdioutput &gdi, AutoMachine *sm, AutoMachine::State state, Machines type);
 
