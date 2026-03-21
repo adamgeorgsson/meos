@@ -229,6 +229,13 @@ if (cbStartReconnectMachine)
 
 **Also:** `oEvent.h` has `friend class MySQLReconnect` (line 1609). Keep this — `MySQLReconnect` is still defined in `TabAuto.h` and implemented in `mysqldaemon.cpp`.
 
+**Missing includes after removing TabAuto.h:** Add these to `oEventSQL.cpp` after the other includes:
+```cpp
+#include "localizer.h"    // for lang (was transitive via TabAuto.h → TabBase.h)
+
+bool isThreadReconnecting();  // forward-declare; defined in mysqldaemon.cpp, declared in TabAuto.h
+```
+
 ---
 
 ### US-P0f5: Decouple oEventResult.cpp
@@ -399,3 +406,4 @@ Recommended: do US-P0f1 + US-P0f8 together, then one domain file at a time, veri
 - **Thread safety:** These callbacks are called from the main UI thread only, same as the original Tab calls. No synchronization needed.
 - **`newcompetition.cpp`:** This file implements `TabCompetition::` methods. It is UI code, not domain code. Do NOT try to remove its `TabCompetition.h` include.
 - **Nested structs accessing callbacks:** When replacing Tab calls inside nested structs/classes (e.g., `RefreshFilter` in `oEvent.cpp`), the callback member is not directly accessible — qualify with the `oEvent` reference (e.g., `oe.cbBaseButtons` instead of bare `cbBaseButtons`).
+- **Transitive includes lost when removing TabAuto.h (oEventSQL.cpp):** `TabAuto.h` transitively provided `lang` (via `TabBase.h` → `localizer.h`) and declared `isThreadReconnecting()`. After removing `TabAuto.h`, add `#include "localizer.h"` and a forward declaration `bool isThreadReconnecting();` — the function is defined in `mysqldaemon.cpp` and does not need `TabAuto.h` at runtime.

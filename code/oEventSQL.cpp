@@ -39,8 +39,10 @@
 #include "maprenderer.h"
 #include <cassert>
 #include <cstdint>
+#include "localizer.h"
 
 extern Image image;
+bool isThreadReconnecting();
 
 bool oEvent::connectToServer()
 {
