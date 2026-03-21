@@ -415,6 +415,9 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - Must remove minizip `.c` compilation units from CMakeLists.txt when switching to vcpkg library
 - The vcpkg port name is `"minizip"` (not `"unofficial-minizip"`). The cmake package/find_package name is `unofficial-minizip` and the target is `unofficial::minizip::minizip` — these are correct in CMakeLists.txt. Only vcpkg.json uses the port name `"minizip"`.
 
+**Learnings from Previous Runs:**
+- `fopen64` in vcpkg minizip takes `const char*` (narrow), but `code/zip.cpp` passes `const wchar_t*` paths and wide mode literals (`L"rb"`, `L"wb"`). Fix: replace `fopen64(widePtr, L"mode")` with `_wfopen(widePtr, L"mode")` at those call sites. `_wfopen` is MSVC-provided and already appropriate since `zip.cpp` is Windows-only code (`<direct.h>`, `<io.h>`). Narrow-string `fopen64` calls (e.g. `fopen64(filenameinzip, "rb")`) do not need changing.
+
 ### US-P0m6: Migrate restbed to vcpkg
 
 **Description:** Replace vendored restbed headers (`code/restbed/`) and pre-built `RestBed.lib` (20–48 MB) with vcpkg.

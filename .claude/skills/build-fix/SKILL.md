@@ -34,9 +34,9 @@ For each root cause:
 
 ## Step 4: Trace back to the originating skill or PRD
 
-The error is typically introduced in the most recent commit. For each fix, determine **what generated the broken code**:
+For each fix, determine **what generated the broken code**:
 
-1. **Check the latest commit** — `git log -1` and `git diff HEAD~1` to see what changed. Most errors come from here.
+1. **Check git blame** on the broken line — find the commit that introduced it.
 2. **Match commit message to skill/PRD** — commit messages reference user story IDs (e.g., `US-014`, `US-P0f2`) and skill names.
 3. **Search skills** — grep `.claude/skills/*/SKILL.md` for mentions of the affected file, function, or pattern.
 4. **Search PRDs** — grep `plan/prd-*.md` for the user story ID from the commit message.

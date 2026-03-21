@@ -148,7 +148,7 @@ wstring do_extract_currentfile(unzFile uf, const wstring &baseDir, const char* p
     if (err!=UNZ_OK)
       throw std::exception(zipError);
 
-    fout = fopen64(write_filename.c_str(),L"wb");
+    fout = _wfopen(write_filename.c_str(),L"wb");
 
     // some zipfile doesn't contain directory alone before file
     if ((fout==NULL) && createSubdir &&
@@ -157,7 +157,7 @@ wstring do_extract_currentfile(unzFile uf, const wstring &baseDir, const char* p
       *(filename_withoutpath-1)='\0';
       makedir(write_filename.c_str());
       *(filename_withoutpath-1)=c;
-      fout=fopen64(write_filename.c_str(),L"wb");
+      fout=_wfopen(write_filename.c_str(),L"wb");
     }
 
     if (fout==NULL) {
@@ -283,7 +283,7 @@ int check_exist_file(const wchar_t* filename)
 {
   FILE* ftestexist;
   int ret = 1;
-  ftestexist = fopen64(filename,L"rb");
+  ftestexist = _wfopen(filename,L"rb");
   if (ftestexist==NULL)
       ret = 0;
   else
@@ -334,7 +334,7 @@ int isLargeFile(const wchar_t* filename)
 {
   int largeFile = 0;
   ZPOS64_T pos = 0;
-  FILE* pFile = fopen64(filename, L"rb");
+  FILE* pFile = _wfopen(filename, L"rb");
 
   if (pFile != NULL) {
     fseeko64(pFile, 0, SEEK_END);
@@ -433,7 +433,7 @@ int zip(const wchar_t *zipfilename, const char *password, const vector<wstring> 
       throw meosException(eb);
     }
     else {
-      fin = fopen64(wfn.c_str(),L"rb");
+      fin = _wfopen(wfn.c_str(),L"rb");
       if (fin==NULL)  {
         swprintf(eb, sizeof(eb)/sizeof(wchar_t), L"Error opening %s for reading",filenameinzip);
         throw meosException(eb);
