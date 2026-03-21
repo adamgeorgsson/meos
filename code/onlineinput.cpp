@@ -37,7 +37,6 @@
 #include "machinecontainer.h"
 
 #include "SportIdent.h"
-#include "TabSI.h"
 #include "xmlparser.h"
 #include <ctime>
 
@@ -692,7 +691,8 @@ void OnlineInput::processCards(gdioutput &gdi, oEvent &oe, const xmlList &cards)
       sic.Punch[j].Time = transformTime(punches[j].getObjectInt("time"));
     }
     sic.nPunch = punches.size();
-    TabSI::getSI(gdi).addCard(sic);
+    if (oe.cbAddCard)
+      oe.cbAddCard(sic);
   }
 }
 
