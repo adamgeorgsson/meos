@@ -18,6 +18,7 @@ trap 'echo ""; echo "Ralph interrupted. No partial data written."; exit 130' INT
 # Parse arguments
 TOOL="claude"
 MAX_ITERATIONS=10
+MODEL="claude-sonnet-4.6"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -27,6 +28,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --tool=*)
       TOOL="${1#*=}"
+      shift
+      ;;
+    --model)
+      MODEL="$2"
+      shift 2
+      ;;
+    --model=*)
+      MODEL="${1#*=}"
       shift
       ;;
     *)
@@ -61,7 +70,7 @@ if [ ! -f "$METRICS_FILE" ]; then
   echo "task_id,tool,start_time,duration_seconds,status,tokens_pct" > "$METRICS_FILE"
 fi
 
-echo "Starting Ralph - Tool: $TOOL - Max iterations: $MAX_ITERATIONS"
+echo "Starting Ralph - Tool: $TOOL - Model: $MODEL - Max iterations: $MAX_ITERATIONS"
 
 for i in $(seq 1 $MAX_ITERATIONS); do
   echo ""
@@ -79,9 +88,10 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # --kill-after=10: send SIGKILL 10s after SIGTERM if process won't die
   TIMEOUT=3600
   if [[ "$TOOL" == "claude" ]]; then
-    OUTPUT=$(timeout --kill-after=10 $TIMEOUT claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/prompt.md" 2>&1 | tee /dev/stderr) || true
+    CLAUDE_MODEL="${MODEL//./-}"
+    OUTPUT=$(timeout --kill-after=10 $TIMEOUT claude --dangerously-skip-permissions --print --model "$CLAUDE_MODEL" < "$SCRIPT_DIR/prompt.md" 2>&1 | tee /dev/stderr) || true
   elif [[ "$TOOL" == "copilot" ]]; then
-    OUTPUT=$(timeout --kill-after=10 $TIMEOUT copilot -p "$(cat "$SCRIPT_DIR/prompt.md")" --allow-all 2>&1 | tee /dev/stderr) || true
+    OUTPUT=$(timeout --kill-after=10 $TIMEOUT copilot -p "$(cat "$SCRIPT_DIR/prompt.md")" --allow-all --model "$MODEL" 2>&1 | tee /dev/stderr) || true
   fi
 
   STEP_END=$(date +%s)

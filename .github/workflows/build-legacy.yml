@@ -45,8 +45,10 @@ jobs:
           Copy-Item code/dll64/libmysql.dll $outDir
 
           # Copy OpenSSL DLLs from vcpkg installed directory (OpenSSL 3.x: libssl-3-x64.dll / libcrypto-3-x64.dll)
-          foreach ($pattern in @('libssl*.dll', 'libcrypto*.dll')) {
-            Get-ChildItem -Path $vcpkgBin -Filter $pattern | ForEach-Object { Copy-Item $_.FullName $outDir }
+          if (Test-Path $vcpkgBin) {
+            foreach ($pattern in @('libssl*.dll', 'libcrypto*.dll')) {
+              Get-ChildItem -Path $vcpkgBin -Filter $pattern | ForEach-Object { Copy-Item $_.FullName $outDir }
+            }
           }
 
           $vcToolsDir = (& vswhere -latest -find "VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT") | Select-Object -Last 1

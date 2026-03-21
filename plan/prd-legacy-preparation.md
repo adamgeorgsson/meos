@@ -460,6 +460,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 
 **Learnings from Previous Runs:**
 - When copying OpenSSL DLLs in CI "Package release", use `$env:GITHUB_WORKSPACE\vcpkg_installed\x64-windows\bin` as the source path. Manifest mode installs there, not under `$env:VCPKG_INSTALLATION_ROOT\installed\`. Using the wrong path causes `Get-ChildItem` to throw a hard error (unlike `Test-Path` which silently returns false).
+- `Get-ChildItem -Path $vcpkgBin -Filter $pattern` throws a hard error if `$vcpkgBin` does not exist (e.g., bin/ absent when OpenSSL not yet installed). Wrap with `if (Test-Path $vcpkgBin)` before calling `Get-ChildItem` with wildcard filters — consistent with how the libharu individual-file copies are guarded.
 
 ## Dependency Order
 
