@@ -339,6 +339,10 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 
 **Known Pitfalls:**
 - Vendored version may differ from vcpkg port — check for API changes
+- **Wrong cmake target name**: vcpkg's libharu port exports `unofficial::libharu::hpdf` (not `unofficial::libharu::libharu`). The cmake target is named after the internal cmake target `hpdf`, not the library name. Use `find_package(unofficial-libharu CONFIG REQUIRED)` and link with `unofficial::libharu::hpdf`.
+
+**Learnings from Previous Runs:**
+- The cmake target for vcpkg libharu is `unofficial::libharu::hpdf`, not `unofficial::libharu::libharu`. Confirmed by the port's `export-targets.patch` (namespace `unofficial::libharu::` applied to target `hpdf`) and the port's `usage` file.
 
 ### US-P0m2: Migrate MySQL Connector/C to vcpkg
 

@@ -173,7 +173,7 @@ target_link_libraries(MeOS PRIVATE
     ZLIB::ZLIB
     unofficial::minizip::minizip
     PNG::PNG
-    unofficial::libharu::libharu
+    unofficial::libharu::hpdf
     # Vendored external libraries — Debug
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/RestBed.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libmysql.lib>
