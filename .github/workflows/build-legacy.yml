@@ -21,8 +21,16 @@ jobs:
       - name: Install OpenSSL 1.1
         run: choco install openssl --version=1.1.1.2100 -y --no-progress
 
+      - name: Update vcpkg
+        shell: pwsh
+        run: git -C "$env:VCPKG_INSTALLATION_ROOT" pull
+
       - name: Configure
-        run: cmake -S code -B code/build -A x64
+        shell: pwsh
+        run: >
+          cmake -S code -B code/build -A x64
+          "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          "-DVCPKG_MANIFEST_DIR=${{ github.workspace }}"
 
       - name: Build
         run: cmake --build code/build --config ${{ matrix.configuration }}

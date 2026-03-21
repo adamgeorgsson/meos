@@ -156,20 +156,27 @@ if(MSVC)
 endif()
 
 # ---------------------------------------------------------------------------
+# vcpkg-managed libraries
+# ---------------------------------------------------------------------------
+find_package(ZLIB REQUIRED)
+find_package(unofficial-minizip CONFIG REQUIRED)
+
+# ---------------------------------------------------------------------------
 # Library directories and external libraries (x64 layout)
 # ---------------------------------------------------------------------------
 set(LIB_DIR_DEBUG   ${CMAKE_CURRENT_SOURCE_DIR}/lib64_db)
 set(LIB_DIR_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/lib64)
 
 target_link_libraries(MeOS PRIVATE
+    # vcpkg-managed libraries
+    ZLIB::ZLIB
+    unofficial::minizip::minizip
     # Vendored external libraries — Debug
-    $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/zlibstat.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libharu.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/RestBed.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libpng.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libmysql.lib>
     # Vendored external libraries — Release
-    $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/zlibstat.lib>
     $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/libharu.lib>
     $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/RestBed.lib>
     $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/libpng.lib>
