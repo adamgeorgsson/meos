@@ -36,7 +36,8 @@ jobs:
           $outDir = $exe.DirectoryName
 
           # Copy libharu DLL from vcpkg installed directory (may be libharu.dll or libhpdf.dll)
-          $vcpkgBin = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin"
+          # In manifest mode vcpkg installs next to vcpkg.json, not in the global VCPKG_INSTALLATION_ROOT
+          $vcpkgBin = "$env:GITHUB_WORKSPACE\vcpkg_installed\x64-windows\bin"
           foreach ($pattern in @('libharu.dll', 'libhpdf.dll')) {
             $dll = Join-Path $vcpkgBin $pattern
             if (Test-Path $dll) { Copy-Item $dll $outDir }

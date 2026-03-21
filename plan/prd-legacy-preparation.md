@@ -343,6 +343,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 
 **Learnings from Previous Runs:**
 - The cmake target for vcpkg libharu is `unofficial::libharu::hpdf`, not `unofficial::libharu::libharu`. Confirmed by the port's `export-targets.patch` (namespace `unofficial::libharu::` applied to target `hpdf`) and the port's `usage` file.
+- In CI "Package release" steps, use `$env:GITHUB_WORKSPACE\vcpkg_installed\x64-windows\bin` (not `$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin`) to locate vcpkg DLLs. Manifest mode (`-DVCPKG_MANIFEST_DIR` passed to CMake) installs packages next to `vcpkg.json` in `vcpkg_installed\`, not in the global vcpkg install root.
 
 ### US-P0m2: Migrate MySQL Connector/C to vcpkg
 
@@ -456,6 +457,9 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 
 **Known Pitfalls:**
 - OpenSSL 1.1 vs 3.x API differences — verify restbed compatibility with vcpkg version
+
+**Learnings from Previous Runs:**
+- When copying OpenSSL DLLs in CI "Package release", use `$env:GITHUB_WORKSPACE\vcpkg_installed\x64-windows\bin` as the source path. Manifest mode installs there, not under `$env:VCPKG_INSTALLATION_ROOT\installed\`. Using the wrong path causes `Get-ChildItem` to throw a hard error (unlike `Test-Path` which silently returns false).
 
 ## Dependency Order
 
