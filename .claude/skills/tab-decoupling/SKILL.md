@@ -398,3 +398,4 @@ Recommended: do US-P0f1 + US-P0f8 together, then one domain file at a time, veri
 - **`EStdListType` cast:** The `cbRemovedList` callback uses `int` to avoid including `oListInfo.h` in oEvent.h. Cast back to `EStdListType` at registration.
 - **Thread safety:** These callbacks are called from the main UI thread only, same as the original Tab calls. No synchronization needed.
 - **`newcompetition.cpp`:** This file implements `TabCompetition::` methods. It is UI code, not domain code. Do NOT try to remove its `TabCompetition.h` include.
+- **Nested structs accessing callbacks:** When replacing Tab calls inside nested structs/classes (e.g., `RefreshFilter` in `oEvent.cpp`), the callback member is not directly accessible — qualify with the `oEvent` reference (e.g., `oe.cbBaseButtons` instead of bare `cbBaseButtons`).

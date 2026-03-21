@@ -3260,7 +3260,7 @@ void oEvent::generateInForestList(gdioutput& gdi, GUICALLBACK cb, GUICALLBACK cb
           gdi.setData("FilterSetting", lbi.data);
           lastFilter = DWORD(lbi.data);
           oe.generateInForestList(gdi, cb, nullptr);
-          if (cbBaseButtons) cbBaseButtons(gdi, 1, false);
+          if (oe.cbBaseButtons) oe.cbBaseButtons(gdi, 1, false);
           gdi.refreshFast();
         }
       }

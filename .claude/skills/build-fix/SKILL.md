@@ -89,3 +89,4 @@ Before finishing:
 - [ ] For each fix caused by skill/PRD-generated code, the source skill or PRD has been updated
 - [ ] No duplicate learnings were added
 - [ ] Summary table is provided to the user
+- [ ] All changes are committed with a descriptive commit message referencing the fixed errors
