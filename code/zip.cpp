@@ -21,15 +21,15 @@ Ported to C++ and modified to suite MeOS.
 
 #include "meosexception.h"
 #include "meos_util.h"
-#include "minizip/unzip.h"
-#include "minizip/zip.h"
+#include <minizip/unzip.h>
+#include <minizip/zip.h>
 
 #define CASESENSITIVITY (0)
 #define WRITEBUFFERSIZE (1024 * 256)
 #define MAXFILENAME (260)
 
 #define USEWIN32IOAPI
-#include "minizip/iowin32.h"
+#include <minizip/iowin32.h>
 
 const char *zipError = "Error processing zip-file";
 
