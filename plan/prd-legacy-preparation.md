@@ -390,6 +390,10 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 
 **Known Pitfalls:**
 - `code/minizip/` contains both zlib headers and minizip source — only the zlib headers/libs are replaced here; minizip source handled by US-P0m5
+- Do NOT add `minizip` to `vcpkg.json` in this story — that belongs to US-P0m5. US-P0m4 only adds `"zlib"` to vcpkg.json.
+
+**Learnings from Previous Runs:**
+- The vcpkg port name for minizip is `"minizip"` (not `"unofficial-minizip"`). The cmake package/target names are `unofficial-minizip` / `unofficial::minizip::minizip` — those are correct in CMakeLists.txt but the vcpkg.json entry must be `"minizip"`.
 
 ### US-P0m5: Migrate minizip to vcpkg
 
@@ -409,6 +413,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 **Known Pitfalls:**
 - Vendored minizip may include local modifications — diff against upstream before removing
 - Must remove minizip `.c` compilation units from CMakeLists.txt when switching to vcpkg library
+- The vcpkg port name is `"minizip"` (not `"unofficial-minizip"`). The cmake package/find_package name is `unofficial-minizip` and the target is `unofficial::minizip::minizip` — these are correct in CMakeLists.txt. Only vcpkg.json uses the port name `"minizip"`.
 
 ### US-P0m6: Migrate restbed to vcpkg
 
