@@ -160,6 +160,7 @@ endif()
 # ---------------------------------------------------------------------------
 find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
+find_package(PNG REQUIRED)
 
 # ---------------------------------------------------------------------------
 # Library directories and external libraries (x64 layout)
@@ -171,15 +172,14 @@ target_link_libraries(MeOS PRIVATE
     # vcpkg-managed libraries
     ZLIB::ZLIB
     unofficial::minizip::minizip
+    PNG::PNG
     # Vendored external libraries — Debug
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libharu.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/RestBed.lib>
-    $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libpng.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libmysql.lib>
     # Vendored external libraries — Release
     $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/libharu.lib>
     $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/RestBed.lib>
-    $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/libpng.lib>
     $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/libmysql.lib>
     # Windows system libraries
     Msimg32
