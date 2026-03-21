@@ -124,7 +124,6 @@ set_source_files_properties(meos_dpi_manifest.xml PROPERTIES
 # ---------------------------------------------------------------------------
 target_include_directories(MeOS PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/libharu
 )
 
 # ---------------------------------------------------------------------------
@@ -161,6 +160,7 @@ endif()
 find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
+find_package(unofficial-libharu CONFIG REQUIRED)
 
 # ---------------------------------------------------------------------------
 # Library directories and external libraries (x64 layout)
@@ -173,12 +173,11 @@ target_link_libraries(MeOS PRIVATE
     ZLIB::ZLIB
     unofficial::minizip::minizip
     PNG::PNG
+    unofficial::libharu::libharu
     # Vendored external libraries — Debug
-    $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libharu.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/RestBed.lib>
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libmysql.lib>
     # Vendored external libraries — Release
-    $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/libharu.lib>
     $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/RestBed.lib>
     $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/libmysql.lib>
     # Windows system libraries

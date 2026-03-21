@@ -38,7 +38,12 @@ jobs:
           $exe = Get-ChildItem -Path code/build -Recurse -Filter MeOS.exe | Select-Object -First 1
           $outDir = $exe.DirectoryName
 
-          Copy-Item code/dll64/libharu.dll  $outDir
+          # Copy libharu DLL from vcpkg installed directory (may be libharu.dll or libhpdf.dll)
+          $vcpkgBin = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin"
+          foreach ($pattern in @('libharu.dll', 'libhpdf.dll')) {
+            $dll = Join-Path $vcpkgBin $pattern
+            if (Test-Path $dll) { Copy-Item $dll $outDir }
+          }
           Copy-Item code/dll64/libmysql.dll $outDir
 
           $opensslDir = (Get-ChildItem "C:\Program Files\OpenSSL*" -Directory | Select-Object -First 1).FullName
@@ -57,6 +62,7 @@ jobs:
           path: |
             code/build/**/MeOS.exe
             code/build/**/libharu.dll
+            code/build/**/libhpdf.dll
             code/build/**/libmysql.dll
             code/build/**/libssl-1_1-x64.dll
             code/build/**/libcrypto-1_1-x64.dll

@@ -6,6 +6,7 @@
     "gtest",
     "zlib",
     "minizip",
-    "libpng"
+    "libpng",
+    "libharu"
   ]
 }

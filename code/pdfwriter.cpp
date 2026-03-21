@@ -36,7 +36,7 @@
 #include "image.h"
 
 #define HPDF_DLL
-#include "hpdf.h"
+#include <hpdf.h>
 
 #include "pdfwriter.h"
 
