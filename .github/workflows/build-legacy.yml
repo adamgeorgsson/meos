@@ -15,9 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install OpenSSL 1.1
-        run: choco install openssl --version=1.1.1.2100 -y --no-progress
-
       - name: Update vcpkg
         shell: pwsh
         run: git -C "$env:VCPKG_INSTALLATION_ROOT" pull
@@ -46,9 +43,10 @@ jobs:
           }
           Copy-Item code/dll64/libmysql.dll $outDir
 
-          $opensslDir = (Get-ChildItem "C:\Program Files\OpenSSL*" -Directory | Select-Object -First 1).FullName
-          Copy-Item "$opensslDir\libssl-1_1-x64.dll"    $outDir
-          Copy-Item "$opensslDir\libcrypto-1_1-x64.dll"  $outDir
+          # Copy OpenSSL DLLs from vcpkg installed directory (OpenSSL 3.x: libssl-3-x64.dll / libcrypto-3-x64.dll)
+          foreach ($pattern in @('libssl*.dll', 'libcrypto*.dll')) {
+            Get-ChildItem -Path $vcpkgBin -Filter $pattern | ForEach-Object { Copy-Item $_.FullName $outDir }
+          }
 
           $vcToolsDir = (& vswhere -latest -find "VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT") | Select-Object -Last 1
           Copy-Item "$vcToolsDir\MSVCP140.dll"        $outDir
@@ -64,8 +62,8 @@ jobs:
             code/build/**/libharu.dll
             code/build/**/libhpdf.dll
             code/build/**/libmysql.dll
-            code/build/**/libssl-1_1-x64.dll
-            code/build/**/libcrypto-1_1-x64.dll
+            code/build/**/libssl*.dll
+            code/build/**/libcrypto*.dll
             code/build/**/MSVCP140.dll
             code/build/**/VCRUNTIME140.dll
             code/build/**/VCRUNTIME140_1.dll

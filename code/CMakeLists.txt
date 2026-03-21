@@ -161,6 +161,7 @@ find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(unofficial-libharu CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 # ---------------------------------------------------------------------------
 # Library directories and external libraries (x64 layout)

@@ -7,6 +7,7 @@
     "zlib",
     "minizip",
     "libpng",
-    "libharu"
+    "libharu",
+    "openssl"
   ]
 }
