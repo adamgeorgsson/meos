@@ -12,8 +12,14 @@ jobs:
         configuration: [Release]
         platform: [x64]
 
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: C:\vcpkg-cache
+
     steps:
       - uses: actions/checkout@v6
+
+      - name: Create vcpkg binary cache directory
+        run: mkdir C:\vcpkg-cache
 
       - name: Update vcpkg
         shell: pwsh
@@ -22,7 +28,7 @@ jobs:
       - name: Cache vcpkg binary packages
         uses: actions/cache@v4
         with:
-          path: ~\AppData\Local\vcpkg\archives
+          path: C:\vcpkg-cache
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: vcpkg-${{ runner.os }}-
 
