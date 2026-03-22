@@ -125,6 +125,10 @@ python3 .claude/skills/split-files/split_file.py code/gdioutput.cpp \
 - `enumMonitors` anonymous namespace (~line 8058) — should be in gdioutputUI.cpp
 - `extern int defaultCodePage;` — used by encoding functions in gdioutputUI.cpp, add to that file
 
+## Known pitfalls
+
+- **Anonymous-namespace helpers not duplicated in new files**: When splitting, anonymous-namespace (file-local) functions like `getNewFileName` in `oEvent.cpp` may be called from code that moves to a new file. The script only copies `#include` directives, not anonymous-namespace definitions. After splitting, check for any anonymous-namespace functions in the original file that are called by code in the new files, and duplicate them into the new file (in an anonymous namespace) or promote them to a shared header.
+
 ## Execution order
 
 These splits are independent and can be done in any order. Recommended: do one at a time, build, fix, commit, then proceed to the next.
