@@ -308,6 +308,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - [ ] CI artifact packaging still bundles all required DLLs
 - [ ] C++17 standard enforced, disabled warnings match existing build (4267, 4244, 4018)
 - [ ] The existing `.sln`/`.vcxproj` files are left intact
+- [ ] CI uses vcpkg binary caching (`VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"`) to avoid rebuilding dependencies on every run
 
 **Implementation Notes:**
 - Create `code/CMakeLists.txt` as a standalone project (not a subdirectory of root `CMakeLists.txt`)

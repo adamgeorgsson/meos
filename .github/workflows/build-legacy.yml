@@ -19,8 +19,17 @@ jobs:
         shell: pwsh
         run: git -C "$env:VCPKG_INSTALLATION_ROOT" pull
 
+      - name: Export GitHub Actions cache environment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
       - name: Configure
         shell: pwsh
+        env:
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
         run: >
           cmake -S code -B code/build -A x64
           "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
