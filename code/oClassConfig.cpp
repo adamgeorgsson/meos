@@ -1978,11 +1978,11 @@ void oClass::drawSeeded(ClassSeedMethod seed, int leg, int firstStart,
     if (seed == SeedRank)
       sx.first = r[k]->getRanking();
     else if (seed == SeedResult)
-      sx.first = ClassSplit::evaluateResult(*r[k]);
+      sx.first = evaluateSeedResult(*r[k]);
     else if (seed == SeedTime)
-      sx.first = ClassSplit::evaluateTime(*r[k]);
+      sx.first = evaluateSeedTime(*r[k]);
     else if (seed == SeedPoints)
-      sx.first = ClassSplit::evaluatePoints(*r[k]);
+      sx.first = evaluateSeedPoints(*r[k]);
     else
       throw meosException("Not yet implemented");
 

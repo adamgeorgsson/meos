@@ -2244,6 +2244,57 @@ void oClass::getSplitMethods(vector< pair<wstring, size_t> > &methods) {
   methods.push_back(make_pair(lang.tl("Jämna klasser (tid)"), SplitTimeEven));
 }
 
+int evaluateSeedTime(const oAbstractRunner &r) {
+  if (r.getInputStatus() == StatusOK) {
+    int t = r.getInputTime();
+    if (t > 0)
+      return t;
+    else
+      return timeConstHour * 24 * 8;
+  }
+  else {
+    return timeConstHour * 24 * 8 + r.getId();
+  }
+}
+
+int evaluateSeedResult(const oAbstractRunner &r) {
+  int baseRes;
+  if (r.getInputStatus() == StatusOK) {
+    int t = r.getInputPlace();
+
+    if (t == 0) {
+      const oRunner *rr = dynamic_cast<const oRunner *>(&r);
+      if (rr && rr->getTeam() && rr->getLegNumber() > 0) {
+        const pRunner rPrev = rr->getTeam()->getRunner(rr->getLegNumber() - 1);
+        if (rPrev && rPrev->getStatus() == StatusOK)
+          t = rPrev->getPlace();
+      }
+    }
+
+    if (t > 0)
+      baseRes = t;
+    else
+      baseRes = 99999;
+  }
+  else {
+    baseRes = 99999 + r.getInputStatus();
+  }
+  return r.getDCI().getInt("Heat") + 1000 * baseRes;
+}
+
+int evaluateSeedPoints(const oAbstractRunner &r) {
+  if (r.getInputStatus() == StatusOK) {
+    int p = r.getInputPoints();
+    if (p > 0)
+      return 1000*1000*1000 - p;
+    else
+      return 1000*1000*1000;
+  }
+  else {
+    return 1000*1000*1000 + r.getInputStatus();
+  }
+}
+
 class ClassSplit {
 private:
   map<int, int> clubSize;
@@ -2254,58 +2305,6 @@ private:
   void valueSplit(const vector<int> &parts, vector< pair<int, int> > &valueId);
   void valueEvenSplit(const vector<int> &parts, vector< pair<int, int> > &valueId);
 
-public: 
-  static int evaluateTime(const oAbstractRunner &r) {
-    if (r.getInputStatus() == StatusOK) {
-      int t = r.getInputTime();
-      if (t > 0)
-        return t;
-      else
-        return timeConstHour * 24 * 8;
-    }
-    else {
-      return timeConstHour * 24 * 8 + r.getId();
-    }
-  }
-
-  static int evaluateResult(const oAbstractRunner &r) {
-    int baseRes;
-    if (r.getInputStatus() == StatusOK) {
-      int t = r.getInputPlace();
-      
-      if (t == 0) {
-        const oRunner *rr = dynamic_cast<const oRunner *>(&r);
-        if (rr && rr->getTeam() && rr->getLegNumber() > 0) {
-          const pRunner rPrev = rr->getTeam()->getRunner(rr->getLegNumber() - 1);
-          if (rPrev && rPrev->getStatus() == StatusOK)
-            t = rPrev->getPlace();
-        }
-      }
-      
-      if (t > 0)
-        baseRes = t;
-      else
-        baseRes = 99999;
-    }
-    else {
-      baseRes = 99999 + r.getInputStatus();
-    }
-    return r.getDCI().getInt("Heat") + 1000 * baseRes;
-  }
-
-  static int evaluatePoints(const oAbstractRunner &r) {
-    if (r.getInputStatus() == StatusOK) {
-      int p = r.getInputPoints();
-      if (p > 0)
-        return 1000*1000*1000 - p;
-      else
-        return 1000*1000*1000;
-    }
-    else {
-      return 1000*1000*1000 + r.getInputStatus();
-    }
-  }
-
 private:
   int evaluate(const oAbstractRunner &r, ClassSplitMethod method) {
     switch (method) {
@@ -2314,10 +2313,10 @@ private:
         return r.getRanking();
       case SplitTime:
       case SplitTimeEven:
-        return evaluateTime(r);
+        return evaluateSeedTime(r);
       case SplitResult:
       case SplitResultEven:
-        return evaluateResult(r);
+        return evaluateSeedResult(r);
       default:
        throw meosException("Not yet implemented");
     }

@@ -128,6 +128,7 @@ python3 .claude/skills/split-files/split_file.py code/gdioutput.cpp \
 ## Known pitfalls
 
 - **File-local helpers not duplicated in new files**: When splitting, `static` functions and anonymous-namespace (file-local) functions (e.g., `getNewFileName`, `findNextControl`, `gotoNextLine`, `addMissingControl` in `oRunner.cpp`) may be called from code that moves to a new file. The script only copies `#include` directives, not `static` or anonymous-namespace definitions. After splitting, grep the new file for calls to any `static` or anonymous-namespace functions defined in the original file, and move or duplicate them into the new file.
+- **File-local class static methods used cross-file**: Classes defined inside a `.cpp` file (not in a header) may have `static` methods called by code that moves to the new file (e.g., `ClassSplit::evaluateResult` in `oClass.cpp` was called from code moved to `oClassConfig.cpp`). After splitting, grep the new file for `ClassName::` references to any class defined only in the original `.cpp`. Fix by extracting the static methods as free functions declared in the shared header.
 
 ## Execution order
 

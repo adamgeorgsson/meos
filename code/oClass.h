@@ -92,6 +92,13 @@ enum ClassSeedMethod {
   SeedPoints
 };
 
+class oAbstractRunner;
+
+// Seed/split evaluation helpers (used by both oClass.cpp and oClassConfig.cpp)
+int evaluateSeedTime(const oAbstractRunner &r);
+int evaluateSeedResult(const oAbstractRunner &r);
+int evaluateSeedPoints(const oAbstractRunner &r);
+
 #ifdef DODECLARETYPESYMBOLS
   const char *StartTypeNames[4]={"ST", "CH", "DR", "HU"};
   const char *LegTypeNames[7]={"NO", "PA", "EX", "SM", "IG", "PO", "GP"};

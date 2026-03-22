@@ -179,6 +179,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - `static` and anonymous-namespace helpers have internal linkage — must be in the file that calls them (e.g., `findNextControl`, `gotoNextLine`, `addMissingControl` in `oRunner.cpp` needed to move to `oRunnerResult.cpp`)
 - `#include "stdafx.h"` must be the first include in every file (MSVC precompiled headers)
 - The `PrintPostInfo` struct in `oListInfo.cpp` is used by both split files — move it to `oListInfo.h` or duplicate it
+- File-local classes with static methods (e.g., `ClassSplit` in `oClass.cpp`) may be referenced from the new file via `ClassName::method()`. Extract such static methods as free functions declared in the shared header.
 
 ### US-P0h: Replace Win32 Time APIs with std::chrono
 
@@ -308,7 +309,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - [ ] CI artifact packaging still bundles all required DLLs
 - [ ] C++17 standard enforced, disabled warnings match existing build (4267, 4244, 4018)
 - [ ] The existing `.sln`/`.vcxproj` files are left intact
-- [ ] CI uses vcpkg binary caching (`VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"`) to avoid rebuilding dependencies on every run
+- [ ] CI uses vcpkg binary caching (`actions/cache` on `~/AppData/Local/vcpkg/archives`) to avoid rebuilding dependencies on every run
 
 **Implementation Notes:**
 - Create `code/CMakeLists.txt` as a standalone project (not a subdirectory of root `CMakeLists.txt`)
