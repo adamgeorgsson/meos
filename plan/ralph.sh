@@ -114,6 +114,9 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     TASK_ID="iteration-$i"
   fi
 
+  # Push any commits the agent made
+  git push 2>/dev/null || echo "Warning: git push failed (no commits or network issue)"
+
   # Check for completion signal
   if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
     echo ""
