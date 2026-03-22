@@ -41,6 +41,7 @@ set(SOURCES
     oBase.cpp
     oCard.cpp
     oClass.cpp
+    oClassConfig.cpp
     oClub.cpp
     oControl.cpp
     oCourse.cpp
