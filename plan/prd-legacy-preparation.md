@@ -438,7 +438,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - vcpkg port: `restbed`. Project uses `#include <restbed>` umbrella header. Depends on OpenSSL (coordinate with US-P0m7).
 
 **Known Pitfalls:**
-- Verify `[ssl]` feature is enabled in vcpkg dependency if SSL support is needed
+- The vcpkg restbed port's SSL feature is named `openssl`, not `ssl`. Use `{ "name": "restbed", "features": ["openssl"] }` in `vcpkg.json`
 - Vendored restbed is from 2017 (Corvusoft era) — vcpkg version may have API changes
 - restbed depends on ASIO transitively
 
