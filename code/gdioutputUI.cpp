@@ -28,6 +28,8 @@
 
 #include "StdAfx.h"
 #include "gdioutput.h"
+
+extern int defaultCodePage;
 #include "gdiconstants.h"
 #include "meosexception.h"
 
