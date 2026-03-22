@@ -430,8 +430,11 @@ void ConnectionWrapper::connect(const string &unused,
     throw Exception(err.c_str());
   }
 
+#if MYSQL_VERSION_ID < 80034
+  // MYSQL_OPT_RECONNECT was removed in MySQL 8.0.34
   bool t = true;
   mysql_options(mysql, MYSQL_OPT_RECONNECT, &t);
+#endif
 }
 
 QueryWrapper ConnectionWrapper::query() {

@@ -163,13 +163,11 @@ find_package(PNG REQUIRED)
 find_package(unofficial-libharu CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(unofficial-restbed CONFIG REQUIRED)
+find_package(unofficial-libmysql CONFIG REQUIRED)
 
 # ---------------------------------------------------------------------------
-# Library directories and external libraries (x64 layout)
+# External libraries
 # ---------------------------------------------------------------------------
-set(LIB_DIR_DEBUG   ${CMAKE_CURRENT_SOURCE_DIR}/lib64_db)
-set(LIB_DIR_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/lib64)
-
 target_link_libraries(MeOS PRIVATE
     # vcpkg-managed libraries
     ZLIB::ZLIB
@@ -177,10 +175,7 @@ target_link_libraries(MeOS PRIVATE
     PNG::PNG
     unofficial::libharu::hpdf
     unofficial::restbed::restbed
-    # Vendored external libraries — Debug
-    $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libmysql.lib>
-    # Vendored external libraries — Release
-    $<$<CONFIG:Release>:${LIB_DIR_RELEASE}/libmysql.lib>
+    unofficial::libmysql::libmysql
     # Windows system libraries
     Msimg32
     comctl32

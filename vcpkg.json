@@ -9,6 +9,7 @@
     "libpng",
     "libharu",
     "openssl",
-    { "name": "restbed", "features": ["openssl"] }
+    { "name": "restbed", "features": ["openssl"] },
+    "libmysql"
   ]
 }

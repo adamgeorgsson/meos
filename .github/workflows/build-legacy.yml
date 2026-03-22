@@ -42,7 +42,10 @@ jobs:
             $dll = Join-Path $vcpkgBin $pattern
             if (Test-Path $dll) { Copy-Item $dll $outDir }
           }
-          Copy-Item code/dll64/libmysql.dll $outDir
+
+          # Copy MySQL DLL from vcpkg installed directory
+          $mysqlDll = Join-Path $vcpkgBin 'libmysql.dll'
+          if (Test-Path $mysqlDll) { Copy-Item $mysqlDll $outDir }
 
           # Copy OpenSSL DLLs from vcpkg installed directory (OpenSSL 3.x: libssl-3-x64.dll / libcrypto-3-x64.dll)
           if (Test-Path $vcpkgBin) {
