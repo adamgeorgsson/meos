@@ -46,6 +46,8 @@ set(SOURCES
     oCourse.cpp
     oDataContainer.cpp
     oEvent.cpp
+    oEventAdmin.cpp
+    oEventConfig.cpp
     oEventDraw.cpp
     oEventResult.cpp
     oEventSpeaker.cpp
