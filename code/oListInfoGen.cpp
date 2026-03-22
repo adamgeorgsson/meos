@@ -23,6 +23,7 @@
 
 #include "StdAfx.h"
 #include "oListInfo.h"
+#include "oListInfoInternal.h"
 #include "oEvent.h"
 #include "gdioutput.h"
 #include "meos_util.h"

@@ -176,7 +176,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 **Implementation:** For each sub-story: run the script with `--dry-run` first, then without. After the script runs, verify file-static helpers are in the correct file (see SKILL.md for details per file), then build and fix any missing includes.
 
 **Known Pitfalls:**
-- `static` and anonymous-namespace helpers have internal linkage — must be in the file that calls them (e.g., `findNextControl`, `gotoNextLine`, `addMissingControl` in `oRunner.cpp` needed to move to `oRunnerResult.cpp`)
+- `static` and anonymous-namespace helpers have internal linkage — must be in the file that calls them (e.g., `findNextControl`, `gotoNextLine`, `addMissingControl` in `oRunner.cpp` needed to move to `oRunnerResult.cpp`). If the same static helper is called from **both** the original and the new file, create a shared internal header (e.g., `oListInfoInternal.h`) with those functions and include it from both `.cpp` files.
 - `#include "stdafx.h"` must be the first include in every file (MSVC precompiled headers)
 - The `PrintPostInfo` struct in `oListInfo.cpp` is used by both split files — move it to `oListInfo.h` or duplicate it
 - File-local classes with static methods (e.g., `ClassSplit` in `oClass.cpp`) may be referenced from the new file via `ClassName::method()`. Extract such static methods as free functions declared in the shared header.

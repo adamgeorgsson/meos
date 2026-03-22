@@ -28,6 +28,7 @@
 #include <cassert>
 #include <cmath>
 #include "localizer.h"
+#include "oListInfoInternal.h"
 #include "metalist.h"
 #include <algorithm>
 #include "gdifonts.h"
@@ -159,66 +160,7 @@ bool oListInfo::needRegenerate(const oEvent &oe) const {
   return false;
 }
 
-static void generateNBestHead(const oListParam &par, oListInfo &li, int ypos) {
-  if (par.filterMaxPer > 0)
-    li.addHead(oPrintPost(lString, lang.tl(L"Visar de X bästa#" + itow(par.filterMaxPer)), normalText, 0, ypos));
-}
-
 extern gdioutput *gdi_main;
-
-static pair<wstring, bool> getControlName(const oEvent &oe, int courseContolId) {
-  pair<int, int> idt = oControl::getIdIndexFromCourseControlId(courseContolId);
-  pControl to = oe.getControl(idt.first);
-  wstring toS;
-  bool name = false;
-  if (to) {
-    if (to->hasName()) {
-      toS = to->getName();
-      name = true;
-    }
-    else if (to->getFirstNumber()>0)
-      toS = itow(to->getFirstNumber());
-    else
-      toS = itow(idt.first);
-
-    if (to->getNumberDuplicates() > 0)
-      toS += L"-" + itow(idt.second + 1);
-  }
-  else
-    toS = itow(idt.first);
-
-  return make_pair(toS, name);
-}
-
-static wstring getFullControlName(const oEvent &oe, int ctrl) {
-  pair<wstring, bool> toS = getControlName(oe, ctrl);
-  if (toS.second)
-    return toS.first;
-  else
-    return lang.tl(L"Kontroll X#" + toS.first);
-}
-
-static void getResultTitle(const oEvent &oe, const oListParam &lp, wstring &title) {
-  if (lp.useControlIdResultTo <= 0 && lp.useControlIdResultFrom <= 0)
-    title = lang.tl(L"Resultat - %s");
-  else if (lp.useControlIdResultTo>0 && lp.useControlIdResultFrom<=0){
-    pair<wstring, bool> toS = getControlName(oe, lp.useControlIdResultTo);
-    if (toS.second)
-      title = lang.tl(L"Resultat - %s") + L", " + toS.first;
-    else
-      title = lang.tl(L"Resultat - %s") + L", " + lang.tl(L"vid kontroll X#" + toS.first);
-  }
-  else {
-    wstring fromS = lang.tl(L"Start"), toS = lang.tl(L"Mål");
-    if (lp.useControlIdResultTo>0) {
-      toS = getControlName(oe, lp.useControlIdResultTo).first;
-    }
-    if (lp.useControlIdResultFrom>0) {
-      fromS = getControlName(oe, lp.useControlIdResultFrom).first;
-    }
-    title = lang.tl(L"Resultat mellan X och Y#" + fromS + L"#" + toS);
-  }
-}
 
 static double adjustmentFactor(double par, double target) {
   double k = (1.0 - target)/10;
