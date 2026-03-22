@@ -26,8 +26,6 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "StdAfx.h"
-#define DODECLARETYPESYMBOLS
-
 #include <cassert>
 #include "oClass.h"
 #include "oEvent.h"
