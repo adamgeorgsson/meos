@@ -439,6 +439,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 
 **Known Pitfalls:**
 - The vcpkg restbed port's SSL feature is named `openssl`, not `ssl`. Use `{ "name": "restbed", "features": ["openssl"] }` in `vcpkg.json`
+- The vcpkg restbed port uses the `unofficial` namespace: `find_package(unofficial-restbed CONFIG REQUIRED)` and link target `unofficial::restbed::restbed` (not `corvusoft::restbed`)
 - Vendored restbed is from 2017 (Corvusoft era) — vcpkg version may have API changes
 - restbed depends on ASIO transitively
 

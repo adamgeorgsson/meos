@@ -162,7 +162,7 @@ find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(unofficial-libharu CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(restbed CONFIG REQUIRED)
+find_package(unofficial-restbed CONFIG REQUIRED)
 
 # ---------------------------------------------------------------------------
 # Library directories and external libraries (x64 layout)
@@ -176,7 +176,7 @@ target_link_libraries(MeOS PRIVATE
     unofficial::minizip::minizip
     PNG::PNG
     unofficial::libharu::hpdf
-    corvusoft::restbed
+    unofficial::restbed::restbed
     # Vendored external libraries — Debug
     $<$<CONFIG:Debug>:${LIB_DIR_DEBUG}/libmysql.lib>
     # Vendored external libraries — Release
