@@ -67,7 +67,7 @@ fi
 
 # Initialize metrics CSV if it doesn't exist
 if [ ! -f "$METRICS_FILE" ]; then
-  echo "task_id,tool,start_time,duration_seconds,status,tokens_pct" > "$METRICS_FILE"
+  echo "task_id,tool,start_time,duration_seconds,status,cost_usd,input_tokens,output_tokens" > "$METRICS_FILE"
 fi
 
 echo "Starting Ralph - Tool: $TOOL - Model: $MODEL - Max iterations: $MAX_ITERATIONS"
@@ -87,9 +87,18 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # Run the selected tool with the ralph prompt (60 min timeout per iteration)
   # --kill-after=10: send SIGKILL 10s after SIGTERM if process won't die
   TIMEOUT=3600
+  COST_USD=""
+  INPUT_TOKENS=""
+  OUTPUT_TOKENS=""
   if [[ "$TOOL" == "claude" ]]; then
     CLAUDE_MODEL="${MODEL//./-}"
-    OUTPUT=$(timeout --kill-after=10 $TIMEOUT claude --dangerously-skip-permissions --print --model "$CLAUDE_MODEL" < "$SCRIPT_DIR/prompt.md" 2>&1 | tee /dev/stderr) || true
+    JSON_OUTPUT=$(timeout --kill-after=10 $TIMEOUT claude --dangerously-skip-permissions --print --output-format json --model "$CLAUDE_MODEL" < "$SCRIPT_DIR/prompt.md" 2>/dev/null) || true
+    # Extract text result and usage from JSON
+    OUTPUT=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',''))" 2>/dev/null) || OUTPUT="$JSON_OUTPUT"
+    COST_USD=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'{d.get(\"total_cost_usd\",0):.4f}')" 2>/dev/null) || true
+    INPUT_TOKENS=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); u=d.get('usage',{}); print(u.get('input_tokens',0) + u.get('cache_read_input_tokens',0) + u.get('cache_creation_input_tokens',0))" 2>/dev/null) || true
+    OUTPUT_TOKENS=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('usage',{}).get('output_tokens',0))" 2>/dev/null) || true
+    echo "$OUTPUT" >&2
   elif [[ "$TOOL" == "copilot" ]]; then
     OUTPUT=$(timeout --kill-after=10 $TIMEOUT copilot -p "$(cat "$SCRIPT_DIR/prompt.md")" --allow-all --model "$MODEL" 2>&1 | tee /dev/stderr) || true
   fi
@@ -111,8 +120,8 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     echo "Ralph completed all tasks!"
     echo "Completed at iteration $i of $MAX_ITERATIONS (${STEP_DURATION_FMT})"
 
-    # Log final metrics (tokens_pct left empty for manual entry)
-    echo "$TASK_ID,$TOOL,$STEP_START_FMT,$STEP_DURATION,completed," >> "$METRICS_FILE"
+    # Log final metrics with token usage
+    echo "$TASK_ID,$TOOL,$STEP_START_FMT,$STEP_DURATION,completed,$COST_USD,$INPUT_TOKENS,$OUTPUT_TOKENS" >> "$METRICS_FILE"
     echo "" >> "$PROGRESS_FILE"
     echo "## $TASK_ID — COMPLETED (${STEP_DURATION_FMT})" >> "$PROGRESS_FILE"
 
@@ -120,18 +129,22 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     echo ""
     echo "=== Metrics Summary (see $METRICS_FILE) ==="
     TOTAL_TIME=0
+    TOTAL_COST=0
     TASK_COUNT=0
-    while IFS=',' read -r tid tool start dur status tokens; do
+    while IFS=',' read -r tid tool start dur status cost in_tok out_tok; do
       [[ "$tid" == "task_id" ]] && continue
       TOTAL_TIME=$((TOTAL_TIME + dur))
       TASK_COUNT=$((TASK_COUNT + 1))
+      if [[ -n "$cost" ]]; then
+        TOTAL_COST=$(python3 -c "print(round($TOTAL_COST + $cost, 4))")
+      fi
     done < "$METRICS_FILE"
-    printf "Total time: %dm%02ds across %d tasks\n" $((TOTAL_TIME / 60)) $((TOTAL_TIME % 60)) "$TASK_COUNT"
+    printf "Total time: %dm%02ds across %d tasks, total cost: \$%s\n" $((TOTAL_TIME / 60)) $((TOTAL_TIME % 60)) "$TASK_COUNT" "$TOTAL_COST"
     exit 0
   fi
 
-  # Log metrics for this iteration (tokens_pct left empty for manual entry)
-  echo "$TASK_ID,$TOOL,$STEP_START_FMT,$STEP_DURATION,continuing," >> "$METRICS_FILE"
+  # Log metrics for this iteration with token usage
+  echo "$TASK_ID,$TOOL,$STEP_START_FMT,$STEP_DURATION,continuing,$COST_USD,$INPUT_TOKENS,$OUTPUT_TOKENS" >> "$METRICS_FILE"
   echo "" >> "$PROGRESS_FILE"
   echo "## $TASK_ID (${STEP_DURATION_FMT})" >> "$PROGRESS_FILE"
 
@@ -145,12 +158,16 @@ echo "Check $PROGRESS_FILE for status."
 echo ""
 echo "=== Metrics Summary (see $METRICS_FILE) ==="
 TOTAL_TIME=0
+TOTAL_COST=0
 TASK_COUNT=0
-while IFS=',' read -r tid tool start dur status tokens; do
+while IFS=',' read -r tid tool start dur status cost in_tok out_tok; do
   [[ "$tid" == "task_id" ]] && continue
   TOTAL_TIME=$((TOTAL_TIME + dur))
   TASK_COUNT=$((TASK_COUNT + 1))
-  printf "  %s: %dm%02ds\n" "$tid" $((dur / 60)) $((dur % 60))
+  if [[ -n "$cost" ]]; then
+    TOTAL_COST=$(python3 -c "print(round($TOTAL_COST + $cost, 4))")
+  fi
+  printf "  %s: %dm%02ds \$%s\n" "$tid" $((dur / 60)) $((dur % 60)) "${cost:-n/a}"
 done < "$METRICS_FILE"
-printf "Total time: %dm%02ds across %d tasks\n" $((TOTAL_TIME / 60)) $((TOTAL_TIME % 60)) "$TASK_COUNT"
+printf "Total time: %dm%02ds across %d tasks, total cost: \$%s\n" $((TOTAL_TIME / 60)) $((TOTAL_TIME % 60)) "$TASK_COUNT" "$TOTAL_COST"
 exit 1
