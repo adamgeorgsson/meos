@@ -62,6 +62,8 @@ set(SOURCES
     oPunch.cpp
     oReport.cpp
     oRunner.cpp
+    oRunnerData.cpp
+    oRunnerResult.cpp
     oTeam.cpp
     oTeamEvent.cpp
     parser.cpp
