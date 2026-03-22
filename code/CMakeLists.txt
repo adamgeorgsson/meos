@@ -17,6 +17,8 @@ set(SOURCES
     csvparser.cpp
     download.cpp
     gdioutput.cpp
+    gdioutputEvent.cpp
+    gdioutputUI.cpp
     generalresult.cpp
     HTMLWriter.cpp
     image.cpp
