@@ -31,6 +31,7 @@ jobs:
           path: C:\vcpkg-cache
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: vcpkg-${{ runner.os }}-
+          save-always: true
 
       - name: Configure
         shell: pwsh
