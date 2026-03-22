@@ -51,6 +51,12 @@ jobs:
             }
           }
 
+          # Copy restbed DLL from vcpkg installed directory
+          if (Test-Path $vcpkgBin) {
+            $dll = Join-Path $vcpkgBin 'restbed.dll'
+            if (Test-Path $dll) { Copy-Item $dll $outDir }
+          }
+
           $vcToolsDir = (& vswhere -latest -find "VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT") | Select-Object -Last 1
           Copy-Item "$vcToolsDir\MSVCP140.dll"        $outDir
           Copy-Item "$vcToolsDir\VCRUNTIME140.dll"    $outDir
@@ -67,6 +73,7 @@ jobs:
             code/build/**/libmysql.dll
             code/build/**/libssl*.dll
             code/build/**/libcrypto*.dll
+            code/build/**/restbed.dll
             code/build/**/MSVCP140.dll
             code/build/**/VCRUNTIME140.dll
             code/build/**/VCRUNTIME140_1.dll

@@ -8,6 +8,7 @@
     "minizip",
     "libpng",
     "libharu",
-    "openssl"
+    "openssl",
+    { "name": "restbed", "features": ["ssl"] }
   ]
 }
