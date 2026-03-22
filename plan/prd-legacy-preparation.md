@@ -176,7 +176,7 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 **Implementation:** For each sub-story: run the script with `--dry-run` first, then without. After the script runs, verify file-static helpers are in the correct file (see SKILL.md for details per file), then build and fix any missing includes.
 
 **Known Pitfalls:**
-- Anonymous-namespace helpers have internal linkage — must be in the file that calls them
+- `static` and anonymous-namespace helpers have internal linkage — must be in the file that calls them (e.g., `findNextControl`, `gotoNextLine`, `addMissingControl` in `oRunner.cpp` needed to move to `oRunnerResult.cpp`)
 - `#include "stdafx.h"` must be the first include in every file (MSVC precompiled headers)
 - The `PrintPostInfo` struct in `oListInfo.cpp` is used by both split files — move it to `oListInfo.h` or duplicate it
 

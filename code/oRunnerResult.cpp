@@ -51,6 +51,64 @@
 #include "xmlparser.h"
 #include <unordered_map>
 
+static int findNextControl(const vector<pControl> &ctrl, int startIndex, int id, int &offset, bool supportRogaining)
+{
+  vector<pControl>::const_iterator it=ctrl.begin();
+  int index=0;
+  offset = 1;
+  while(startIndex>0 && it!=ctrl.end()) {
+    int multi = (*it)->getNumMulti();
+    offset += multi-1;
+    ++it, --startIndex, ++index;
+    if (it!=ctrl.end() && (*it)->isRogaining(supportRogaining))
+      index--;
+  }
+
+  while(it!=ctrl.end() && (*it) && (*it)->getId()!=id) {
+    int multi = (*it)->getNumMulti();
+    offset += multi-1;
+    ++it, ++index;
+    if (it!=ctrl.end() && (*it)->isRogaining(supportRogaining))
+      index--;
+  }
+
+  if (it==ctrl.end())
+    return -1;
+  else
+    return index;
+}
+
+static void gotoNextLine(gdioutput &gdi, int &xcol, int &cx, int &cy, int colDeltaX, int numCol, int baseCX) {
+  if (++xcol < numCol) {
+    cx += colDeltaX;
+  }
+  else {
+    xcol = 0;
+    cy += int(gdi.getLineHeight()*1.1);
+    cx = baseCX;
+  }
+}
+
+static void addMissingControl(bool wideFormat, gdioutput &gdi,
+                              int &xcol, int &cx, int &cy,
+                              int colDeltaX, int numCol, int baseCX) {
+  int xx = cx;
+  wstring str = makeDash(L"-");
+  int posy = wideFormat ? cy : cy-int(gdi.getLineHeight()*0.4);
+  const int endx = cx + colDeltaX - gdi.scaleLength(27/2);
+
+  while (xx < endx) {
+    gdi.addStringUT(posy, xx, fontSmall, str);
+    xx += gdi.scaleLength(8);
+  }
+
+  // Make a thin line for list format, otherwise, take a full place
+  if (wideFormat) {
+    gotoNextLine(gdi, xcol, cx, cy, colDeltaX, numCol, baseCX);
+  }
+  else
+    cy+=int(gdi.getLineHeight()*0.3);
+}
 
 void oRunner::printSplits(gdioutput& gdi, const oListInfo* li) const {
   bool withAnalysis = (oe->getDI().getInt("Analysis") & 1) == 0;

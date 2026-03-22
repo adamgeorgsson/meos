@@ -127,7 +127,7 @@ python3 .claude/skills/split-files/split_file.py code/gdioutput.cpp \
 
 ## Known pitfalls
 
-- **Anonymous-namespace helpers not duplicated in new files**: When splitting, anonymous-namespace (file-local) functions like `getNewFileName` in `oEvent.cpp` may be called from code that moves to a new file. The script only copies `#include` directives, not anonymous-namespace definitions. After splitting, check for any anonymous-namespace functions in the original file that are called by code in the new files, and duplicate them into the new file (in an anonymous namespace) or promote them to a shared header.
+- **File-local helpers not duplicated in new files**: When splitting, `static` functions and anonymous-namespace (file-local) functions (e.g., `getNewFileName`, `findNextControl`, `gotoNextLine`, `addMissingControl` in `oRunner.cpp`) may be called from code that moves to a new file. The script only copies `#include` directives, not `static` or anonymous-namespace definitions. After splitting, grep the new file for calls to any `static` or anonymous-namespace functions defined in the original file, and move or duplicate them into the new file.
 
 ## Execution order
 
