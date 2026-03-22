@@ -749,3 +749,16 @@ public:
   bool needRegenerate(const oEvent &oe) const;
 
 };
+
+struct PrintPostInfo {
+  PrintPostInfo(gdioutput &gdi, const oListParam &par) :
+              gdi(gdi), par(par), keepToghether(false) {}
+
+  gdioutput &gdi;
+  const oListParam &par;
+  oCounter counter;
+  bool keepToghether;
+  void reset() {keepToghether = false;}
+private:
+  PrintPostInfo &operator=(const PrintPostInfo &a) {}
+};

@@ -58,6 +58,7 @@ set(SOURCES
     oFreePunch.cpp
     oImportExport.cpp
     oListInfo.cpp
+    oListInfoGen.cpp
     onlineinput.cpp
     onlineresults.cpp
     oPunch.cpp
