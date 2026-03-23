@@ -59,8 +59,8 @@ def replace_printf_s_on_line(line: str) -> str:
     Heuristic:
     - sprintf_s(buf, "fmt", ...) [2-arg]: second arg starts with "
     - sprintf_s(buf, N, "fmt", ...) [3-arg]: second arg is anything else
-    - swprintf_s(wbuf, L"fmt", ...) [2-arg]: second arg does NOT start with digit
-    - swprintf_s(wbuf, N, L"fmt", ...) [3-arg]: second arg starts with digit
+    - swprintf_s(wbuf, L"fmt", ...) [2-arg]: second arg starts with L" or lang.
+    - swprintf_s(wbuf, N, L"fmt", ...) [3-arg]: second arg is anything else (numeric, constant, macro)
     """
     # Skip commented-out lines
     stripped = line.lstrip()
@@ -96,12 +96,12 @@ def replace_printf_s_on_line(line: str) -> str:
             wbuf = m.group(2)
             rest = m.group(3)
             rest_stripped = rest.lstrip()
-            if rest_stripped and rest_stripped[0].isdigit():
-                # 3-arg: second arg is numeric size, just rename
-                return f'{prefix}swprintf({wbuf}, {rest}'
-            else:
-                # 2-arg: insert sizeof/sizeof(wchar_t)
+            if rest_stripped.startswith('L"') or rest_stripped.startswith('lang.'):
+                # 2-arg: second arg is format string, insert sizeof/sizeof(wchar_t)
                 return f'{prefix}swprintf({wbuf}, sizeof({wbuf})/sizeof(wchar_t), {rest}'
+            else:
+                # 3-arg: second arg is size, just rename
+                return f'{prefix}swprintf({wbuf}, {rest}'
 
         line = re.sub(
             r'(.*?)swprintf_s\((\w[\w\[\]]*),\s*(.*)',

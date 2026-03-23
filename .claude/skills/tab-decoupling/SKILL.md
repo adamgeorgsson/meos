@@ -229,6 +229,13 @@ if (cbStartReconnectMachine)
 
 **Also:** `oEvent.h` has `friend class MySQLReconnect` (line 1609). Keep this — `MySQLReconnect` is still defined in `TabAuto.h` and implemented in `mysqldaemon.cpp`.
 
+**Missing includes after removing TabAuto.h:** Add these to `oEventSQL.cpp` after the other includes:
+```cpp
+#include "localizer.h"    // for lang (was transitive via TabAuto.h → TabBase.h)
+
+bool isThreadReconnecting();  // forward-declare; defined in mysqldaemon.cpp, declared in TabAuto.h
+```
+
 ---
 
 ### US-P0f5: Decouple oEventResult.cpp
@@ -299,6 +306,15 @@ The method is `OnlineInput::processCards(gdioutput &gdi, oEvent &oe, ...)` so `o
 ---
 
 ### US-P0f8: Register callbacks in meos.cpp
+
+**Prerequisites — make accessed members public in TabAuto.h:**
+
+The registration lambdas access `TabAuto` members that are private by default. Before registering, make these public in `TabAuto.h`:
+
+1. Move `synchronize` and `synchronizePunches` (bool fields) from `private:` to `public:`.
+2. Move `timerCallback(gdioutput &gdi)` and `syncCallback(gdioutput &gdi)` from `private:` to `public:`.
+
+These are accessed via captured pointers in the lambdas below. Without this step, MSVC will emit `error C2248: cannot access private member`.
 
 **Where:** In `meos.cpp`, after the tab objects are created in the `WM_CREATE` handler (around line 1069). The exact location should be after all tabs are instantiated via `gdi_main->getTabs().get(...)` and before the window is shown.
 
@@ -384,7 +400,10 @@ Recommended: do US-P0f1 + US-P0f8 together, then one domain file at a time, veri
 
 ## Known pitfalls
 
+- **`TabAuto` private members:** The lambdas in US-P0f8 access `timerCallback`, `syncCallback`, `synchronize`, and `synchronizePunches` which are private in `TabAuto`. These must be made public in `TabAuto.h` before registering callbacks, or MSVC will error with `C2248: cannot access private member`.
 - **`gdi_main` lifetime:** The lambdas in US-P0f8 capture raw pointers (`ta`, `tsi`, `tl`, `gdi_main`). These Tab objects live for the entire application lifetime (destroyed in `FixedTabs` destructor), so capturing raw pointers is safe.
 - **`EStdListType` cast:** The `cbRemovedList` callback uses `int` to avoid including `oListInfo.h` in oEvent.h. Cast back to `EStdListType` at registration.
 - **Thread safety:** These callbacks are called from the main UI thread only, same as the original Tab calls. No synchronization needed.
 - **`newcompetition.cpp`:** This file implements `TabCompetition::` methods. It is UI code, not domain code. Do NOT try to remove its `TabCompetition.h` include.
+- **Nested structs accessing callbacks:** When replacing Tab calls inside nested structs/classes (e.g., `RefreshFilter` in `oEvent.cpp`), the callback member is not directly accessible — qualify with the `oEvent` reference (e.g., `oe.cbBaseButtons` instead of bare `cbBaseButtons`).
+- **Transitive includes lost when removing TabAuto.h (oEventSQL.cpp):** `TabAuto.h` transitively provided `lang` (via `TabBase.h` → `localizer.h`) and declared `isThreadReconnecting()`. After removing `TabAuto.h`, add `#include "localizer.h"` and a forward declaration `bool isThreadReconnecting();` — the function is defined in `mysqldaemon.cpp` and does not need `TabAuto.h` at runtime.
