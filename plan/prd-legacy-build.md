@@ -40,11 +40,12 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 **Acceptance Criteria:**
 - [ ] `code/CMakeLists.txt` exists and builds MeOS.exe on Windows with MSVC via CMake
 - [ ] All `.cpp` source files, resource files (`meos.rc`, `meoslang.rc`), and DPI manifest are compiled/embedded
-- [ ] All external libraries linked: libharu, libmysql, libpng, zlib, RestBed, OpenSSL
+- [ ] All external libraries linked: libharu, libmysql, libpng, zlib, RestBed (OpenSSL is statically linked into RestBed.lib — no separate link needed)
 - [ ] All Windows system libraries linked: Msimg32, comctl32, odbc32, odbccp32, winmm, ws2_32, wininet
 - [ ] Debug and Release configurations work (correct library paths: `lib64_db/` vs `lib64/`)
 - [ ] `.github/workflows/build-legacy.yml` uses CMake instead of MSBuild
 - [ ] CI artifact packaging still bundles all required DLLs
+- [ ] `UNICODE` and `_UNICODE` compile definitions set (matching vcxproj `CharacterSet=Unicode`)
 - [ ] C++17 standard enforced, disabled warnings match existing build (4267, 4244, 4018)
 - [ ] The existing `.sln`/`.vcxproj` files are left intact
 
@@ -52,14 +53,15 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 - Create `code/CMakeLists.txt` as a standalone project (not a subdirectory of root `CMakeLists.txt`)
 - External libraries: `code/lib64/` (Release) and `code/lib64_db/` (Debug) — use generator expressions
 - Include paths: `code/libharu/`, `code/mysql/`, `code/png/`, `code/restbed/`, `code/minizip/`
-- For OpenSSL: use `find_package(OpenSSL)` (CI installs via Chocolatey)
+- OpenSSL is NOT needed as a direct link dependency — the vendored `RestBed.lib` already has OpenSSL statically linked. Do NOT use `find_package(OpenSSL)`. OpenSSL DLLs (`libcrypto-1_1-x64.dll`, `libssl-1_1-x64.dll`) are still needed at runtime.
 - CI: replace `msbuild` with `cmake -S code -B code/build -A x64` + `cmake --build code/build --config Release`
 - Preserve `/GL` + `/LTCG` and `/MP` for Release
+- **Must** define `UNICODE` and `_UNICODE` — the vcxproj uses `CharacterSet=Unicode` and all source code uses wide Win32 APIs (`wchar_t` / `LPCWSTR`). Without this, MSVC resolves to ANSI (`A`-suffix) APIs and compilation fails with hundreds of `wchar_t`→`LPCSTR` conversion errors.
 
 **Known Pitfalls:**
-- `find_package(OpenSSL)` may need `OPENSSL_ROOT_DIR` set to the Chocolatey install path on CI
 - `WIN32` flag in `add_executable(MeOS WIN32 ...)` needed for GUI app (no console window)
 - Library search order matters: `code/lib64/` must be found before system-installed versions
+- Do NOT add `find_package(OpenSSL)` — the vendored RestBed.lib already includes OpenSSL. Adding it causes configure failure when OpenSSL dev headers/libs are not installed.
 
 ### US-P0m1: Migrate libharu to vcpkg
 
@@ -69,6 +71,7 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 - [ ] `libharu` declared in `vcpkg.json`
 - [ ] `code/CMakeLists.txt` uses `find_package` instead of manual library paths for libharu
 - [ ] CI builds succeed with vcpkg-provided libharu
+- [ ] **Build verification:** `cmake -B build -G "Visual Studio 18 2026" -A x64` + `cmake --build build --config Release` in `code/` succeeds with zero errors
 
 **Implementation Notes:**
 - vcpkg port: `libharu`. Uses `#include "hpdf.h"` in `pdfwriter.cpp`
@@ -86,6 +89,7 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 - [ ] `code/CMakeLists.txt` uses `find_package` instead of manual library paths for MySQL
 - [ ] `libmysql.dll` available at runtime via vcpkg
 - [ ] CI builds succeed with vcpkg-provided MySQL
+- [ ] **Build verification:** `cmake -B build -G "Visual Studio 18 2026" -A x64` + `cmake --build build --config Release` in `code/` succeeds with zero errors
 
 **Implementation Notes:**
 - vcpkg port: `libmysql`. Vendored headers are MySQL 5.7 — check API compatibility
@@ -104,6 +108,7 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 - [ ] `libpng` declared in `vcpkg.json`
 - [ ] `code/CMakeLists.txt` uses `find_package(PNG)` instead of manual library paths
 - [ ] CI builds succeed with vcpkg-provided libpng
+- [ ] **Build verification:** `cmake -B build -G "Visual Studio 18 2026" -A x64` + `cmake --build build --config Release` in `code/` succeeds with zero errors
 
 **Implementation Notes:**
 - vcpkg port: `libpng`. Uses `#include "png.h"` in `image.cpp`. Depends on zlib (transitive via vcpkg).
@@ -119,6 +124,7 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 - [ ] `zlib` declared in `vcpkg.json`
 - [ ] `code/CMakeLists.txt` uses `find_package(ZLIB)` instead of manual library paths
 - [ ] CI builds succeed with vcpkg-provided zlib
+- [ ] **Build verification:** `cmake -B build -G "Visual Studio 18 2026" -A x64` + `cmake --build build --config Release` in `code/` succeeds with zero errors
 
 **Known Pitfalls:**
 - `code/minizip/` contains both zlib headers and minizip source — only the zlib libs are replaced here; minizip source handled by US-P0m5
@@ -131,6 +137,7 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 - [ ] `minizip` declared in `vcpkg.json`
 - [ ] `code/CMakeLists.txt` uses vcpkg integration instead of compiling minizip sources directly
 - [ ] CI builds succeed with vcpkg-provided minizip
+- [ ] **Build verification:** `cmake -B build -G "Visual Studio 18 2026" -A x64` + `cmake --build build --config Release` in `code/` succeeds with zero errors
 
 **Implementation Notes:**
 - vcpkg port: `minizip`. `code/zip.cpp` includes `"minizip/zip.h"` — verify vcpkg provides same include path
@@ -148,6 +155,7 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 - [ ] `restbed` declared in `vcpkg.json`
 - [ ] `code/CMakeLists.txt` uses `find_package(restbed)` instead of manual library paths
 - [ ] CI builds succeed with vcpkg-provided restbed
+- [ ] **Build verification:** `cmake -B build -G "Visual Studio 18 2026" -A x64` + `cmake --build build --config Release` in `code/` succeeds with zero errors
 
 **Implementation Notes:**
 - vcpkg port: `restbed`. Project uses `#include <restbed>` umbrella header. Depends on OpenSSL (coordinate with US-P0m7).
@@ -166,6 +174,7 @@ This PRD is executed by an autonomous agent running on **Windows**. The agent ca
 - [ ] `code/CMakeLists.txt` uses `find_package(OpenSSL)` with vcpkg integration
 - [ ] CI workflow no longer needs a separate OpenSSL installation step
 - [ ] CI builds succeed
+- [ ] **Build verification:** `cmake -B build -G "Visual Studio 18 2026" -A x64` + `cmake --build build --config Release` in `code/` succeeds with zero errors
 
 **Implementation Notes:**
 - OpenSSL is a transitive dependency of restbed — if US-P0m6 is done, this may only require adding it to `vcpkg.json` and removing the Chocolatey step from CI

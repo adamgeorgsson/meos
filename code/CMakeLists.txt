@@ -17,6 +17,9 @@ list(APPEND SOURCES
 # WIN32: suppress console window (standard for GUI apps)
 add_executable(MeOS WIN32 ${SOURCES})
 
+# Unicode build (matches original VS project CharacterSet=Unicode)
+target_compile_definitions(MeOS PRIVATE UNICODE _UNICODE)
+
 # DPI-aware manifest: embed alongside default manifest (VS generator + MT tool)
 target_sources(MeOS PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/meos_dpi_manifest.xml")
 set_source_files_properties(
@@ -41,9 +44,6 @@ target_link_directories(MeOS PRIVATE
     $<$<NOT:$<CONFIG:Release>>:${CMAKE_CURRENT_SOURCE_DIR}/lib64_db>
 )
 
-# OpenSSL (installed via Chocolatey on CI; set OPENSSL_ROOT_DIR if needed)
-find_package(OpenSSL REQUIRED)
-
 # Link libraries
 target_link_libraries(MeOS PRIVATE
     # Vendored third-party (resolved from lib64/ or lib64_db/ above)
@@ -52,9 +52,6 @@ target_link_libraries(MeOS PRIVATE
     libpng
     RestBed
     zlibstat
-    # OpenSSL
-    OpenSSL::SSL
-    OpenSSL::Crypto
     # Windows system libraries
     Msimg32
     comctl32
