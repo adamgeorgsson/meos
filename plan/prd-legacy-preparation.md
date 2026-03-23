@@ -2,22 +2,24 @@
 
 ## Introduction
 
-This PRD covers the preparatory work needed in the legacy `code/` directory *before* migrating files to the new `src/` modular layout. The goal is to fix cross-platform blockers, reduce GUI coupling, and replace Win32-specific APIs in domain code.
+This PRD covers the preparatory work needed in the legacy `code/` directory *before* migrating files to the new `src/` modular layout. The goal is to fix cross-platform blockers, reduce GUI coupling, replace Win32-specific APIs in domain code, and clean up vendored directories after vcpkg migration.
 
-This work can run **in parallel** with the main platform modernization effort (CMake setup, React frontend, database layer, etc.) since it operates exclusively on the legacy `code/` directory.
+Build system changes (CMake, vcpkg dependencies) are covered separately in `prd-legacy-build.md`.
+
+This work can run **in parallel** with the build modernization effort and the main platform modernization effort (React frontend, database layer, etc.) since it operates exclusively on the legacy `code/` directory.
 
 ### Execution Environment
 
-This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The agent **cannot** run MSBuild or verify Windows builds locally. Changes are made "blind" — correctness of the Windows build is verified **manually via GitHub Actions CI** after the agent completes its work. The agent should:
+This PRD is executed by an autonomous agent running on **Windows**. The agent can verify Windows builds locally using MSBuild or CMake. The agent should:
 
 - Focus on making correct, mechanical, safe transformations
 - Use standard C++ replacements that are known to work on both MSVC and GCC/Clang
-- Avoid MSVC-incompatible constructs (e.g., GCC-only extensions)
+- Avoid GCC-only constructs
 - Prefer conservative changes — when in doubt, use the safer option
 
 ### Constraints
 
-- All changes must be compatible with MSVC (Visual Studio 2022, v143) — verified post-hoc via CI, not locally
+- All changes must be compatible with MSVC (Visual Studio 2022, v143)
 - No changes to the `src/` directory — this PRD operates exclusively on `code/`
 - Changes should be mechanical/safe where possible (search-and-replace, move functions)
 - Domain behavior must not change — these are refactoring-only changes
@@ -287,161 +289,31 @@ This PRD is executed by an autonomous agent running on **Linux Ubuntu**. The age
 - `SportIdent.cpp` MessageBox calls are inside hardware configuration — may need a callback that the UI layer registers
 - OutputDebugString with wide string `.c_str()` → use `narrow()` wrapper for `std::cerr`
 
-### US-P0l: CMake Build for Legacy Code
+### US-P0m-cleanup: Remove Vendored Third-Party Directories
 
-**Description:** Add a CMake build system for the `code/` directory. The existing `.vcxproj`/`.sln` files are retained for Visual Studio users, but CI switches to CMake.
-
-**Acceptance Criteria:**
-- [ ] `code/CMakeLists.txt` exists and builds MeOS.exe on Windows with MSVC via CMake
-- [ ] All `.cpp` source files, resource files (`meos.rc`, `meoslang.rc`), and DPI manifest are compiled/embedded
-- [ ] All external libraries linked: libharu, libmysql, libpng, zlib, RestBed, OpenSSL
-- [ ] All Windows system libraries linked: Msimg32, comctl32, odbc32, odbccp32, winmm, ws2_32, wininet
-- [ ] Debug and Release configurations work (correct library paths: `lib64_db/` vs `lib64/`)
-- [ ] `.github/workflows/build-legacy.yml` uses CMake instead of MSBuild
-- [ ] CI artifact packaging still bundles all required DLLs
-- [ ] C++17 standard enforced, disabled warnings match existing build (4267, 4244, 4018)
-- [ ] The existing `.sln`/`.vcxproj` files are left intact
-
-**Implementation Notes:**
-- Create `code/CMakeLists.txt` as a standalone project (not a subdirectory of root `CMakeLists.txt`)
-- External libraries: `code/lib64/` (Release) and `code/lib64_db/` (Debug) — use generator expressions
-- Include paths: `code/libharu/`, `code/mysql/`, `code/png/`, `code/restbed/`, `code/minizip/`
-- For OpenSSL: use `find_package(OpenSSL)` (CI installs via Chocolatey)
-- CI: replace `msbuild` with `cmake -S code -B code/build -A x64` + `cmake --build code/build --config Release`
-- Preserve `/GL` + `/LTCG` and `/MP` for Release
-
-**Known Pitfalls:**
-- `find_package(OpenSSL)` may need `OPENSSL_ROOT_DIR` set to the Chocolatey install path on CI
-- `WIN32` flag in `add_executable(MeOS WIN32 ...)` needed for GUI app (no console window)
-- Library search order matters: `code/lib64/` must be found before system-installed versions
-
-### US-P0m1: Migrate libharu to vcpkg
-
-**Description:** Replace vendored libharu headers (`code/libharu/`) and pre-built libs (`libharu.lib`/`libhpdf.lib`) with vcpkg.
+**Description:** After vcpkg migrations (US-P0m1–m7 in prd-legacy-build.md) are verified working, remove the vendored directories and pre-built libraries from `code/`.
 
 **Acceptance Criteria:**
-- [ ] `libharu` declared in `vcpkg.json`
-- [ ] `code/CMakeLists.txt` uses `find_package` instead of manual library paths
-- [ ] Vendored `code/libharu/` directory and pre-built libs removed
-- [ ] `code/pdfwriter.cpp` compiles and links correctly
-- [ ] CI builds succeed
+- [ ] `code/libharu/` directory removed (after US-P0m1)
+- [ ] `code/mysql/` directory removed (after US-P0m2)
+- [ ] `code/png/` directory removed (after US-P0m3)
+- [ ] Pre-built zlib libs removed from `code/lib64/`, `code/lib64_db/`, `code/lib/` (after US-P0m4)
+- [ ] `code/minizip/` directory removed (after US-P0m5)
+- [ ] `code/restbed/` directory removed (after US-P0m6)
+- [ ] Pre-built libs (`libharu.lib`, `libhpdf.lib`, `RestBed.lib`, etc.) removed from `code/lib64/`, `code/lib64_db/`
+- [ ] Runtime DLLs removed from `code/dll/`, `code/dll64/` (after US-P0m2)
+- [ ] CI builds still succeed after removal
 
-**Implementation Notes:**
-- vcpkg port: `libharu`. Uses `#include "hpdf.h"` in `pdfwriter.cpp`
-- libharu depends on zlib and libpng — vcpkg handles transitive dependencies
-
-**Known Pitfalls:**
-- Vendored version may differ from vcpkg port — check for API changes
-
-### US-P0m2: Migrate MySQL Connector/C to vcpkg
-
-**Description:** Replace vendored MySQL headers (`code/mysql/`), pre-built libs, and runtime DLLs (`code/dll/`, `code/dll64/`) with vcpkg.
-
-**Acceptance Criteria:**
-- [ ] `libmysql` declared in `vcpkg.json`
-- [ ] `code/CMakeLists.txt` uses `find_package` instead of manual library paths
-- [ ] Vendored `code/mysql/` directory, pre-built libs, and DLLs removed
-- [ ] `code/mysqlwrapper.cpp`, `code/MeosSQL.cpp`, `code/mysqldaemon.cpp` compile and link correctly
-- [ ] CI builds succeed
-
-**Implementation Notes:**
-- vcpkg port: `libmysql`. Vendored headers are MySQL 5.7 — check API compatibility
-- `code/mysqlwrapper.h` includes `<mysql.h>` — verify vcpkg provides same include path
-- `libmysql.dll` needed at runtime — ensure CI artifact packaging picks up vcpkg-installed DLL
-
-**Known Pitfalls:**
-- MariaDB Connector/C (`libmariadb`) is an alternative with better cross-platform support
-- `code/mysql/` has a nested `mysql/` subdirectory — ensure all nested includes resolve
-
-### US-P0m3: Migrate libpng to vcpkg
-
-**Description:** Replace vendored libpng headers (`code/png/`) and pre-built libs with vcpkg.
-
-**Acceptance Criteria:**
-- [ ] `libpng` declared in `vcpkg.json`
-- [ ] `code/CMakeLists.txt` uses `find_package(PNG)` instead of manual library paths
-- [ ] Vendored `code/png/` directory and pre-built libs removed
-- [ ] `code/image.cpp` compiles and links correctly
-- [ ] CI builds succeed
-
-**Implementation Notes:**
-- vcpkg port: `libpng`. Uses `#include "png.h"` in `image.cpp`. Depends on zlib (transitive via vcpkg).
-
-**Known Pitfalls:**
-- Vendored `pnglibconf.h` may contain custom configuration — compare with vcpkg version
-
-### US-P0m4: Migrate zlib to vcpkg
-
-**Description:** Replace vendored zlib static libraries (`zlibstat.lib`/`zlibstat_vc15.lib`) with vcpkg. Note: zlib headers are bundled inside `code/minizip/`.
-
-**Acceptance Criteria:**
-- [ ] `zlib` declared in `vcpkg.json`
-- [ ] `code/CMakeLists.txt` uses `find_package(ZLIB)` instead of manual library paths
-- [ ] Pre-built zlib libs removed from `code/lib64/`, `code/lib64_db/`, `code/lib/`
-- [ ] `code/zip.cpp` and minizip code compile and link correctly
-- [ ] CI builds succeed
-
-**Known Pitfalls:**
-- `code/minizip/` contains both zlib headers and minizip source — only the zlib headers/libs are replaced here; minizip source handled by US-P0m5
-
-### US-P0m5: Migrate minizip to vcpkg
-
-**Description:** Replace vendored minizip source files and headers (`code/minizip/`) with vcpkg. Currently minizip is compiled directly as part of MeOS.
-
-**Acceptance Criteria:**
-- [ ] `minizip` declared in `vcpkg.json`
-- [ ] `code/CMakeLists.txt` uses vcpkg integration instead of compiling minizip sources directly
-- [ ] Vendored `code/minizip/` directory removed (after US-P0m4 provides zlib)
-- [ ] `code/zip.cpp` compiles and links correctly
-- [ ] CI builds succeed
-
-**Implementation Notes:**
-- vcpkg port: `minizip`. `code/zip.cpp` includes `"minizip/zip.h"` — verify vcpkg provides same include path
-- `iowin32.h`/`iowin32.c` is the Windows-specific I/O backend — vcpkg port provides this on Windows
+**Dependencies:** All US-P0m* stories in prd-legacy-build.md must be completed and verified first.
 
 **Known Pitfalls:**
 - Vendored minizip may include local modifications — diff against upstream before removing
-- Must remove minizip `.c` compilation units from CMakeLists.txt when switching to vcpkg library
-
-### US-P0m6: Migrate restbed to vcpkg
-
-**Description:** Replace vendored restbed headers (`code/restbed/`) and pre-built `RestBed.lib` (20–48 MB) with vcpkg.
-
-**Acceptance Criteria:**
-- [ ] `restbed` declared in `vcpkg.json`
-- [ ] `code/CMakeLists.txt` uses `find_package(restbed)` instead of manual library paths
-- [ ] Vendored `code/restbed/` directory and pre-built libs removed
-- [ ] `code/restserver.cpp` and `code/RestService.cpp` compile and link correctly
-- [ ] CI builds succeed
-
-**Implementation Notes:**
-- vcpkg port: `restbed`. Project uses `#include <restbed>` umbrella header. Depends on OpenSSL (coordinate with US-P0m7).
-
-**Known Pitfalls:**
-- Verify `[ssl]` feature is enabled in vcpkg dependency if SSL support is needed
-- Vendored restbed is from 2017 (Corvusoft era) — vcpkg version may have API changes
-- restbed depends on ASIO transitively
-
-### US-P0m7: Migrate OpenSSL to vcpkg
-
-**Description:** Replace system-installed OpenSSL (Chocolatey on CI) with vcpkg for consistent cross-platform builds.
-
-**Acceptance Criteria:**
-- [ ] `openssl` declared in `vcpkg.json`
-- [ ] `code/CMakeLists.txt` uses `find_package(OpenSSL)` with vcpkg integration
-- [ ] CI workflow no longer needs a separate OpenSSL installation step
-- [ ] CI builds succeed
-
-**Implementation Notes:**
-- OpenSSL is a transitive dependency of restbed — if US-P0m6 is done, this may only require adding it to `vcpkg.json` and removing the Chocolatey step from CI
-
-**Known Pitfalls:**
-- OpenSSL 1.1 vs 3.x API differences — verify restbed compatibility with vcpkg version
+- `code/minizip/` contains both zlib headers and minizip source — only remove after both US-P0m4 and US-P0m5 are done
+- Verify no source files still reference vendored include paths before deleting
 
 ## Dependency Order
 
 ```
-US-P0l (CMake build)        — independent, do early for CI feedback
 US-P0a (include casing)     — independent, do first
 US-P0b (extract utilities)  — independent
 US-P0c (string functions)   — independent, easier after US-P0b
@@ -453,12 +325,6 @@ US-P0i (file APIs)          — independent, easier after US-P0e
 US-P0j (threading)          — independent
 US-P0k (Sleep)              — independent, combine with US-P0j
 US-P0n (MessageBox/Debug)   — independent, combine with US-P0f
-US-P0m4 (zlib vcpkg)        — depends on US-P0l
-US-P0m3 (libpng vcpkg)      — depends on US-P0m4
-US-P0m1 (libharu vcpkg)     — depends on US-P0m3 and US-P0m4
-US-P0m5 (minizip vcpkg)     — depends on US-P0m4
-US-P0m7 (OpenSSL vcpkg)     — depends on US-P0l
-US-P0m6 (restbed vcpkg)     — depends on US-P0m7
-US-P0m2 (MySQL vcpkg)       — depends on US-P0l
+US-P0m-cleanup (remove vendored dirs) — depends on all US-P0m* in prd-legacy-build.md
 US-P0g (split large files)  — do last to avoid conflicts
 ```
