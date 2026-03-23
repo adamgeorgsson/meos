@@ -59,9 +59,43 @@ npm test           # Vitest unit tests
 npm run test:coverage  # Tests with v8 coverage
 ```
 
+## Legacy MeOS (code/ directory)
+
+The `code/` directory contains the original MeOS application and is built with CMake.
+
+### Prerequisites
+
+- Windows (MSVC required — legacy code is Windows-only)
+- CMake 3.16+
+- Visual Studio 2019 or 2022 (x64 toolchain)
+- OpenSSL 1.1 (install via Chocolatey: `choco install openssl --version=1.1.1.2100`)
+
+### Build
+
+```powershell
+# Configure (x64, Visual Studio generator)
+cmake -S code -B code/build -A x64 -DOPENSSL_ROOT_DIR="C:/Program Files/OpenSSL-Win64"
+
+# Build Release
+cmake --build code/build --config Release --parallel
+
+# Output: code/build/Release/MeOS.exe
+```
+
+### Runtime DLLs
+
+Copy the following DLLs next to `MeOS.exe` before running:
+
+- `code/dll64/libharu.dll`
+- `code/dll64/libmysql.dll`
+- `C:/Program Files/OpenSSL-Win64/libssl-1_1-x64.dll`
+- `C:/Program Files/OpenSSL-Win64/libcrypto-1_1-x64.dll`
+- VC++ runtime DLLs (`MSVCP140.dll`, `VCRUNTIME140.dll`, `VCRUNTIME140_1.dll`)
+
 ## CI/CD
 
 GitHub Actions workflows run automatically on every push and pull request.
 
 - **C++ CI** (`.github/workflows/cpp.yml`) — builds and tests on Linux and Windows, runs clang-tidy on Linux
 - **Frontend CI** (`.github/workflows/frontend.yml`) — lint, test, and build the React frontend
+- **Legacy Build CI** (`.github/workflows/build-legacy.yml`) — builds the legacy `code/` directory with CMake on Windows

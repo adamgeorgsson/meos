@@ -1,0 +1,82 @@
+cmake_minimum_required(VERSION 3.16)
+project(MeOS LANGUAGES CXX RC)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Dynamically discover all C++ sources in this directory (non-recursive,
+# so subdirectories like minizip/, libharu/, etc. are not included)
+file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp")
+
+# Resource files
+list(APPEND SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/meos.rc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/meoslang.rc"
+)
+
+# WIN32: suppress console window (standard for GUI apps)
+add_executable(MeOS WIN32 ${SOURCES})
+
+# DPI-aware manifest: embed alongside default manifest (VS generator + MT tool)
+target_sources(MeOS PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/meos_dpi_manifest.xml")
+set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/meos_dpi_manifest.xml"
+    PROPERTIES VS_TOOL_OVERRIDE "MT"
+)
+
+# Include paths for vendored third-party headers
+target_include_directories(MeOS PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/libharu"
+    "${CMAKE_CURRENT_SOURCE_DIR}/mysql"
+    "${CMAKE_CURRENT_SOURCE_DIR}/png"
+    "${CMAKE_CURRENT_SOURCE_DIR}/restbed"
+    "${CMAKE_CURRENT_SOURCE_DIR}/minizip"
+)
+
+# Vendored library search paths:
+#   Release  → lib64/
+#   Debug    → lib64_db/
+target_link_directories(MeOS PRIVATE
+    $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/lib64>
+    $<$<NOT:$<CONFIG:Release>>:${CMAKE_CURRENT_SOURCE_DIR}/lib64_db>
+)
+
+# OpenSSL (installed via Chocolatey on CI; set OPENSSL_ROOT_DIR if needed)
+find_package(OpenSSL REQUIRED)
+
+# Link libraries
+target_link_libraries(MeOS PRIVATE
+    # Vendored third-party (resolved from lib64/ or lib64_db/ above)
+    libharu
+    libmysql
+    libpng
+    RestBed
+    zlibstat
+    # OpenSSL
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    # Windows system libraries
+    Msimg32
+    comctl32
+    odbc32
+    odbccp32
+    winmm
+    ws2_32
+    wininet
+)
+
+# MSVC-specific compiler and linker settings
+if(MSVC)
+    target_compile_options(MeOS PRIVATE
+        # Suppress known legacy warnings
+        /wd4267 /wd4244 /wd4018
+        # Multi-processor compilation
+        /MP
+        # Whole program optimisation for Release
+        $<$<CONFIG:Release>:/GL>
+    )
+    target_link_options(MeOS PRIVATE
+        # Link-time code generation for Release
+        $<$<CONFIG:Release>:/LTCG>
+    )
+endif()

@@ -2,7 +2,7 @@ name: Build legacy MeOS
 
 on:
   push:
-    branches: [base, 'legacy-preparation-*']
+    branches: [base, 'legacy-preparation-*', 'legacy-build-*']
     paths:
       - 'code/**'
       - '.github/workflows/build-legacy.yml'
@@ -18,21 +18,21 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
-
       - name: Install OpenSSL 1.1
         run: choco install openssl --version=1.1.1.2100 -y --no-progress
 
+      - name: Configure (CMake)
+        run: >
+          cmake -S code -B code/build -A x64
+          -DOPENSSL_ROOT_DIR="C:/Program Files/OpenSSL-Win64"
+
       - name: Build
-        working-directory: code
-        run: msbuild MeOS.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+        run: cmake --build code/build --config ${{ matrix.configuration }} --parallel
 
       - name: Package release
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path code -Recurse -Filter MeOS.exe | Select-Object -First 1
-          $outDir = $exe.DirectoryName
+          $outDir = "code/build/${{ matrix.configuration }}"
 
           Copy-Item code/dll64/libharu.dll  $outDir
           Copy-Item code/dll64/libmysql.dll $outDir
@@ -51,12 +51,12 @@ jobs:
         with:
           name: MeOS-${{ matrix.configuration }}-${{ matrix.platform }}
           path: |
-            code/**/MeOS.exe
-            code/**/libharu.dll
-            code/**/libmysql.dll
-            code/**/libssl-1_1-x64.dll
-            code/**/libcrypto-1_1-x64.dll
-            code/**/MSVCP140.dll
-            code/**/VCRUNTIME140.dll
-            code/**/VCRUNTIME140_1.dll
+            code/build/${{ matrix.configuration }}/MeOS.exe
+            code/build/${{ matrix.configuration }}/libharu.dll
+            code/build/${{ matrix.configuration }}/libmysql.dll
+            code/build/${{ matrix.configuration }}/libssl-1_1-x64.dll
+            code/build/${{ matrix.configuration }}/libcrypto-1_1-x64.dll
+            code/build/${{ matrix.configuration }}/MSVCP140.dll
+            code/build/${{ matrix.configuration }}/VCRUNTIME140.dll
+            code/build/${{ matrix.configuration }}/VCRUNTIME140_1.dll
           if-no-files-found: warn
