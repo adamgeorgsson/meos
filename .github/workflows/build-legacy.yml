@@ -30,14 +30,7 @@ jobs:
           $outDir = "code/build/${{ matrix.configuration }}"
 
           $vcpkgBin = "code/build/vcpkg_installed/x64-windows/bin"
-          Get-ChildItem "$vcpkgBin/zlib*.dll"     | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/minizip*.dll"  | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/libpng*.dll"   | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/libharu*.dll"  | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/libmysql*.dll" | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/libssl*.dll"    | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/libcrypto*.dll" | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/restbed*.dll"   | Copy-Item -Destination $outDir
+          Get-ChildItem "$vcpkgBin/*.dll" | Copy-Item -Destination $outDir
 
           $vcToolsDir = (& vswhere -latest -find "VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT") | Select-Object -Last 1
           Copy-Item "$vcToolsDir\MSVCP140.dll"       $outDir

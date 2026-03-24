@@ -66,8 +66,7 @@ npm run test:coverage  # Tests with v8 coverage
 - Windows 10/11 x64
 - CMake 3.20+
 - Visual Studio 2019/2022 with C++ workload
-- vcpkg (set `VCPKG_INSTALLATION_ROOT` to your vcpkg directory)
-- OpenSSL 1.1 (install via `choco install openssl --version=1.1.1.2100`)
+- vcpkg (set `VCPKG_INSTALLATION_ROOT` to your vcpkg installation directory)
 
 ### Build
 
@@ -76,7 +75,8 @@ cmake -S code -B code/build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATI
 cmake --build code/build --config Release
 ```
 
-vcpkg automatically installs `zlib` and `minizip` from `code/vcpkg.json` during configure.
+vcpkg automatically installs all dependencies from `code/vcpkg.json` during configure:
+`zlib`, `minizip`, `libpng`, `libharu`, `libmysql`, `openssl`, `restbed`.
 
 Output: `code/build/Release/MeOS.exe`
 
@@ -84,10 +84,8 @@ The build automatically copies data files from `code/Lists/` to the output direc
 
 ### Runtime DLLs
 
-Copy the following alongside `MeOS.exe` before running:
-- `code/dll64/libharu.dll`
-- `code/dll64/libmysql.dll`
-- OpenSSL: `libssl-1_1-x64.dll`, `libcrypto-1_1-x64.dll`
+All required DLLs are provided by vcpkg. Copy everything from
+`code/build/vcpkg_installed/x64-windows/bin/` alongside `MeOS.exe` before running.
 
 ## CI/CD
 
