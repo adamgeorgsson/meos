@@ -22,7 +22,7 @@ jobs:
         run: choco install openssl --version=1.1.1.2100 -y --no-progress
 
       - name: Configure
-        run: cmake -S code -B code/build -A x64
+        run: cmake -S code -B code/build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 
       - name: Build
         run: cmake --build code/build --config ${{ matrix.configuration }}
@@ -34,6 +34,10 @@ jobs:
 
           Copy-Item code/dll64/libharu.dll  $outDir
           Copy-Item code/dll64/libmysql.dll $outDir
+
+          $vcpkgBin = "code/build/vcpkg_installed/x64-windows/bin"
+          Get-ChildItem "$vcpkgBin/zlib*.dll"    | Copy-Item -Destination $outDir
+          Get-ChildItem "$vcpkgBin/minizip*.dll" | Copy-Item -Destination $outDir
 
           $opensslDir = (Get-ChildItem "C:\Program Files\OpenSSL*" -Directory | Select-Object -First 1).FullName
           Copy-Item "$opensslDir\libssl-1_1-x64.dll"    $outDir

@@ -66,14 +66,17 @@ npm run test:coverage  # Tests with v8 coverage
 - Windows 10/11 x64
 - CMake 3.20+
 - Visual Studio 2019/2022 with C++ workload
+- vcpkg (set `VCPKG_INSTALLATION_ROOT` to your vcpkg directory)
 - OpenSSL 1.1 (install via `choco install openssl --version=1.1.1.2100`)
 
 ### Build
 
 ```powershell
-cmake -S code -B code/build -A x64
+cmake -S code -B code/build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 cmake --build code/build --config Release
 ```
+
+vcpkg automatically installs `zlib` and `minizip` from `code/vcpkg.json` during configure.
 
 Output: `code/build/Release/MeOS.exe`
 

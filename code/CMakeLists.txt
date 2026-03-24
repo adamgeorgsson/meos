@@ -4,6 +4,9 @@ project(MeOS)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(ZLIB REQUIRED)
+find_package(unofficial-minizip CONFIG REQUIRED)
+
 file(GLOB SOURCES "*.cpp")
 
 add_executable(MeOS WIN32
@@ -33,7 +36,8 @@ target_link_libraries(MeOS PRIVATE
     libharu
     libmysql
     libpng
-    zlibstat
+    ZLIB::ZLIB
+    unofficial::minizip::minizip
     RestBed
     Msimg32
     comctl32
