@@ -13,6 +13,8 @@ find_package(PNG REQUIRED)
 find_package(OpenSSL REQUIRED)
 # vcpkg-provided packages (US-006)
 find_package(unofficial-libmysql CONFIG REQUIRED)
+# vcpkg-provided packages (US-007)
+find_package(haru CONFIG REQUIRED)
 
 # Dynamically discover all C++ sources in this directory (non-recursive,
 # so subdirectories like minizip/, libharu/, etc. are not included)
@@ -40,8 +42,8 @@ set_source_files_properties(
 # Include paths for vendored third-party headers
 # code/minizip removed: zlib and minizip headers are now provided by vcpkg (US-002/US-005)
 # code/png removed: image.cpp uses "#include "png/png.h"" which resolves relative to code/ (US-003)
+# code/libharu removed: pdfwriter.cpp uses "#include "hpdf.h""; vcpkg haru::haru provides include dirs (US-007)
 target_include_directories(MeOS PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/libharu"
     "${CMAKE_CURRENT_SOURCE_DIR}/mysql"
     "${CMAKE_CURRENT_SOURCE_DIR}/restbed"
 )
@@ -57,8 +59,9 @@ target_link_directories(MeOS PRIVATE
 # Link libraries
 target_link_libraries(MeOS PRIVATE
     # Vendored third-party (resolved from lib64/ or lib64_db/ above)
-    libharu
     RestBed
+    # vcpkg-provided: replaces vendored libharu.lib (US-007)
+    haru::haru
     # vcpkg-provided: replaces vendored libmysql.lib (US-006)
     unofficial::libmysql::libmysql
     # vcpkg-provided: replaces Chocolatey OpenSSL; also satisfies RestBed's transitive dep (US-004)
