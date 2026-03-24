@@ -6,6 +6,7 @@
     "zlib",
     "minizip",
     "libpng",
-    "openssl"
+    "openssl",
+    "libmysql"
   ]
 }

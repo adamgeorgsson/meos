@@ -11,6 +11,8 @@ find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
 # vcpkg-provided packages (US-004)
 find_package(OpenSSL REQUIRED)
+# vcpkg-provided packages (US-006)
+find_package(unofficial-libmysql CONFIG REQUIRED)
 
 # Dynamically discover all C++ sources in this directory (non-recursive,
 # so subdirectories like minizip/, libharu/, etc. are not included)
@@ -56,8 +58,9 @@ target_link_directories(MeOS PRIVATE
 target_link_libraries(MeOS PRIVATE
     # Vendored third-party (resolved from lib64/ or lib64_db/ above)
     libharu
-    libmysql
     RestBed
+    # vcpkg-provided: replaces vendored libmysql.lib (US-006)
+    unofficial::libmysql::libmysql
     # vcpkg-provided: replaces Chocolatey OpenSSL; also satisfies RestBed's transitive dep (US-004)
     OpenSSL::SSL
     OpenSSL::Crypto

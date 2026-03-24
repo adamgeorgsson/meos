@@ -33,12 +33,12 @@ jobs:
           $outDir = "code/build/${{ matrix.configuration }}"
 
           Copy-Item code/dll64/libharu.dll  $outDir
-          Copy-Item code/dll64/libmysql.dll $outDir
 
-          # vcpkg-provided DLLs (zlib, libpng; minizip may be static depending on triplet)
+          # vcpkg-provided DLLs (zlib, libpng, libmysql; minizip may be static depending on triplet)
           $vcpkgBin = "code/build/vcpkg_installed/x64-windows/bin"
           if (Test-Path "$vcpkgBin/zlib1.dll") { Copy-Item "$vcpkgBin/zlib1.dll" $outDir }
           Get-ChildItem "$vcpkgBin/libpng*.dll" -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
+          if (Test-Path "$vcpkgBin/libmysql.dll") { Copy-Item "$vcpkgBin/libmysql.dll" $outDir }
 
           # vcpkg-provided OpenSSL DLLs (name includes version, e.g. libssl-3-x64.dll or libssl-1_1-x64.dll)
           Get-ChildItem "$vcpkgBin/libssl*.dll"    -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
