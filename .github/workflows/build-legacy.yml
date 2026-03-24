@@ -2,7 +2,7 @@ name: Build legacy MeOS
 
 on:
   push:
-    branches: [base, 'legacy-preparation-*']
+    branches: [base, 'legacy-preparation-*', 'legacy-build-*']
     paths:
       - 'code/**'
       - '.github/workflows/build-legacy.yml'
@@ -16,47 +16,39 @@ jobs:
         platform: [x64]
 
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
+      - uses: actions/checkout@v4
 
       - name: Install OpenSSL 1.1
         run: choco install openssl --version=1.1.1.2100 -y --no-progress
 
+      - name: Configure
+        run: cmake -S code -B code/build -A x64
+
       - name: Build
-        working-directory: code
-        run: msbuild MeOS.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+        run: cmake --build code/build --config ${{ matrix.configuration }}
 
       - name: Package release
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path code -Recurse -Filter MeOS.exe | Select-Object -First 1
-          $outDir = $exe.DirectoryName
+          $outDir = "code/build/${{ matrix.configuration }}"
 
           Copy-Item code/dll64/libharu.dll  $outDir
           Copy-Item code/dll64/libmysql.dll $outDir
 
           $opensslDir = (Get-ChildItem "C:\Program Files\OpenSSL*" -Directory | Select-Object -First 1).FullName
           Copy-Item "$opensslDir\libssl-1_1-x64.dll"    $outDir
-          Copy-Item "$opensslDir\libcrypto-1_1-x64.dll"  $outDir
+          Copy-Item "$opensslDir\libcrypto-1_1-x64.dll" $outDir
 
           $vcToolsDir = (& vswhere -latest -find "VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT") | Select-Object -Last 1
-          Copy-Item "$vcToolsDir\MSVCP140.dll"        $outDir
-          Copy-Item "$vcToolsDir\VCRUNTIME140.dll"    $outDir
-          Copy-Item "$vcToolsDir\VCRUNTIME140_1.dll"  $outDir
+          Copy-Item "$vcToolsDir\MSVCP140.dll"       $outDir
+          Copy-Item "$vcToolsDir\VCRUNTIME140.dll"   $outDir
+          Copy-Item "$vcToolsDir\VCRUNTIME140_1.dll" $outDir
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: MeOS-${{ matrix.configuration }}-${{ matrix.platform }}
           path: |
-            code/**/MeOS.exe
-            code/**/libharu.dll
-            code/**/libmysql.dll
-            code/**/libssl-1_1-x64.dll
-            code/**/libcrypto-1_1-x64.dll
-            code/**/MSVCP140.dll
-            code/**/VCRUNTIME140.dll
-            code/**/VCRUNTIME140_1.dll
+            code/build/${{ matrix.configuration }}/MeOS.exe
+            code/build/${{ matrix.configuration }}/*.dll
           if-no-files-found: warn

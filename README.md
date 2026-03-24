@@ -59,6 +59,31 @@ npm test           # Vitest unit tests
 npm run test:coverage  # Tests with v8 coverage
 ```
 
+## Legacy MeOS (Windows GUI)
+
+### Prerequisites
+
+- Windows 10/11 x64
+- CMake 3.20+
+- Visual Studio 2019/2022 with C++ workload
+- OpenSSL 1.1 (install via `choco install openssl --version=1.1.1.2100`)
+
+### Build
+
+```powershell
+cmake -S code -B code/build -A x64
+cmake --build code/build --config Release
+```
+
+Output: `code/build/Release/MeOS.exe`
+
+### Runtime DLLs
+
+Copy the following alongside `MeOS.exe` before running:
+- `code/dll64/libharu.dll`
+- `code/dll64/libmysql.dll`
+- OpenSSL: `libssl-1_1-x64.dll`, `libcrypto-1_1-x64.dll`
+
 ## CI/CD
 
 GitHub Actions workflows run automatically on every push and pull request.
