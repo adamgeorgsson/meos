@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
+find_package(unofficial-libharu CONFIG REQUIRED)
 
 file(GLOB SOURCES "*.cpp")
 
@@ -21,7 +22,6 @@ set_target_properties(MeOS PROPERTIES
 )
 
 target_include_directories(MeOS PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/libharu
     ${CMAKE_CURRENT_SOURCE_DIR}/mysql
     ${CMAKE_CURRENT_SOURCE_DIR}/png
     ${CMAKE_CURRENT_SOURCE_DIR}/restbed
@@ -34,7 +34,7 @@ target_link_directories(MeOS PRIVATE
 )
 
 target_link_libraries(MeOS PRIVATE
-    libharu
+    unofficial::libharu::hpdf
     libmysql
     PNG::PNG
     ZLIB::ZLIB
