@@ -4,6 +4,10 @@ project(MeOS LANGUAGES CXX RC)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# vcpkg-provided packages (US-002/US-005)
+find_package(ZLIB REQUIRED)
+find_package(unofficial-minizip CONFIG REQUIRED)
+
 # Dynamically discover all C++ sources in this directory (non-recursive,
 # so subdirectories like minizip/, libharu/, etc. are not included)
 file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp")
@@ -28,12 +32,12 @@ set_source_files_properties(
 )
 
 # Include paths for vendored third-party headers
+# code/minizip removed: zlib and minizip headers are now provided by vcpkg (US-002/US-005)
 target_include_directories(MeOS PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/libharu"
     "${CMAKE_CURRENT_SOURCE_DIR}/mysql"
     "${CMAKE_CURRENT_SOURCE_DIR}/png"
     "${CMAKE_CURRENT_SOURCE_DIR}/restbed"
-    "${CMAKE_CURRENT_SOURCE_DIR}/minizip"
 )
 
 # Vendored library search paths:
@@ -51,7 +55,9 @@ target_link_libraries(MeOS PRIVATE
     libmysql
     libpng
     RestBed
-    zlibstat
+    # vcpkg-provided: replaces vendored zlibstat.lib which bundled zlib + minizip (US-002/US-005)
+    ZLIB::ZLIB
+    unofficial::minizip::minizip
     # Windows system libraries
     Msimg32
     comctl32
