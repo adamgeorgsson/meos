@@ -51,4 +51,14 @@ jobs:
           path: |
             code/build/${{ matrix.configuration }}/MeOS.exe
             code/build/${{ matrix.configuration }}/*.dll
+            code/build/${{ matrix.configuration }}/*.xml
+            code/build/${{ matrix.configuration }}/*.csv
+            code/build/${{ matrix.configuration }}/*.listdef
+            code/build/${{ matrix.configuration }}/*.lxml
+            code/build/${{ matrix.configuration }}/*.template
+            code/build/${{ matrix.configuration }}/*.meos
+            code/build/${{ matrix.configuration }}/*.mwd
+            code/build/${{ matrix.configuration }}/*.wpersons
+            code/build/${{ matrix.configuration }}/*.brules
+            code/build/${{ matrix.configuration }}/*.cardsystem
           if-no-files-found: warn

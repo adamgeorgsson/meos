@@ -60,3 +60,10 @@ target_compile_options(MeOS PRIVATE
 target_link_options(MeOS PRIVATE
     $<$<CONFIG:Release>:/LTCG>
 )
+
+add_custom_command(TARGET MeOS POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/Lists"
+        "$<TARGET_FILE_DIR:MeOS>"
+    COMMENT "Copying Lists data files to output directory"
+)

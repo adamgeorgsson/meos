@@ -77,6 +77,8 @@ cmake --build code/build --config Release
 
 Output: `code/build/Release/MeOS.exe`
 
+The build automatically copies data files from `code/Lists/` to the output directory via a CMake POST_BUILD step.
+
 ### Runtime DLLs
 
 Copy the following alongside `MeOS.exe` before running:
