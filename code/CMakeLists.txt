@@ -9,6 +9,7 @@ find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(unofficial-libharu CONFIG REQUIRED)
 find_package(unofficial-libmysql CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 file(GLOB SOURCES "*.cpp")
 
@@ -41,6 +42,8 @@ target_link_libraries(MeOS PRIVATE
     ZLIB::ZLIB
     unofficial::minizip::minizip
     RestBed
+    OpenSSL::SSL
+    OpenSSL::Crypto
     Msimg32
     comctl32
     odbc32

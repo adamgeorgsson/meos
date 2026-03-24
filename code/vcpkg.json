@@ -5,6 +5,7 @@
     "minizip",
     "libpng",
     "libharu",
-    "libmysql"
+    "libmysql",
+    "openssl"
   ]
 }
