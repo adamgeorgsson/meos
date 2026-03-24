@@ -39,9 +39,10 @@ jobs:
           Copy-Item code/dll64/libharu.dll  $outDir
           Copy-Item code/dll64/libmysql.dll $outDir
 
-          # vcpkg-provided DLLs (zlib; minizip may be static depending on triplet)
+          # vcpkg-provided DLLs (zlib, libpng; minizip may be static depending on triplet)
           $vcpkgBin = "code/build/vcpkg_installed/x64-windows/bin"
           if (Test-Path "$vcpkgBin/zlib1.dll") { Copy-Item "$vcpkgBin/zlib1.dll" $outDir }
+          Get-ChildItem "$vcpkgBin/libpng*.dll" -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
 
           $opensslDir = (Get-ChildItem "C:\Program Files\OpenSSL*" -Directory | Select-Object -First 1).FullName
           Copy-Item "$opensslDir\libssl-1_1-x64.dll"    $outDir

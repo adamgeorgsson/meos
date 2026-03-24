@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # vcpkg-provided packages (US-002/US-005)
 find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
+# vcpkg-provided packages (US-003)
+find_package(PNG REQUIRED)
 
 # Dynamically discover all C++ sources in this directory (non-recursive,
 # so subdirectories like minizip/, libharu/, etc. are not included)
@@ -33,10 +35,10 @@ set_source_files_properties(
 
 # Include paths for vendored third-party headers
 # code/minizip removed: zlib and minizip headers are now provided by vcpkg (US-002/US-005)
+# code/png removed: image.cpp uses "#include "png/png.h"" which resolves relative to code/ (US-003)
 target_include_directories(MeOS PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/libharu"
     "${CMAKE_CURRENT_SOURCE_DIR}/mysql"
-    "${CMAKE_CURRENT_SOURCE_DIR}/png"
     "${CMAKE_CURRENT_SOURCE_DIR}/restbed"
 )
 
@@ -53,8 +55,9 @@ target_link_libraries(MeOS PRIVATE
     # Vendored third-party (resolved from lib64/ or lib64_db/ above)
     libharu
     libmysql
-    libpng
     RestBed
+    # vcpkg-provided: replaces vendored libpng.lib (US-003)
+    PNG::PNG
     # vcpkg-provided: replaces vendored zlibstat.lib which bundled zlib + minizip (US-002/US-005)
     ZLIB::ZLIB
     unofficial::minizip::minizip
