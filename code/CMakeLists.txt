@@ -15,6 +15,8 @@ find_package(OpenSSL REQUIRED)
 find_package(unofficial-libmysql CONFIG REQUIRED)
 # vcpkg-provided packages (US-007)
 find_package(haru CONFIG REQUIRED)
+# vcpkg-provided packages (US-008)
+find_package(unofficial-restbed CONFIG REQUIRED)
 
 # Dynamically discover all C++ sources in this directory (non-recursive,
 # so subdirectories like minizip/, libharu/, etc. are not included)
@@ -43,23 +45,17 @@ set_source_files_properties(
 # code/minizip removed: zlib and minizip headers are now provided by vcpkg (US-002/US-005)
 # code/png removed: image.cpp uses "#include "png/png.h"" which resolves relative to code/ (US-003)
 # code/libharu removed: pdfwriter.cpp uses "#include "hpdf.h""; vcpkg haru::haru provides include dirs (US-007)
+# code/restbed kept: restserver.cpp uses "#include "restbed/restbed"" which resolves relative to code/,
+#   and the umbrella header internally includes "corvusoft/restbed/..." relative to code/restbed/ (US-008)
 target_include_directories(MeOS PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/mysql"
     "${CMAKE_CURRENT_SOURCE_DIR}/restbed"
 )
 
-# Vendored library search paths:
-#   Release  → lib64/
-#   Debug    → lib64_db/
-target_link_directories(MeOS PRIVATE
-    $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/lib64>
-    $<$<NOT:$<CONFIG:Release>>:${CMAKE_CURRENT_SOURCE_DIR}/lib64_db>
-)
-
 # Link libraries
 target_link_libraries(MeOS PRIVATE
-    # Vendored third-party (resolved from lib64/ or lib64_db/ above)
-    RestBed
+    # vcpkg-provided: replaces vendored RestBed.lib (US-008)
+    unofficial::restbed::restbed
     # vcpkg-provided: replaces vendored libharu.lib (US-007)
     haru::haru
     # vcpkg-provided: replaces vendored libmysql.lib (US-006)

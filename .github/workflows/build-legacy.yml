@@ -32,12 +32,13 @@ jobs:
         run: |
           $outDir = "code/build/${{ matrix.configuration }}"
 
-          # vcpkg-provided DLLs (zlib, libpng, libharu, libmysql; minizip may be static depending on triplet)
+          # vcpkg-provided DLLs (zlib, libpng, libharu, libmysql, restbed; minizip may be static depending on triplet)
           $vcpkgBin = "code/build/vcpkg_installed/x64-windows/bin"
           if (Test-Path "$vcpkgBin/zlib1.dll") { Copy-Item "$vcpkgBin/zlib1.dll" $outDir }
           Get-ChildItem "$vcpkgBin/libpng*.dll" -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
           Get-ChildItem "$vcpkgBin/libharu*.dll" -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
           if (Test-Path "$vcpkgBin/libmysql.dll") { Copy-Item "$vcpkgBin/libmysql.dll" $outDir }
+          Get-ChildItem "$vcpkgBin/restbed*.dll"  -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
 
           # vcpkg-provided OpenSSL DLLs (name includes version, e.g. libssl-3-x64.dll or libssl-1_1-x64.dll)
           Get-ChildItem "$vcpkgBin/libssl*.dll"    -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
@@ -56,6 +57,7 @@ jobs:
             code/build/${{ matrix.configuration }}/MeOS.exe
             code/build/${{ matrix.configuration }}/libharu*.dll
             code/build/${{ matrix.configuration }}/libmysql.dll
+            code/build/${{ matrix.configuration }}/restbed*.dll
             code/build/${{ matrix.configuration }}/libssl*.dll
             code/build/${{ matrix.configuration }}/libcrypto*.dll
             code/build/${{ matrix.configuration }}/MSVCP140.dll
