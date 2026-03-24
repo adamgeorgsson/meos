@@ -9,6 +9,8 @@ find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 # vcpkg-provided packages (US-003)
 find_package(PNG REQUIRED)
+# vcpkg-provided packages (US-004)
+find_package(OpenSSL REQUIRED)
 
 # Dynamically discover all C++ sources in this directory (non-recursive,
 # so subdirectories like minizip/, libharu/, etc. are not included)
@@ -56,6 +58,9 @@ target_link_libraries(MeOS PRIVATE
     libharu
     libmysql
     RestBed
+    # vcpkg-provided: replaces Chocolatey OpenSSL; also satisfies RestBed's transitive dep (US-004)
+    OpenSSL::SSL
+    OpenSSL::Crypto
     # vcpkg-provided: replaces vendored libpng.lib (US-003)
     PNG::PNG
     # vcpkg-provided: replaces vendored zlibstat.lib which bundled zlib + minizip (US-002/US-005)

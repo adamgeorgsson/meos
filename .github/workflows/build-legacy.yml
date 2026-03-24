@@ -18,13 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install OpenSSL 1.1
-        run: choco install openssl --version=1.1.1.2100 -y --no-progress
-
       - name: Configure (CMake)
         run: >
           cmake -S code -B code/build -A x64
-          -DOPENSSL_ROOT_DIR="C:/Program Files/OpenSSL-Win64"
           -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
           -DVCPKG_TARGET_TRIPLET=x64-windows
 
@@ -44,9 +40,9 @@ jobs:
           if (Test-Path "$vcpkgBin/zlib1.dll") { Copy-Item "$vcpkgBin/zlib1.dll" $outDir }
           Get-ChildItem "$vcpkgBin/libpng*.dll" -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
 
-          $opensslDir = (Get-ChildItem "C:\Program Files\OpenSSL*" -Directory | Select-Object -First 1).FullName
-          Copy-Item "$opensslDir\libssl-1_1-x64.dll"    $outDir
-          Copy-Item "$opensslDir\libcrypto-1_1-x64.dll"  $outDir
+          # vcpkg-provided OpenSSL DLLs (name includes version, e.g. libssl-3-x64.dll or libssl-1_1-x64.dll)
+          Get-ChildItem "$vcpkgBin/libssl*.dll"    -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
+          Get-ChildItem "$vcpkgBin/libcrypto*.dll" -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $outDir }
 
           $vcToolsDir = (& vswhere -latest -find "VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT") | Select-Object -Last 1
           Copy-Item "$vcToolsDir\MSVCP140.dll"        $outDir
@@ -61,8 +57,8 @@ jobs:
             code/build/${{ matrix.configuration }}/MeOS.exe
             code/build/${{ matrix.configuration }}/libharu.dll
             code/build/${{ matrix.configuration }}/libmysql.dll
-            code/build/${{ matrix.configuration }}/libssl-1_1-x64.dll
-            code/build/${{ matrix.configuration }}/libcrypto-1_1-x64.dll
+            code/build/${{ matrix.configuration }}/libssl*.dll
+            code/build/${{ matrix.configuration }}/libcrypto*.dll
             code/build/${{ matrix.configuration }}/MSVCP140.dll
             code/build/${{ matrix.configuration }}/VCRUNTIME140.dll
             code/build/${{ matrix.configuration }}/VCRUNTIME140_1.dll

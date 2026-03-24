@@ -5,6 +5,7 @@
   "dependencies": [
     "zlib",
     "minizip",
-    "libpng"
+    "libpng",
+    "openssl"
   ]
 }
