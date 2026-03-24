@@ -94,10 +94,10 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     CLAUDE_MODEL="${MODEL//./-}"
     JSON_OUTPUT=$(timeout --kill-after=10 $TIMEOUT claude --dangerously-skip-permissions --print --output-format json --model "$CLAUDE_MODEL" < "$SCRIPT_DIR/prompt.md" 2>/dev/null) || true
     # Extract text result and usage from JSON
-    OUTPUT=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',''))" 2>/dev/null) || OUTPUT="$JSON_OUTPUT"
-    COST_USD=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'{d.get(\"total_cost_usd\",0):.4f}')" 2>/dev/null) || true
-    INPUT_TOKENS=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); u=d.get('usage',{}); print(u.get('input_tokens',0) + u.get('cache_read_input_tokens',0) + u.get('cache_creation_input_tokens',0))" 2>/dev/null) || true
-    OUTPUT_TOKENS=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('usage',{}).get('output_tokens',0))" 2>/dev/null) || true
+    OUTPUT=$(echo "$JSON_OUTPUT" | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',''))" 2>/dev/null) || OUTPUT="$JSON_OUTPUT"
+    COST_USD=$(echo "$JSON_OUTPUT" | python -c "import sys,json; d=json.load(sys.stdin); print(f'{d.get(\"total_cost_usd\",0):.4f}')" 2>/dev/null) || true
+    INPUT_TOKENS=$(echo "$JSON_OUTPUT" | python -c "import sys,json; d=json.load(sys.stdin); u=d.get('usage',{}); print(u.get('input_tokens',0) + u.get('cache_read_input_tokens',0) + u.get('cache_creation_input_tokens',0))" 2>/dev/null) || true
+    OUTPUT_TOKENS=$(echo "$JSON_OUTPUT" | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('usage',{}).get('output_tokens',0))" 2>/dev/null) || true
     echo "$OUTPUT" >&2
   elif [[ "$TOOL" == "copilot" ]]; then
     OUTPUT=$(timeout --kill-after=10 $TIMEOUT copilot -p "$(cat "$SCRIPT_DIR/prompt.md")" --allow-all --model "$MODEL" 2>&1 | tee /dev/stderr) || true
@@ -136,7 +136,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
       TOTAL_TIME=$((TOTAL_TIME + dur))
       TASK_COUNT=$((TASK_COUNT + 1))
       if [[ -n "$cost" ]]; then
-        TOTAL_COST=$(python3 -c "print(round($TOTAL_COST + $cost, 4))")
+        TOTAL_COST=$(python -c "print(round($TOTAL_COST + $cost, 4))")
       fi
     done < "$METRICS_FILE"
     printf "Total time: %dm%02ds across %d tasks, total cost: \$%s\n" $((TOTAL_TIME / 60)) $((TOTAL_TIME % 60)) "$TASK_COUNT" "$TOTAL_COST"
@@ -165,7 +165,7 @@ while IFS=',' read -r tid tool start dur status cost in_tok out_tok; do
   TOTAL_TIME=$((TOTAL_TIME + dur))
   TASK_COUNT=$((TASK_COUNT + 1))
   if [[ -n "$cost" ]]; then
-    TOTAL_COST=$(python3 -c "print(round($TOTAL_COST + $cost, 4))")
+    TOTAL_COST=$(python -c "print(round($TOTAL_COST + $cost, 4))")
   fi
   printf "  %s: %dm%02ds \$%s\n" "$tid" $((dur / 60)) $((dur % 60)) "${cost:-n/a}"
 done < "$METRICS_FILE"

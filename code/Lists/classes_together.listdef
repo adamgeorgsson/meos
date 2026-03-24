@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<MeOSListDefinition version="3.9">
+<ListName>Classes together</ListName>
+<Tag>classestogether</Tag>
+<SortOrder>CustomSort</SortOrder>
+<ListType>RunnerGlobal</ListType>
+<SubListType>None</SubListType>
+<ResultModule>atcontrol</ResultModule>
+<SupportFrom>1</SupportFrom>
+<SupportTo>1</SupportTo>
+<Filter name="FilterPrelResult"/>
+<Filter name="FilterNoCancel"/>
+<HeadFont scale="100" above="0">arial</HeadFont>
+<SubHeadFont scale="100" above="0">arial</SubHeadFont>
+<ListFont scale="100" above="0">arial</ListFont>
+<SubListFont scale="100" above="0">arial</SubListFont>
+<Head>
+<Line>
+<Block Type="CmpName">
+<Text>Resultat - X</Text>
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+</Block>
+</Line>
+<Line>
+<Block Type="CmpDate">
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+</Block>
+</Line>
+</Head>
+<SubHead>
+<Line>
+<Block Type="String">
+<Text>Namn</Text>
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+</Block>
+<Block Type="String">
+<Text>Klubb</Text>
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+</Block>
+<Block Type="String">
+<Text>Klass</Text>
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+</Block>
+<Block Type="String">
+<Text>Tid</Text>
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+</Block>
+<Block Type="String">
+<Text>Efter</Text>
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+</Block>
+</Line>
+</SubHead>
+<List>
+<Line>
+<Block Type="RunnerPlace">
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+<TextAdjust>Right</TextAdjust>
+</Block>
+<Block Type="PatrolNameNames">
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">Namn</Align>
+</Block>
+<Block Type="PatrolClubNameNames">
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">Klubb</Align>
+</Block>
+<Block Type="ClassName">
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">Klass</Align>
+</Block>
+<Block Type="RunnerTimeStatus">
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">Tid</Align>
+</Block>
+<Block Type="RunnerTimeAfter">
+<ResultModule>atcontrol</ResultModule>
+<Align BlockAlign="true">None</Align>
+</Block>
+</Line>
+</List>
+<SubList>
+</SubList>
+</MeOSListDefinition>
