@@ -32,13 +32,12 @@ jobs:
         run: |
           $outDir = "code/build/${{ matrix.configuration }}"
 
-          Copy-Item code/dll64/libmysql.dll $outDir
-
           $vcpkgBin = "code/build/vcpkg_installed/x64-windows/bin"
-          Get-ChildItem "$vcpkgBin/zlib*.dll"    | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/minizip*.dll" | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/libpng*.dll"  | Copy-Item -Destination $outDir
-          Get-ChildItem "$vcpkgBin/libharu*.dll" | Copy-Item -Destination $outDir
+          Get-ChildItem "$vcpkgBin/zlib*.dll"     | Copy-Item -Destination $outDir
+          Get-ChildItem "$vcpkgBin/minizip*.dll"  | Copy-Item -Destination $outDir
+          Get-ChildItem "$vcpkgBin/libpng*.dll"   | Copy-Item -Destination $outDir
+          Get-ChildItem "$vcpkgBin/libharu*.dll"  | Copy-Item -Destination $outDir
+          Get-ChildItem "$vcpkgBin/libmysql*.dll" | Copy-Item -Destination $outDir
 
           $opensslDir = (Get-ChildItem "C:\Program Files\OpenSSL*" -Directory | Select-Object -First 1).FullName
           Copy-Item "$opensslDir\libssl-1_1-x64.dll"    $outDir

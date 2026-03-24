@@ -8,6 +8,7 @@ find_package(ZLIB REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(unofficial-libharu CONFIG REQUIRED)
+find_package(unofficial-libmysql CONFIG REQUIRED)
 
 file(GLOB SOURCES "*.cpp")
 
@@ -35,7 +36,7 @@ target_link_directories(MeOS PRIVATE
 
 target_link_libraries(MeOS PRIVATE
     unofficial::libharu::hpdf
-    libmysql
+    unofficial::libmysql::libmysql
     PNG::PNG
     ZLIB::ZLIB
     unofficial::minizip::minizip

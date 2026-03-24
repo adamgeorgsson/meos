@@ -4,6 +4,7 @@
     "zlib",
     "minizip",
     "libpng",
-    "libharu"
+    "libharu",
+    "libmysql"
   ]
 }
