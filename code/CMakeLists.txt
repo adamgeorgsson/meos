@@ -10,6 +10,7 @@ find_package(PNG REQUIRED)
 find_package(unofficial-libharu CONFIG REQUIRED)
 find_package(unofficial-libmysql CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(unofficial-restbed CONFIG REQUIRED)
 
 file(GLOB SOURCES "*.cpp")
 
@@ -30,18 +31,13 @@ target_include_directories(MeOS PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/minizip
 )
 
-target_link_directories(MeOS PRIVATE
-    $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/lib64>
-    $<$<NOT:$<CONFIG:Release>>:${CMAKE_CURRENT_SOURCE_DIR}/lib64_db>
-)
-
 target_link_libraries(MeOS PRIVATE
     unofficial::libharu::hpdf
     unofficial::libmysql::libmysql
     PNG::PNG
     ZLIB::ZLIB
     unofficial::minizip::minizip
-    RestBed
+    unofficial::restbed::restbed
     OpenSSL::SSL
     OpenSSL::Crypto
     Msimg32
