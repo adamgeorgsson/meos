@@ -313,6 +313,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - vcpkg may produce different DLL names across versions (e.g., `libssl-1_1-x64.dll` vs `libssl-3-x64.dll`) — use glob patterns
 - Forgetting to add a new DLL to the package step causes runtime failures that CI build step won't catch
 - `x64-windows` triplet produces dynamic libraries — if triplet changes, DLL list changes too
+- The core-migration `cpp.yml` workflow uses `lukka/run-vcpkg@v11` with default glob `**/vcpkg.json` — having a second `vcpkg.json` in `code/` causes the action to fail with "found multiple times". If both files coexist, `cpp.yml` must scope its glob (e.g., `vcpkgJsonGlob: 'vcpkg.json'`) to avoid ambiguity.
 
 ## Dependency Order
 
