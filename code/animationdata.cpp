@@ -24,6 +24,8 @@ Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 #include "animationdata.h"
 #include "meos_util.h"
 #include "Printer.h"
+#include <chrono>
+#include <thread>
 
 AnimationData::AnimationData(gdioutput &gdi, int timePerPage, int nCol, 
                              int marginPercent, bool animate, bool respectPageBreak) :
@@ -209,7 +211,7 @@ void AnimationData::renderSubPage(HDC hDC, gdioutput &gdi, RenderedPage &page, i
   int currentRow = 0;
   for (auto &text : page.text) {
     if (animateDelay>0 && text.ti.yp != currentRow) {
-      Sleep(animateDelay);
+      std::this_thread::sleep_for(std::chrono::milliseconds(animateDelay));
       currentRow = text.ti.yp;
     }
     gdi.RenderString(text.ti, hDC);
