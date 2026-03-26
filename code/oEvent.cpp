@@ -39,7 +39,7 @@
 
 #include "meosexception.h"
 #include "oFreeImport.h"
-#include "TabBase.h"
+// TabBase.h removed — decoupled via cbBaseButtons callback
 #include "meos_util.h"
 #include "RunnerDB.h"
 #include "localizer.h"
@@ -52,9 +52,7 @@
 #include "generalresult.h"
 #include "oEventDraw.h"
 #include "MeosSQL.h"
-#include "TabAuto.h"
-#include "TabSI.h"
-#include "TabList.h"
+// TabAuto.h, TabSI.h, TabList.h removed — decoupled via callbacks
 #include "binencoder.h"
 #include "image.h"
 #include "datadefiners.h"
@@ -3278,7 +3276,7 @@ void oEvent::generateInForestList(gdioutput& gdi, GUICALLBACK cb, GUICALLBACK cb
           gdi.setData("FilterSetting", lbi.data);
           lastFilter = uint32_t(lbi.data);
           oe.generateInForestList(gdi, cb, nullptr);
-          TabList::baseButtons(gdi, 1, false);
+          if (oe.cbBaseButtons) oe.cbBaseButtons(gdi, 1, false);
           gdi.refreshFast();
         }
       }
@@ -4244,7 +4242,7 @@ void oEvent::clear()
   Annotation.clear();
 
   //Make sure no daemon is hunting us.
-  TabAuto::tabAutoKillMachines();
+  if (cbKillMachines) cbKillMachines();
 
   delete directSocket;
   directSocket = 0;
@@ -4310,7 +4308,7 @@ void oEvent::clear()
 
   // Cleanup user interface
   if (isMainEvent)
-    gdibase.getTabs().clearCompetitionData();
+    gdibase.clearTabsCompetitionData();
   
   machineContainer.release();
   renderMaps.reset();
@@ -6883,7 +6881,7 @@ bool oEvent::supportSubSeconds() const {
 }
 
 void oEvent::supportSubSeconds(bool use) {
-  TabSI::getSI(gdiBase()).setSubSecondMode(use);
+  if (cbSetSubSecondMode) cbSetSubSecondMode(use);
   getDI().setInt("SubSeconds", use ? 1 : 0);
 }
 

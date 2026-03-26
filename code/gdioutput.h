@@ -409,6 +409,7 @@ public:
   void synchronizeListScroll(const string& id1, const string& id2);
 
   FixedTabs& getTabs();
+  void clearTabsCompetitionData();
 
   // True if up/down is locked, i.e, don't move page
   bool lockUpDown;

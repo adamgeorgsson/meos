@@ -406,7 +406,9 @@ FixedTabs &gdioutput::getTabs() {
   return *tabs;
 }
 
-
+void gdioutput::clearTabsCompetitionData() {
+  getTabs().clearCompetitionData();
+}
 
 void gdioutput::fetchPrinterSettings(PrinterObject &po) const {
   po = *po_default;
