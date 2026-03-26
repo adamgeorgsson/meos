@@ -14,15 +14,25 @@ jobs:
       matrix:
         configuration: [Release]
         platform: [x64]
+    env:
+      VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-binary-cache,readwrite'
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Restore vcpkg and install dependencies
+      - name: Cache vcpkg binary packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg-binary-cache
+          key: vcpkg-binary-${{ runner.os }}-${{ hashFiles('code/vcpkg.json') }}
+          restore-keys: |
+            vcpkg-binary-${{ runner.os }}-
+
+      - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: 'code/vcpkg.json'
-          doNotCache: false
+          vcpkgGitCommitId: '67f167b2f7c170f83688919c90edcd896239330e'
 
       - name: Configure
         run: cmake -S code -B code/build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
