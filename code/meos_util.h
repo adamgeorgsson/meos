@@ -310,3 +310,9 @@ void wide2String(const wstring &in, string &out);
 void checkWriteAccess(const wstring &file);
 
 void moveFile(const wstring& src, const wstring& dst);
+
+// String encoding utilities (free-function versions of gdioutput static methods)
+const wstring &widen(const string &input);
+const string &narrow(const wstring &input);
+const string &toUTF8(const wstring &input);
+const wstring &fromUTF8(const string &input);
