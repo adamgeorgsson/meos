@@ -464,7 +464,7 @@ string TestMeOS::getTestFile(const char *relPath) const {
   else if (*tp.rbegin() == '\\')
     return tp + relPath;
   else
-    return tp + "\\" + relPath;
+    return tp + "/" + relPath;
 }
 
 wstring TestMeOS::getTempFile() const {

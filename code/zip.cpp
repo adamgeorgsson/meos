@@ -231,12 +231,12 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
   wstring base = getTempPath();
   wchar_t end = base[base.length()-1];
   if (end != '\\' && end != '/')
-    base += L"\\";
+    base += L"/";
 
   int id = rand();
   wstring target;
   do {
-    target = base + L"zip" + itow(id) + L"\\";
+    target = base + L"zip" + itow(id) + L"/";
     id++;
   }
   while ( _waccess( target.c_str(), 0 ) == 0 );

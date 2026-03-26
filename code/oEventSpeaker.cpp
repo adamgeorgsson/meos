@@ -1417,7 +1417,7 @@ void oEvent::tryPrewarningSounds(const wstring &basedir, int number)
   wchar_t wave[20];
   swprintf(wave, sizeof(wave)/sizeof(wchar_t), L"%d.wav", number);
 
-  wstring file=basedir+L"\\"+wave;
+  wstring file=basedir+L"/"+wave;
 
   if (_waccess(file.c_str(), 0)==-1)
     gdibase.alert(L"Fel: hittar inte filen X.#" + file);
@@ -1437,10 +1437,10 @@ void oEvent::playPrewarningSounds(const wstring &basedir, set<int> &controls)
         wchar_t wave[20];
         swprintf(wave, sizeof(wave)/sizeof(wchar_t), L"%d.wav", r->getStartNo());
 
-        wstring file=basedir+L"\\"+ r->getDI().getString("Nationality") +L"\\"+wave;
+        wstring file=basedir+L"/"+ r->getDI().getString("Nationality") +L"/"+wave;
 
         if (_waccess(file.c_str(), 0)==-1)
-          file=basedir+L"\\"+wave;
+          file=basedir+L"/"+wave;
 
         PlaySound(file.c_str(), 0, SND_SYNC|SND_FILENAME );
         it->hasBeenPlayed=true;

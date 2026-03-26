@@ -773,8 +773,8 @@ void HTMLWriter::enumTemplates(TemplateType type, vector<TemplateInfo> &descript
   int userCounter = res.size();
 
 #ifdef _DEBUG
-  expandDirectory((wstring(programPath) + L".\\..\\Lists\\").c_str(), L"*.meostmpl", res);
-  expandDirectory((wstring(programPath) + L".\\..\\Lists\\").c_str(), L"*.template", res);
+  expandDirectory((wstring(programPath) + L"./../Lists/").c_str(), L"*.meostmpl", res);
+  expandDirectory((wstring(programPath) + L"./../Lists/").c_str(), L"*.template", res);
 #endif
 
   if (exePath[0]) {
