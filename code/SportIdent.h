@@ -5,6 +5,9 @@
 
 #include <set>
 #include <vector>
+#include <mutex>
+#include <thread>
+#include <atomic>
 #include "oPunch.h"
 
 /************************************************************************
@@ -125,7 +128,12 @@ struct SI_StationData {
 struct SI_StationInfo
 {
   SI_StationInfo();
-  HANDLE ThreadHandle;
+  SI_StationInfo(const SI_StationInfo& other);
+  SI_StationInfo& operator=(const SI_StationInfo& other);
+
+  std::thread ThreadHandle;
+  std::atomic<bool> threadActive{false};
+  std::atomic<bool> stopRequested{false};
   wstring ComPort;
   HANDLE hComm;
   COMMTIMEOUTS TimeOuts;
@@ -163,7 +171,7 @@ protected:
   bool readSI6Block(HANDLE hComm, BYTE *data);
   bool readSystemData(SI_StationInfo *si, int retry=2);
   bool readSystemDataV2(SI_StationInfo &si);
-  CRITICAL_SECTION SyncObj;
+  std::mutex SyncObj;
 
   int readByte_delay(BYTE &byte,  HANDLE hComm);
   int readBytes_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDLE hComm);

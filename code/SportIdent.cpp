@@ -30,7 +30,6 @@
 #include "meos.h"
 #include "SportIdent.h"
 #include <fstream>
-#include <process.h>
 #include <winsock2.h>
 #include "localizer.h"
 #include "meos_util.h"
@@ -58,12 +57,30 @@ SI_StationData::SI_StationData() {
 
 SI_StationInfo::SI_StationInfo()
 {
-  ThreadHandle=0;
   hComm=0;
   memset(&TimeOuts, 0, sizeof(TimeOuts));
 
   tcpPort=0;
   localZeroTime=0;
+}
+
+SI_StationInfo::SI_StationInfo(const SI_StationInfo& other)
+  : ComPort(other.ComPort), hComm(other.hComm), TimeOuts(other.TimeOuts),
+    data(other.data), tcpPort(other.tcpPort), localZeroTime(other.localZeroTime) {
+  // ThreadHandle, threadActive, stopRequested: default-initialized (not joinable, false)
+}
+
+SI_StationInfo& SI_StationInfo::operator=(const SI_StationInfo& other) {
+  if (this != &other) {
+    ComPort = other.ComPort;
+    hComm = other.hComm;
+    TimeOuts = other.TimeOuts;
+    data = other.data;
+    tcpPort = other.tcpPort;
+    localZeroTime = other.localZeroTime;
+    // ThreadHandle, threadActive, stopRequested: not copied
+  }
+  return *this;
 }
 
 SportIdent::SportIdent(HWND hWnd, DWORD Id, bool readVoltage) : readVoltage(readVoltage) {
@@ -72,7 +89,7 @@ SportIdent::SportIdent(HWND hWnd, DWORD Id, bool readVoltage) : readVoltage(read
 
   n_SI_Info = 0;
 
-  InitializeCriticalSection(&SyncObj);
+  // SyncObj (std::mutex) is default-constructed
 
   tcpPortOpen = 0;
   serverSocket = 0;
@@ -93,7 +110,7 @@ void SportIdent::resetPunchMap() {
 SportIdent::~SportIdent()
 {
   closeCom(0);
-  DeleteCriticalSection(&SyncObj);
+  // SyncObj (std::mutex) is destructed automatically
 }
 
 // CRC algoritm used by SPORTIdent GmbH
@@ -314,12 +331,12 @@ bool SportIdent::openComListen(const wchar_t *com, DWORD BaudRate) {
 
   if (!si) {
     SI_Info[n_SI_Info].ComPort=com;
-    SI_Info[n_SI_Info].ThreadHandle=0;
+    // ThreadHandle (std::thread) is default-constructed (not joinable)
     si=&SI_Info[n_SI_Info];
     n_SI_Info++;
   }
   si->data.clear();
-  
+
   if (si->ComPort == L"TEST")
     return true; // Passive test
 
@@ -373,7 +390,7 @@ bool SportIdent::tcpAddPort(int port, DWORD zeroTime)
 
   if (!si) {
     SI_Info[n_SI_Info].ComPort=L"TCP";
-    SI_Info[n_SI_Info].ThreadHandle=0;
+    // ThreadHandle (std::thread) is default-constructed (not joinable)
     si=&SI_Info[n_SI_Info];
     n_SI_Info++;
   }
@@ -392,7 +409,7 @@ bool SportIdent::openCom(const wchar_t *com)
 
   if (!si) {
     SI_Info[n_SI_Info].ComPort=com;
-    SI_Info[n_SI_Info].ThreadHandle=0;
+    // ThreadHandle (std::thread) is default-constructed (not joinable)
     si=&SI_Info[n_SI_Info];
     n_SI_Info++;
   }
@@ -573,33 +590,43 @@ void SportIdent::closeCom(const wchar_t *com)
 
     if (si && si->ComPort==L"TCP") {
       if (tcpPortOpen) {
-        EnterCriticalSection(&SyncObj);
-        shutdown(SOCKET(serverSocket), SD_BOTH);
-        LeaveCriticalSection(&SyncObj);
+        {
+          std::lock_guard<std::mutex> lock(SyncObj);
+          shutdown(SOCKET(serverSocket), SD_BOTH);
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-        EnterCriticalSection(&SyncObj);
-        closesocket(SOCKET(serverSocket));
-        tcpPortOpen = 0;
-        serverSocket = 0;
-        LeaveCriticalSection(&SyncObj);
+        {
+          std::lock_guard<std::mutex> lock(SyncObj);
+          closesocket(SOCKET(serverSocket));
+          tcpPortOpen = 0;
+          serverSocket = 0;
+        }
       }
+      if (si->ThreadHandle.joinable())
+        si->ThreadHandle.join();
+      si->threadActive = false;
     }
     else if (si && si->hComm)
     {
-      if (si->ThreadHandle)
+      if (si->ThreadHandle.joinable())
       {
-        EnterCriticalSection(&SyncObj);
-        TerminateThread(si->ThreadHandle, 0);
-        LeaveCriticalSection(&SyncObj);
-
-        CloseHandle(si->ThreadHandle);
-        si->ThreadHandle=0;
+        // Signal thread to stop and interrupt blocking I/O by closing the port
+        si->stopRequested = true;
+        SetCommTimeouts(si->hComm, &si->TimeOuts); //Restore
+        CloseHandle(si->hComm);
+        si->hComm = 0;
+        si->ThreadHandle.join();
+        si->stopRequested = false;
+        si->threadActive = false;
       }
-      SetCommTimeouts(si->hComm, &si->TimeOuts); //Restore
-      CloseHandle(si->hComm);
-      si->hComm=0;
+      else if (si->hComm)
+      {
+        SetCommTimeouts(si->hComm, &si->TimeOuts); //Restore
+        CloseHandle(si->hComm);
+        si->hComm=0;
+      }
     }
   }
 }
@@ -1226,12 +1253,15 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
         if (hComm==SI_Info[i].hComm)
         {
           //We are about to kill this thread the natural way
-          //Prevent forced kill
-
-          //CloseHandle(SI_Info[i].ThreadHandle);
-          SI_Info[i].ThreadHandle=0;
-
-          closeCom(SI_Info[i].ComPort.c_str());
+          SI_Info[i].threadActive = false;
+          if (SI_Info[i].stopRequested) {
+            // External caller (closeCom) is handling cleanup and will join the thread
+          }
+          else {
+            // Natural exit: thread detaches itself and closes the port
+            SI_Info[i].ThreadHandle.detach();
+            closeCom(SI_Info[i].ComPort.c_str());
+          }
         }
 
       //Notify something happened...
@@ -2042,15 +2072,10 @@ void SportIdent::EnumrateSerialPorts(list<int>& ports)
 
 void SportIdent::addCard(const SICard &sic)
 {
-  EnterCriticalSection(&SyncObj);
-  try {
+  {
+    std::lock_guard<std::mutex> lock(SyncObj);
     ReadCards.push_front(sic);
   }
-  catch(...) {
-    LeaveCriticalSection(&SyncObj);
-    throw;
-  }
-  LeaveCriticalSection(&SyncObj);
 
   PostMessage(hWndNotify, WM_USER, ClassId, 0);
 }
@@ -2133,15 +2158,14 @@ bool SportIdent::getCard(SICard &sic)
 {
   bool ret=false;
 
-  EnterCriticalSection(&SyncObj);
-
-  if (!ReadCards.empty()) {
-    sic=ReadCards.front();
-    ReadCards.pop_front();
-    ret=true;
+  {
+    std::lock_guard<std::mutex> lock(SyncObj);
+    if (!ReadCards.empty()) {
+      sic=ReadCards.front();
+      ReadCards.pop_front();
+      ret=true;
+    }
   }
-
-  LeaveCriticalSection(&SyncObj);
 
   return ret;
 }
@@ -2153,10 +2177,14 @@ void start_si_thread(void *ptr)
   if (!si->Current_SI_Info)
     return;
 
-  EnterCriticalSection(&si->SyncObj);
-  SI_StationInfo si_info=*si->Current_SI_Info;	//Copy data.
-  si->Current_SI_Info=0;
-  LeaveCriticalSection(&si->SyncObj);
+  SI_StationInfo *myStation;
+  SI_StationInfo si_info;
+  {
+    std::lock_guard<std::mutex> lock(si->SyncObj);
+    myStation = si->Current_SI_Info;
+    si_info=*si->Current_SI_Info;	//Copy data.
+    si->Current_SI_Info=0;
+  }
 
   try {
     if (si_info.ComPort == L"TCP") {
@@ -2171,9 +2199,10 @@ void start_si_thread(void *ptr)
     }
   }
   catch (...) {
-    
-    return;
   }
+
+  if (myStation)
+    myStation->threadActive = false;
 }
 
 void SportIdent::startMonitorThread(const wchar_t *com) {
@@ -2185,14 +2214,14 @@ void SportIdent::startMonitorThread(const wchar_t *com) {
       tcpPortOpen=0;
 
     Current_SI_Info=si;
-    si->ThreadHandle=(HANDLE)_beginthread(start_si_thread, 0,  this);
+    si->threadActive = true;
+    si->ThreadHandle = std::thread(start_si_thread, this);
 
     while((volatile void *)Current_SI_Info)
       std::this_thread::sleep_for(std::chrono::milliseconds(0));
 
     if (si->ComPort==L"TCP") {
-      DWORD ec=0;
-      while( (GetExitCodeThread(si->ThreadHandle, &ec)!=0 && ec==STILL_ACTIVE && tcpPortOpen==0))
+      while(si->threadActive && tcpPortOpen==0)
         std::this_thread::sleep_for(std::chrono::milliseconds(0));
     }
   }
@@ -2240,7 +2269,7 @@ bool SportIdent::autoDetect(list<int> &ComPorts)
   {
     array[i]=Ports.front();
     Ports.pop_front();
-    (HANDLE)_beginthread(checkport_si_thread, 0,  &array[i]);
+    std::thread(checkport_si_thread, &array[i]).detach();
     i++;
     //Sleep(0);
   }
@@ -2274,7 +2303,7 @@ bool SportIdent::isPortOpen(const wstring &com)
   if (si && si->ComPort==L"TCP")
     return tcpPortOpen && serverSocket;
   else
-    return si!=0 && si->hComm && si->ThreadHandle;
+    return si!=0 && si->hComm && si->threadActive;
 }
 
 
@@ -2292,7 +2321,7 @@ bool SportIdent::isAnyOpenUnkownUnit() const {
     if (com == L"TEST")
       return true;
 
-    if (!(si.hComm && si.ThreadHandle))
+    if (!(si.hComm && si.threadActive))
       continue; // Not open
 
     if (si.data.empty())

@@ -24,6 +24,7 @@
 #include "TabBase.h"
 #include "gdioutput.h"
 #include <string>
+#include <thread>
 #include "oListInfo.h"
 #include "importformats.h"
 
@@ -250,12 +251,15 @@ protected:
   wstring error;
   wstring timeError;
   wstring timeReconnect;
-  HANDLE hThread;
+  std::thread hThread;
   bool toRemove = false;
 
 public:
+  // Copy constructor: copies all state but NOT the thread handle
+  MySQLReconnect(const MySQLReconnect &other);
+
   void settings(gdioutput &gdi, oEvent &oe, State state);
-  shared_ptr<AutoMachine> clone() const final { 
+  shared_ptr<AutoMachine> clone() const final {
     return make_shared<MySQLReconnect>(*this);
   }
 

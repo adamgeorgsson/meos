@@ -33,8 +33,6 @@
 #include <sys/stat.h>
 #include <io.h>
 #include <fcntl.h>
-
-#include <process.h>
 #include <chrono>
 #include <thread>
 
@@ -47,7 +45,8 @@
 
 Download::Download()
 {
-  hThread = 0;
+  // hThread (std::thread) is default-constructed (not joinable)
+  threadRunning = false;
   doExit = false;
 //hProgress = NULL;
 
@@ -70,44 +69,36 @@ Download::~Download()
     InternetCloseHandle(hInternet);
 }
 
-void __cdecl SUThread(void *ptr)
+void SUThread(Download *ptr)
 {
-  Download *dwl=(Download *)ptr;
-  dwl->initThread();
+  ptr->initThread();
 }
 
 bool Download::createDownloadThread() {
-  doExit=false;
-  hThread=_beginthread(SUThread, 0, this);
-
-  if (hThread==-1) {
-    hThread=0;
+  doExit = false;
+  threadRunning = true;
+  try {
+    hThread = std::thread(SUThread, this);
+  } catch (const std::system_error&) {
+    threadRunning = false;
     return false;
   }
-
   return true;
 }
 
 void Download::shutDown()
 {
-  if (hThread) {
-    doExit=true;
+  if (hThread.joinable()) {
+    doExit = true;
 
-    int m=0;
-    while(m<100 && hThread) {
+    int m = 0;
+    while (m < 100 && threadRunning.load()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(0));
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
       m++;
     }
-    //If unsuccessful ending thread, do it violently
-    if (hThread) {
-      OutputDebugString(L"Terminate thread...\n");
-      TerminateThread(HANDLE(hThread), 0);
-      CloseHandle(HANDLE(hThread));
-    }
-    hThread=0;
+    hThread.join();
   }
-
 }
 
 void Download::initThread()
@@ -116,7 +107,7 @@ void Download::initThread()
   while(!doExit && status) {
     status = doDownload();
   }
-  hThread=0;
+  threadRunning = false;
 }
 
 void Download::initInternet() {
@@ -267,7 +258,7 @@ void Download::setBytesToDownload(DWORD btd)
 
 bool Download::isWorking()
 {
-  return hThread!=0;
+  return threadRunning.load();
 }
 
 bool Download::successful()
