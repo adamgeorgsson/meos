@@ -39,7 +39,6 @@
 #include "autocomplete.h"
 #include "image.h"
 #include "binencoder.h"
-#include "TabAuto.h"
 #include "xmlparser.h"
 
 extern oEvent *gEvent;
@@ -3066,8 +3065,8 @@ void MetaListContainer::removeList(int index) {
   EStdListType typeCode = EStdListType(EStdListType::EFirstLoadedList + index);
 
   if (owner) {
-    TabAuto* ta = (TabAuto*)owner->gdiBase().getTabs().get(TAutoTab);
-    ta->removedList(typeCode);
+    if (owner->cbRemovedList)
+      owner->cbRemovedList(int(typeCode));
   }
 
   set<int> toRemove;  
