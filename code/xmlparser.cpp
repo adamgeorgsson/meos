@@ -994,7 +994,7 @@ void xmlparser::convertString(const char *in, char *out, int maxlen) const
   int wlen = MultiByteToWideChar(CP_UTF8, 0, in, len, buff, buff_pre_alloc);
   buff[wlen-1] = 0;
 
-  BOOL untranslated = false;
+  bool untranslated = false;
   WideCharToMultiByte(CP_ACP, 0, buff, wlen, out, buff_pre_alloc, "?", &untranslated);
   out[wlen-1] = 0;
 

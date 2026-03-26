@@ -22,6 +22,7 @@
 
 #include "StdAfx.h"
 #include "random.h"
+#include <cstdint>
 
 static int _rbp=0;
 static int _rbinterval=1;
@@ -53,7 +54,7 @@ bool GetRandomBit()
 
 int GetRandomNumber(int m)
 {
-  DWORD r=0;
+  uint32_t r=0;
   if (m<=1) return 0;
 
   int bits=0;

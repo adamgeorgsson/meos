@@ -67,6 +67,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "Table.h"
+#include <cstdint>
 
 extern Image image;
 
@@ -117,7 +118,7 @@ oEvent::oEvent(gdioutput &gdi) : oBase(nullptr), gdibase(gdi) {
   openFileLock = new MeOSFileLock();
 
   wchar_t cp[MAX_COMPUTERNAME_LENGTH + 1];
-  DWORD size = MAX_COMPUTERNAME_LENGTH + 1;
+  uint32_t size = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(cp, &size);
   clientName = cp;
 
@@ -2430,8 +2431,8 @@ void oEvent::setDate(const wstring &m, bool manualSet)
   }
 }
 
-const wstring &oEvent::getAbsTime(DWORD time, SubSecond mode) const {
-  DWORD t = ZeroTime + time;
+const wstring &oEvent::getAbsTime(uint32_t time, SubSecond mode) const {
+  uint32_t t = ZeroTime + time;
   if (int(t)<0)
     t = 0;
   int days = time/(timeConstHour*24);
@@ -2450,7 +2451,7 @@ const wstring &oEvent::getTimeZoneString() const {
   return date2LocalTZ[Date];
 }
 
-wstring oEvent::getAbsDateTimeISO(DWORD time, bool includeDate, bool useGMT) const
+wstring oEvent::getAbsDateTimeISO(uint32_t time, bool includeDate, bool useGMT) const
 {
   int t = ZeroTime + time;
   wstring dateS, timeS;
@@ -2624,8 +2625,8 @@ int oEvent::convertScore(const wstring &score) const {
     return base * factor + fraction;
 }
 
-const wstring &oEvent::getAbsTimeHM(DWORD time) const {
-  DWORD t=ZeroTime+time;
+const wstring &oEvent::getAbsTimeHM(uint32_t time) const {
+  uint32_t t=ZeroTime+time;
 
   if (int(t)<0)
     return makeDash(L"-");
@@ -3235,9 +3236,9 @@ void oEvent::generateInForestList(gdioutput& gdi, GUICALLBACK cb, GUICALLBACK cb
   calcUseStartSeconds();
   const int ct = getComputerTime();
 
-  DWORD filter = 0;
+  uint32_t filter = 0;
   bool hasFilter = gdi.getData("FilterSetting", filter);
-  static DWORD lastFilter = 0;
+  static uint32_t lastFilter = 0;
 
   int y = gdi.getCY();
   int x = gdi.getCX();
@@ -3275,7 +3276,7 @@ void oEvent::generateInForestList(gdioutput& gdi, GUICALLBACK cb, GUICALLBACK cb
         if (type == GuiEventType::GUI_LISTBOX) {
           ListBoxInfo lbi = dynamic_cast<ListBoxInfo &>(info);
           gdi.setData("FilterSetting", lbi.data);
-          lastFilter = DWORD(lbi.data);
+          lastFilter = uint32_t(lbi.data);
           oe.generateInForestList(gdi, cb, nullptr);
           TabList::baseButtons(gdi, 1, false);
           gdi.refreshFast();
@@ -5378,7 +5379,7 @@ const string &oEvent::getPropertyString(const char *name, const string &def)
 string oEvent::getPropertyStringDecrypt(const char *name, const string &def)
 {
   wchar_t bf[MAX_COMPUTERNAME_LENGTH + 1];
-  DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
+  uint32_t len = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(bf, &len);
   string prop = getPropertyString(name, def);
   string prop2;
@@ -5401,7 +5402,7 @@ string oEvent::getPropertyStringDecrypt(const char *name, const string &def)
 
 void oEvent::setPropertyEncrypt(const char *name, const string &prop) {
   wchar_t bf[MAX_COMPUTERNAME_LENGTH + 1];
-  DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
+  uint32_t len = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(bf, &len);
   string prop2;
   int code = 0;

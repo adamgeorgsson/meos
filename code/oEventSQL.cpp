@@ -40,6 +40,7 @@
 #include "image.h"
 #include "maprenderer.h"
 #include <cassert>
+#include <cstdint>
 
 extern Image image;
 
@@ -896,9 +897,9 @@ void oEvent::listConnectedClients(gdioutput &gdi)
   gdi.dropLine(2);
 }
 
-DWORD oEvent::clientCheckSum() const
+uint32_t oEvent::clientCheckSum() const
 {
-  DWORD cs=0;
+  uint32_t cs=0;
   for (size_t k=0;k<connectedClients.size();k++)
     for (size_t i=0;i<connectedClients[k].length();i++)
       cs += BYTE(connectedClients[k][i]) << ((i*5+k*7)%24);

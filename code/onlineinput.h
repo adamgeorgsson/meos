@@ -24,6 +24,7 @@
 #include "TabAuto.h"
 #include <deque>
 #include "oPunch.h"
+#include <cstdint>
 
 class InfoCompetition;
 class xmlobject;
@@ -41,7 +42,7 @@ protected:
   int lastImportedId;
   int importCounter;
   int bytesImported;
-  DWORD lastSync;
+  uint32_t lastSync;
 
   enum class Type {
     MIP,
