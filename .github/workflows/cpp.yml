@@ -31,6 +31,7 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: 'vcpkg.json'
+          doNotCache: false
 
       - name: Configure
         run: cmake --preset default ${{ runner.os == 'Linux' && '-DMEOS_ENABLE_CLANG_TIDY=ON' || '' }}
