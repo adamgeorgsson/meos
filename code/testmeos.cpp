@@ -19,7 +19,7 @@
     Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <cassert>
 #include "testmeos.h"

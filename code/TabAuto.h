@@ -21,7 +21,7 @@
 
 ************************************************************************/
 
-#include "tabbase.h"
+#include "TabBase.h"
 #include "gdioutput.h"
 #include <string>
 #include "oListInfo.h"

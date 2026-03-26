@@ -62,7 +62,7 @@ bool showResultTime(RunnerStatus st, int time) {
 }
 
 
-#include "oSpeaker.h"
+#include "ospeaker.h"
 
 extern char RunnerStatusOrderMap[100];
 

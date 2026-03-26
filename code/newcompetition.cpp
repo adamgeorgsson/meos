@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include "resource.h"
 
@@ -33,7 +33,7 @@
 #include "meos_util.h"
 #include "TabCompetition.h"
 #include "localizer.h"
-#include "meosException.h"
+#include "meosexception.h"
 #include "MeOSFeatures.h"
 #include "importformats.h"
 

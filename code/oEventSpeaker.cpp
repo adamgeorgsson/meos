@@ -20,14 +20,14 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <vector>
 #include <io.h>
 #include <algorithm>
 
 #include "oEvent.h"
-#include "oSpeaker.h"
+#include "ospeaker.h"
 #include "gdioutput.h"
 
 #include "mmsystem.h"

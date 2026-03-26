@@ -20,7 +20,7 @@ Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <vector>
 #include <set>
@@ -34,7 +34,7 @@ Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 #include "metalist.h"
 #include "generalresult.h"
 
-#include "meosException.h"
+#include "meosexception.h"
 #include "meos.h"
 #include "meos_util.h"
 #include "intkeymapimpl.hpp"

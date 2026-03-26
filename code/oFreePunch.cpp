@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include <algorithm>
 #include <cassert>
 
@@ -28,7 +28,7 @@
 #include "oEvent.h"
 #include "Table.h"
 #include "meos_util.h"
-#include "Localizer.h"
+#include "localizer.h"
 #include "socket.h"
 #include "gdioutput.h"
 #include "xmlparser.h"

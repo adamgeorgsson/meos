@@ -5,7 +5,7 @@ Ported to C++ and modified to suite MeOS.
 
 */
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <stdio.h>
 #include <stdlib.h>

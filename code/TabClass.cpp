@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <algorithm>
 
@@ -32,8 +32,8 @@
 #include "TabClass.h"
 #include "TabList.h"
 #include "TabRunner.h"
-#include "ClassConfigInfo.h"
-#include "meosException.h"
+#include "classconfiginfo.h"
+#include "meosexception.h"
 #include "gdifonts.h"
 #include "oEventDraw.h"
 #include "MeOSFeatures.h"

@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include "resource.h"
 
@@ -43,7 +43,7 @@
 #include "classconfiginfo.h"
 #include "RunnerDB.h"
 #include "gdifonts.h"
-#include "meosException.h"
+#include "meosexception.h"
 #include "socket.h"
 #include "iof30interface.h"
 #include "MeOSFeatures.h"
