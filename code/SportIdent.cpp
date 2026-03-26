@@ -897,13 +897,13 @@ int SportIdent::MonitorTCPSI(WORD port, int localZeroTime)
       int r=0;
       while (r!=-1 && tcpPortOpen) {
 
-        uint64_t timeout = GetTickCount64() + 1000;
+        uint64_t timeout = meos_steady_clock_ms() + 1000;
         int iter = 0;
         while(r!=SOCKET_ERROR && r<15 && tcpPortOpen) {
           r=recv(client, temp, 15, MSG_PEEK);
           iter++;
           if (iter > 10) {
-            if (GetTickCount64() > timeout) {
+            if (meos_steady_clock_ms() > timeout) {
               break;
             }
             else

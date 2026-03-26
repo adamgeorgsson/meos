@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Melin Software HB - software@melin.nu - www.melin.nu
-Eksoppsv‰gen 16, SE-75646 UPPSALA, Sweden
+Eksoppsv√§gen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
 
@@ -40,6 +40,7 @@ Eksoppsv‰gen 16, SE-75646 UPPSALA, Sweden
 #include "intkeymapimpl.hpp"
 
 #include "MeOSFeatures.h"
+#include <ctime>
 
 
 
@@ -600,7 +601,7 @@ wstring oEvent::cloneCompetition(bool cloneRunners, bool cloneTimes,
   ce.Date = Date;
 
   if (addToDate) {
-    SYSTEMTIME st;
+    std::tm st = {};
     convertDateYMD(Date, st, false);
     __int64 absD = SystemTimeToInt64TenthSecond(st);
     absD += timeConstHour * 24;

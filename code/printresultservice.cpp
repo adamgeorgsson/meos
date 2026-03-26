@@ -9,6 +9,7 @@
 #include "machinecontainer.h"
 #include "TabList.h"
 #include "xmlparser.h"
+#include <chrono>
 
 int AutomaticCB(gdioutput* gdi, GuiEventType type, BaseInfo* data);
 
@@ -57,7 +58,7 @@ void PrintResultMachine::settings(gdioutput& gdi, oEvent& oe, State state) {
   gdi.fillRight();
   gdi.addCheckbox("DoPrint", "Skriv ut", AutomaticCB, doPrint);
   gdi.dropLine(-0.5);
-  gdi.addButton("PrinterSetup", "Skrivare...", AutomaticCB, "V‰lj skrivare...").setExtra(getId());
+  gdi.addButton("PrinterSetup", "Skrivare...", AutomaticCB, "V√§lj skrivare...").setExtra(getId());
 
   gdi.dropLine(4);
   gdi.popX();
@@ -66,7 +67,7 @@ void PrintResultMachine::settings(gdioutput& gdi, oEvent& oe, State state) {
   int cx = gdi.getCX();
   gdi.addInput("ExportFile", exportFile, 32, 0, L"Fil att exportera till:");
   gdi.dropLine(0.7);
-  gdi.addButton("BrowseFile", "Bl‰ddra...", AutomaticCB);
+  gdi.addButton("BrowseFile", "Bl√§ddra...", AutomaticCB);
   gdi.setCX(cx);
   gdi.dropLine(2.3);
   if (!readOnly) {
@@ -74,14 +75,14 @@ void PrintResultMachine::settings(gdioutput& gdi, oEvent& oe, State state) {
     gdi.addCheckbox("HTMLRefresh", "HTML med AutoRefresh", 0, htmlRefresh != 0);
   }
   else {
-    gdi.addString("", 0, "HTML formaterad genom listinst‰llningar");
+    gdi.addString("", 0, "HTML formaterad genom listinst√§llningar");
   }
 
   gdi.dropLine(1.8);
   gdi.setCX(cx);
-  gdi.addInput("ExportScript", exportScript, 32, 0, L"Skript att kˆra efter export:");
+  gdi.addInput("ExportScript", exportScript, 32, 0, L"Skript att k√∂ra efter export:");
   gdi.dropLine(0.7);
-  gdi.addButton("BrowseScript", "Bl‰ddra...", AutomaticCB);
+  gdi.addButton("BrowseScript", "Bl√§ddra...", AutomaticCB);
   gdi.dropLine(3);
   gdi.popX();
 
@@ -124,7 +125,7 @@ void PrintResultMachine::settings(gdioutput& gdi, oEvent& oe, State state) {
     else
       gdi.selectItemByData("ListType", listInfo.getListCode());
 
-    gdi.addSelection("LegNumber", 140, 300, 0, L"Str‰cka:");
+    gdi.addSelection("LegNumber", 140, 300, 0, L"Str√§cka:");
     set<int> clsUnused;
     vector< pair<wstring, size_t> > out;
     oe.fillLegNumbers(clsUnused, listInfo.isTeamList(), true, out);
@@ -135,16 +136,16 @@ void PrintResultMachine::settings(gdioutput& gdi, oEvent& oe, State state) {
     gdi.addCheckbox("ShowHeader", "Visa rubrik", 0, showHeader);
 
     gdi.addCheckbox("ShowInterResults", "Visa mellantider", 0, showInterResult,
-      "Mellantider visas fˆr namngivna kontroller.");
-    gdi.addCheckbox("SplitAnalysis", "Med str‰cktidsanalys", 0, splitAnalysis);
+      "Mellantider visas f√∂r namngivna kontroller.");
+    gdi.addCheckbox("SplitAnalysis", "Med str√§cktidsanalys", 0, splitAnalysis);
 
-    gdi.addCheckbox("OnlyChanged", "Skriv endast ut ‰ndade sidor", 0, po.onlyChanged);
+    gdi.addCheckbox("OnlyChanged", "Skriv endast ut √§ndade sidor", 0, po.onlyChanged);
 
     gdi.dropLine();
     gdi.popX();
-    gdi.addButton("SelectAll", "V‰lj allt", AutomaticCB, "").setExtra(L"Classes");
+    gdi.addButton("SelectAll", "V√§lj allt", AutomaticCB, "").setExtra(L"Classes");
     gdi.popX();
-    gdi.addButton("SelectNone", "V‰lj inget", AutomaticCB, "").setExtra(L"Classes");
+    gdi.addButton("SelectNone", "V√§lj inget", AutomaticCB, "").setExtra(L"Classes");
   }
   else {
     gdi.fillDown();
@@ -153,7 +154,7 @@ void PrintResultMachine::settings(gdioutput& gdi, oEvent& oe, State state) {
     gdi.addButton("Edit", "Visa och redigera").setHandler(this);
 
     gdi.dropLine();
-    gdi.addCheckbox("OnlyChanged", "Skriv endast ut ‰ndade sidor", 0, po.onlyChanged);
+    gdi.addCheckbox("OnlyChanged", "Skriv endast ut √§ndade sidor", 0, po.onlyChanged);
   }
 }
 
@@ -172,7 +173,7 @@ bool PrintResultMachine::requireList(EStdListType type) const {
 int PrintResultMachine::getInterval(const wstring& mmss) {
   int t = convertAbsoluteTimeMS(mmss) / timeConstSecond;
   if (t < 2 || t > 7200)
-    throw meosException("Intervallet mÂste anges pÂ formen MM:SS.");
+    throw meosException("Intervallet m√•ste anges p√• formen MM:SS.");
 
   return t;
 }
@@ -298,7 +299,7 @@ void PrintResultMachine::status(gdioutput& gdi)
   gdi.dropLine();
   if (doExport) {
     gdi.popX();
-    gdi.addString("", 0, "MÂlfil: ");
+    gdi.addString("", 0, "M√•lfil: ");
     gdi.addStringUT(0, exportFile).setColor(colorRed);
     gdi.dropLine();
   }
@@ -307,7 +308,7 @@ void PrintResultMachine::status(gdioutput& gdi)
   if (interval > 0) {
     gdi.dropLine(0.2);
     gdi.addString("", 0, "Automatisk utskrift / export: ");
-    gdi.addTimer(gdi.getCY(), gdi.getCX(), timerIgnoreSign, (GetTickCount64() - timeout) / 1000);
+    gdi.addTimer(gdi.getCY(), gdi.getCX(), timerIgnoreSign, (meos_steady_clock_ms() - timeout) / 1000);
   }
   else {
 
@@ -317,7 +318,7 @@ void PrintResultMachine::status(gdioutput& gdi)
   gdi.addButton("Stop", "Stoppa automaten", AutomaticCB).setExtra(getId());
   gdi.addButton("PrintNow", "Exportera nu", AutomaticCB).setExtra(getId());
   gdi.fillDown();
-  gdi.addButton("Result", "Inst‰llningar...", AutomaticCB).setExtra(getId());
+  gdi.addButton("Result", "Inst√§llningar...", AutomaticCB).setExtra(getId());
   gdi.popX();
 }
 

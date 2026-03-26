@@ -1,4 +1,4 @@
-﻿/************************************************************************
+/************************************************************************
     MeOS - Orienteering Software
     Copyright (C) 2009-2026 Melin Software HB
 
@@ -29,12 +29,43 @@
 #include "TimeStamp.h"
 #include <algorithm>
 #include "meos_util.h"
+#include <chrono>
+#include <ctime>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 constexpr __int64 minYearConstant = 2014 - 1601;
+
+// Seconds between Windows FILETIME epoch (1601-01-01) and Unix epoch (1970-01-01)
+constexpr uint64_t WIN_UNIX_EPOCH_OFFSET = 11644473600ULL;
+
+// Encode: local time as if UTC -> sec_since_1601 -> Time
+// (matches original GetLocalTime + SystemTimeToFileTime behavior)
+static unsigned encodeLocalTimeAsTime(const std::tm &local_st) {
+  std::tm st_copy = local_st;
+#ifdef _WIN32
+  std::time_t encoded = _mkgmtime(&st_copy);
+#else
+  std::time_t encoded = timegm(&st_copy);
+#endif
+  uint64_t sec_since_1601 = (uint64_t)encoded + WIN_UNIX_EPOCH_OFFSET;
+  return unsigned(sec_since_1601 - (uint64_t)minYearConstant * 365 * 24 * timeConstSecPerHour);
+}
+
+// Decode: Time -> sec_since_1601 -> time_t -> std::tm (via gmtime, giving back local components)
+static std::tm decodeTimeToTm(unsigned time) {
+  uint64_t sec_since_1601 = (uint64_t)time + (uint64_t)minYearConstant * 365 * 24 * timeConstSecPerHour;
+  std::time_t tt = (std::time_t)(sec_since_1601 - WIN_UNIX_EPOCH_OFFSET);
+  std::tm st = {};
+#ifdef _WIN32
+  gmtime_s(&st, &tt);
+#else
+  gmtime_r(&tt, &st);
+#endif
+  return st;
+}
 
 TimeStamp::TimeStamp()
 {
@@ -54,42 +85,28 @@ void TimeStamp::update(TimeStamp &ts)
 
 void TimeStamp::update()
 {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
-
-  FILETIME ft;
-  SystemTimeToFileTime(&st, &ft);
-
-  __int64 &currenttime=*(__int64*)&ft;
-
-  Time=unsigned((currenttime/10000000L) - minYearConstant*365*24*timeConstSecPerHour);
+  std::tm local_st = {};
+  meos_localtime_now(&local_st);
+  Time = encodeLocalTimeAsTime(local_st);
 }
 
 int TimeStamp::getAge() const
 {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
-  FILETIME ft;
-  SystemTimeToFileTime(&st, &ft);
-  __int64 &currenttime=*(__int64*)&ft;
-
-  int CTime=int((currenttime/10000000)-minYearConstant*365*24* timeConstSecPerHour);
-
-  return CTime-Time;
+  std::tm local_st = {};
+  meos_localtime_now(&local_st);
+  unsigned CTime = encodeLocalTimeAsTime(local_st);
+  return int(CTime) - int(Time);
 }
 
 const string &TimeStamp::getStamp() const
 {
   if (stampCodeTime == Time)
     return stampCode;
-  
+
   stampCodeTime = Time;
-  __int64 ft64=(__int64(Time)+minYearConstant*365*24* timeConstSecPerHour)*10000000;
-  FILETIME &ft=*(FILETIME*)&ft64;
-  SYSTEMTIME st;
-  FileTimeToSystemTime(&ft, &st);
+  std::tm st = decodeTimeToTm(Time);
   char bf[64];
-  snprintf(bf, 32, "%d%02d%02d%02d%02d%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+  snprintf(bf, 32, "%d%02d%02d%02d%02d%02d", st.tm_year+1900, st.tm_mon+1, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec);
   stampCode = bf;
 
   return stampCode;
@@ -106,47 +123,37 @@ const string &TimeStamp::getStamp(const string &sqlStampIn) const {
 }
 
 const wstring TimeStamp::getUpdateTime() const {
-  __int64 ft64 = (__int64(Time) + minYearConstant * 365 * 24 * timeConstSecPerHour) * 10000000;
-  FILETIME& ft = *(FILETIME*)&ft64;
-  SYSTEMTIME st;
-  FileTimeToSystemTime(&ft, &st);
+  std::tm st = decodeTimeToTm(Time);
   wchar_t bf[32];
-  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%02d:%02d", st.wHour, st.wMinute);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%02d:%02d", st.tm_hour, st.tm_min);
   return bf;
 }
 
 
 wstring TimeStamp::getStampString() const
 {
-  __int64 ft64=(__int64(Time)+minYearConstant*365*24* timeConstSecPerHour)*10000000;
-  FILETIME &ft=*(FILETIME*)&ft64;
-  SYSTEMTIME st;
-  FileTimeToSystemTime(&ft, &st);
-
+  std::tm st = decodeTimeToTm(Time);
   wchar_t bf[32];
-  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d %02d:%02d:%02d", st.tm_year+1900, st.tm_mon+1, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec);
 
   return bf;
 }
 
 string TimeStamp::getStampStringN() const
 {
-  __int64 ft64 = (__int64(Time) + minYearConstant * 365 * 24 * timeConstSecPerHour) * 10000000;
-  FILETIME &ft = *(FILETIME*)&ft64;
-  SYSTEMTIME st;
-  FileTimeToSystemTime(&ft, &st);
+  std::tm st = decodeTimeToTm(Time);
   int y = getThisYear();
-  if (st.wYear > y || st.wYear < 2009) {
-    st.wYear = y;
-    st.wDay = 1;
-    st.wMonth = 1;
-    st.wHour = 2;
-    st.wMinute = 0;
-    st.wSecond = 0;
+  if ((st.tm_year+1900) > y || (st.tm_year+1900) < 2009) {
+    st.tm_year = y - 1900;
+    st.tm_mday = 1;
+    st.tm_mon = 0;
+    st.tm_hour = 2;
+    st.tm_min = 0;
+    st.tm_sec = 0;
   }
-  
+
   char bf[32];
-  snprintf(bf, sizeof(bf), "%d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+  snprintf(bf, sizeof(bf), "%d-%02d-%02d %02d:%02d:%02d", st.tm_year+1900, st.tm_mon+1, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec);
 
   return bf;
 }
@@ -155,8 +162,7 @@ void TimeStamp::setStamp(const string &s)
 {
   if (s.size()<14)
     return;
-  SYSTEMTIME st;
-  memset(&st, 0, sizeof(st));
+  std::tm st = {};
 
   auto parse = [](const char* data, int size, const char*& next) -> int {
     int ix = 0;
@@ -172,27 +178,14 @@ void TimeStamp::setStamp(const string &s)
     return out;
   };
 
-  //const char *ptr=s.c_str();
-  //sscanf(s.c_str(), "%4hd%2hd%2hd%2hd%2hd%2hd", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-  /*st.wYear = atoi(s.substr(0, 4).c_str());
-  st.wMonth=atoi(s.substr(4, 2).c_str());
-  st.wDay=atoi(s.substr(6, 2).c_str());
-  st.wHour=atoi(s.substr(8, 2).c_str());
-  st.wMinute=atoi(s.substr(10, 2).c_str());
-  st.wSecond=atoi(s.substr(12, 2).c_str());
-  */
   const char* ptr = s.data();
 
-  st.wYear = parse(ptr, 4, ptr);
-  st.wMonth = parse(ptr, 2, ptr);
-  st.wDay = parse(ptr, 2, ptr);
-  st.wHour = parse(ptr, 2, ptr);
-  st.wMinute = parse(ptr, 2, ptr);
-  st.wSecond = parse(ptr, 2, ptr);
-  FILETIME ft;
-  SystemTimeToFileTime(&st, &ft);
+  st.tm_year = parse(ptr, 4, ptr) - 1900;
+  st.tm_mon = parse(ptr, 2, ptr) - 1;
+  st.tm_mday = parse(ptr, 2, ptr);
+  st.tm_hour = parse(ptr, 2, ptr);
+  st.tm_min = parse(ptr, 2, ptr);
+  st.tm_sec = parse(ptr, 2, ptr);
 
-  __int64 &currenttime=*(__int64*)&ft;
-
-  Time = unsigned((currenttime/10000000)-minYearConstant*365*24* timeConstSecPerHour);
+  Time = encodeLocalTimeAsTime(st);
 }

@@ -30,6 +30,7 @@
 #include <cstdint>
 #include <mutex>
 #include <thread>
+#include <chrono>
 
 MySQLReconnect::MySQLReconnect(const wstring &errorIn) : AutoMachine("MySQL-service", Machines::mMySQLReconnect), error(errorIn) {
   timeError = getLocalTime();
@@ -143,7 +144,7 @@ void MySQLReconnect::status(gdioutput &gdi) {
     gdi.addStringUT(1, timeError + L": " + lang.tl("DATABASE ERROR")).setColor(colorDarkRed);
     gdi.fillRight();
     gdi.addString("", 0, "Nästa försök:");
-    gdi.addTimer(gdi.getCY(),  gdi.getCX()+10, timerCanBeNegative, int((GetTickCount64()-timeout)/1000));
+    gdi.addTimer(gdi.getCY(),  gdi.getCX()+10, timerCanBeNegative, int((meos_steady_clock_ms()-timeout)/1000));
   }
   else {
     gdi.addStringUT(0, timeError + L": " + lang.tl("DATABASE ERROR")).setColor(colorDarkGrey);

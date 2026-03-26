@@ -24,6 +24,8 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <chrono>
+#include <ctime>
 
 class StringCache {
 private:
@@ -53,14 +55,14 @@ public:
   }
 };
 
-string convertSystemTimeN(const SYSTEMTIME &st);
+string convertSystemTimeN(const std::tm &st);
 string getLocalTimeN();
 
 bool checkValidDate(const wstring &date);
 
-wstring convertSystemTime(const SYSTEMTIME &st);
-wstring convertSystemTimeOnly(const SYSTEMTIME &st);
-wstring convertSystemDate(const SYSTEMTIME &st);
+wstring convertSystemTime(const std::tm &st);
+wstring convertSystemTimeOnly(const std::tm &st);
+wstring convertSystemDate(const std::tm &st);
 wstring getLocalTime();
 wstring getLocalDate();
 wstring getLocalTimeOnly();
@@ -93,10 +95,10 @@ const wstring &formatTimeHMS(int rt, SubSecond mode = SubSecond::Auto);
 wstring formatTimeIOF(int rt, int zeroTime);
 
 int convertDateYMD(const string &m, bool checkValid);
-int convertDateYMD(const string &m, SYSTEMTIME &st, bool checkValid);
+int convertDateYMD(const string &m, std::tm &st, bool checkValid);
 
 int convertDateYMD(const wstring &m, bool checkValid);
-int convertDateYMD(const wstring &m, SYSTEMTIME &st, bool checkValid);
+int convertDateYMD(const wstring &m, std::tm &st, bool checkValid);
 
 // Convert a "general" time string to a MeOS compatible time string
 void processGeneralTime(const wstring &generalTime, wstring &meosTime, wstring &meosDate);
@@ -105,8 +107,8 @@ void processGeneralTime(const wstring &generalTime, wstring &meosTime, wstring &
 //string formatDate(int m, bool useIsoFormat);
 wstring formatDate(int m, bool useIsoFormat);
 
-__int64 SystemTimeToInt64TenthSecond(const SYSTEMTIME &st);
-SYSTEMTIME Int64TenthSecondToSystemTime(__int64 time);
+__int64 SystemTimeToInt64TenthSecond(const std::tm &st);
+std::tm Int64TenthSecondToSystemTime(__int64 time);
 
 #define NOTIME 0x7FFFFFFF
 
@@ -321,3 +323,21 @@ const wstring &fromUTF8(const string &input);
 // Cross-platform replacement for Win32 _wtoi
 inline int wtoi(const wchar_t* s) { return s ? static_cast<int>(std::wcstol(s, nullptr, 10)) : 0; }
 inline int wtoi(const std::wstring& s) { return static_cast<int>(std::wcstol(s.c_str(), nullptr, 10)); }
+
+/// Returns monotonic milliseconds (replaces GetTickCount64)
+inline uint64_t meos_steady_clock_ms() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(
+        steady_clock::now().time_since_epoch()).count();
+}
+
+/// Fill std::tm with current local time (replaces GetLocalTime)
+inline void meos_localtime_now(std::tm* out) {
+    auto now = std::chrono::system_clock::now();
+    auto tt = std::chrono::system_clock::to_time_t(now);
+#ifdef _WIN32
+    localtime_s(out, &tt);
+#else
+    localtime_r(&tt, out);
+#endif
+}

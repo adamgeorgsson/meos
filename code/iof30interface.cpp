@@ -35,6 +35,7 @@
 #include "meosexception.h"
 #include "localizer.h"
 #include "maprenderer.h"
+#include <ctime>
 
 using namespace std;
 
@@ -2949,10 +2950,10 @@ void IOF30Interface::getAgeLevels(const vector<FeeInfo> &fees, const vector<int>
 
 int getAgeFromDate(const wstring &date) {
   int y = getThisYear();
-  SYSTEMTIME st;
+  std::tm st = {};
   convertDateYMD(date, st, false);
-  if (st.wYear > 1900)
-    return y - st.wYear;
+  if ((st.tm_year + 1900) > 1900)
+    return y - (st.tm_year + 1900);
   else
     return 0;
 }
@@ -2966,7 +2967,7 @@ void IOF30Interface::FeeInfo::add(IOF30Interface::FeeInfo &fi) {
   if (fi.toTime.empty() || (fi.toTime > fromTime && !fromTime.empty())) {
     fi.toTime = fromTime;
     if (!fi.toTime.empty()) {
-      SYSTEMTIME st;
+      std::tm st = {};
       convertDateYMD(fi.toTime, st, false);
       int64_t sec = SystemTimeToInt64TenthSecond(st);
       sec -= timeConstHour;
@@ -3263,25 +3264,35 @@ void IOF30Interface::getLocalDateTime(const string &date, const string &time,
   string zone =  time.substr(zIx);
   wstring wTime(timePart.begin(), timePart.end());
 
-  SYSTEMTIME st;
-  memset(&st, 0, sizeof(SYSTEMTIME));
+  std::tm st = {};
 
   int atime = convertAbsoluteTimeISO(wTime);
   int idate = convertDateYMD(date, st, true);
   if (idate != -1) {
     if (zone == "Z" || zone == "z") {
-      st.wHour = atime / timeConstHour;
-      st.wMinute = (atime / timeConstMinute) % 60;
-      st.wSecond = (atime / timeConstSecond) % 60;
+      st.tm_hour = atime / timeConstHour;
+      st.tm_min = (atime / timeConstMinute) % 60;
+      st.tm_sec = (atime / timeConstSecond) % 60;
 
-      SYSTEMTIME localTime;
-      memset(&localTime, 0, sizeof(SYSTEMTIME));
-      SystemTimeToTzSpecificLocalTime(0, &st, &localTime);
+      // Convert UTC tm to local tm (replaces SystemTimeToTzSpecificLocalTime)
+      std::tm st_copy = st;
+      std::time_t _tt;
+#ifdef _WIN32
+      _tt = _mkgmtime(&st_copy);
+#else
+      _tt = timegm(&st_copy);
+#endif
+      std::tm localTime = {};
+#ifdef _WIN32
+      localtime_s(&localTime, &_tt);
+#else
+      localtime_r(&_tt, &localTime);
+#endif
 
       char bf[64];
-      snprintf(bf, sizeof(bf), "%02d:%02d:%02d", localTime.wHour, localTime.wMinute, localTime.wSecond);
+      snprintf(bf, sizeof(bf), "%02d:%02d:%02d", localTime.tm_hour, localTime.tm_min, localTime.tm_sec);
       timeOut = bf;
-      snprintf(bf, sizeof(bf), "%d-%02d-%02d", localTime.wYear, localTime.wMonth, localTime.wDay);
+      snprintf(bf, sizeof(bf), "%d-%02d-%02d", (localTime.tm_year + 1900), (localTime.tm_mon + 1), localTime.tm_mday);
       dateOut = bf;
     }
     else {
@@ -3326,26 +3337,36 @@ void IOF30Interface::getLocalDateTime(const wstring &date, const wstring &time,
   wstring zone = time.substr(zIx);
   wstring wTime(timePart.begin(), timePart.end());
 
-  SYSTEMTIME st;
-  memset(&st, 0, sizeof(SYSTEMTIME));
+  std::tm st = {};
 
   const int atime = convertAbsoluteTimeISO(wTime);
   int idate = convertDateYMD(date, st, true);
   if (idate != -1) {
     if (zone == L"Z" || zone == L"z") {
-      st.wHour = atime / timeConstHour;
-      st.wMinute = (atime / timeConstMinute) % 60;
-      st.wSecond = (atime / timeConstSecond) % 60;
+      st.tm_hour = atime / timeConstHour;
+      st.tm_min = (atime / timeConstMinute) % 60;
+      st.tm_sec = (atime / timeConstSecond) % 60;
 
-      SYSTEMTIME localTime;
-      memset(&localTime, 0, sizeof(SYSTEMTIME));
-      SystemTimeToTzSpecificLocalTime(0, &st, &localTime);
+      // Convert UTC tm to local tm (replaces SystemTimeToTzSpecificLocalTime)
+      std::tm st_copy = st;
+      std::time_t _tt;
+#ifdef _WIN32
+      _tt = _mkgmtime(&st_copy);
+#else
+      _tt = timegm(&st_copy);
+#endif
+      std::tm localTime = {};
+#ifdef _WIN32
+      localtime_s(&localTime, &_tt);
+#else
+      localtime_r(&_tt, &localTime);
+#endif
 
-      //atime = localTime.wHour * 3600 + localTime.wMinute * 60 + localTime.wSecond;
+      //atime = localTime.tm_hour * 3600 + localTime.tm_min * 60 + localTime.tm_sec;
       wchar_t bf[64];
-      wsprintf(bf, L"%02d:%02d:%02d", localTime.wHour, localTime.wMinute, localTime.wSecond);
+      wsprintf(bf, L"%02d:%02d:%02d", localTime.tm_hour, localTime.tm_min, localTime.tm_sec);
       timeOut = bf;
-      wsprintf(bf, L"%d-%02d-%02d", localTime.wYear, localTime.wMonth, localTime.wDay);
+      wsprintf(bf, L"%d-%02d-%02d", (localTime.tm_year + 1900), (localTime.tm_mon + 1), localTime.tm_mday);
       dateOut = bf;
     }
     else {
