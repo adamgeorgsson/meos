@@ -489,7 +489,7 @@ void TabCompetition::importDefaultHiredCards(gdioutput& gdi) {
       set<int> rentCards;
       for (auto& c : data) {
         for (wstring wc : c) {
-          int cn = _wtoi(wc.c_str());
+          int cn = wtoi(wc.c_str());
           if (cn > 0) {
             oe->setHiredCard(cn, true);
           }

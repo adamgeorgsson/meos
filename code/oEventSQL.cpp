@@ -380,7 +380,7 @@ bool oEvent::uploadSynchronize()
       else if (ans == gdioutput::AskAnswer::AnswerNo) {
         int len = currentNameId.length();
         wchar_t ex[10];
-        swprintf_s(ex, L"_%05XZ", (GetTickCount()/97) & 0xFFFFF);
+        swprintf(ex, sizeof(ex)/sizeof(wchar_t), L"_%05XZ", (GetTickCount()/97) & 0xFFFFF);
         if (len > 0) {
           if (len< 7 || currentNameId[len-1] != 'Z')
             currentNameId += ex;
@@ -495,7 +495,7 @@ bool oEvent::readSynchronize(const CompetitionInfo &ci) {
   currentNameId = ci.FullPath;
 
   wchar_t file[260];
-  swprintf_s(file, L"%s.dbmeos", currentNameId.c_str());
+  swprintf(file, sizeof(file)/sizeof(wchar_t), L"%s.dbmeos", currentNameId.c_str());
   getUserFile(CurrentFile, file);
 
   auto status = sqlConnection->openDB(this, false);
@@ -759,7 +759,7 @@ int oEvent::checkChanged(vector<wstring> &out) const
     it!=oe->Cards.end(); ++it)
     if (it->isChanged()) {
       changed++;
-      swprintf_s(bf, L"Card %d", it->cardNo);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Card %d", it->cardNo);
       out.push_back(bf);
       it->synchronize();
     }
@@ -768,7 +768,7 @@ int oEvent::checkChanged(vector<wstring> &out) const
     it!=oe->Clubs.end(); ++it)
     if (it->isChanged()) {
       changed++;
-      swprintf_s(bf, L"Club %ws", it->name.c_str());
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Club %ws", it->name.c_str());
       out.push_back(bf);
       it->synchronize();
     }
@@ -777,7 +777,7 @@ int oEvent::checkChanged(vector<wstring> &out) const
     it!=oe->Controls.end(); ++it)
     if (it->isChanged()) {
       changed++;
-      swprintf_s(bf, L"Control %d", it->Numbers[0]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Control %d", it->Numbers[0]);
       out.push_back(bf);
       it->synchronize();
     }
@@ -786,7 +786,7 @@ int oEvent::checkChanged(vector<wstring> &out) const
         it!=oe->Courses.end(); ++it)
     if (it->isChanged()) {
       changed++;
-      swprintf_s(bf, L"Course %s", it->name.c_str());
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Course %s", it->name.c_str());
       out.push_back(bf);
       it->synchronize();
     }
@@ -795,7 +795,7 @@ int oEvent::checkChanged(vector<wstring> &out) const
       it!=oe->Classes.end(); ++it)
     if (it->isChanged()) {
       changed++;
-      swprintf_s(bf, L"Class %s", it->Name.c_str());
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Class %s", it->Name.c_str());
       out.push_back(bf);
       it->synchronize();
     }
@@ -804,7 +804,7 @@ int oEvent::checkChanged(vector<wstring> &out) const
       it!=oe->Runners.end(); ++it)
     if (it->isChanged()) {
       changed++;
-      swprintf_s(bf, L"Runner %s", it->getName().c_str());
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Runner %s", it->getName().c_str());
       out.push_back(bf);
       it->synchronize();
     }
@@ -812,7 +812,7 @@ int oEvent::checkChanged(vector<wstring> &out) const
       it!=oe->Teams.end(); ++it)
     if (it->isChanged()) {
       changed++;
-      swprintf_s(bf, L"Team %s", it->getName().c_str());
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Team %s", it->getName().c_str());
       out.push_back(bf);
       it->synchronize();
     }
@@ -820,7 +820,7 @@ int oEvent::checkChanged(vector<wstring> &out) const
       it!=oe->punches.end(); ++it)
     if (it->isChanged()) {
       changed++;
-      swprintf_s(bf, L"Punch SI=%d, %d", it->CardNo, it->type);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Punch SI=%d, %d", it->CardNo, it->type);
       out.push_back(bf);
       it->synchronize();
     }
@@ -887,7 +887,7 @@ void oEvent::listConnectedClients(gdioutput &gdi)
   gdi.pushX();
   int x=gdi.getCX();
   for (int k=0;k<connectedClients.size();k++) {
-    sprintf_s(bf, "%d.", k+1);
+    snprintf(bf, sizeof(bf), "%d.", k+1);
     gdi.addStringUT(0, bf);
     gdi.addStringUT(gdi.getCY(), x+30, 0, connectedClients[k]);
     gdi.popX();

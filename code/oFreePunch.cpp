@@ -217,7 +217,7 @@ pair<int, bool> oFreePunch::inputData(int id, const wstring &input,
   synchronize(false);
   switch(id) {
     case TID_CARD:
-      setCardNo(_wtoi(input.c_str()));
+      setCardNo(wtoi(input.c_str()));
       synchronize(true);
       output = itow(CardNo);
       break;
@@ -235,7 +235,7 @@ pair<int, bool> oFreePunch::inputData(int id, const wstring &input,
       break;
 
     case TID_UNIT:
-      setPunchUnit(_wtoi(input.c_str()));
+      setPunchUnit(wtoi(input.c_str()));
       synchronize(true);
       output = punchUnit > 0 ? itow(punchUnit) : _EmptyWString;
       break;
@@ -259,7 +259,7 @@ void oFreePunch::setTimeInt(int t, bool databaseUpdate) {
 }
 
 bool oFreePunch::setType(const wstring &t, bool databaseUpdate) {
-  int inputType = _wtoi(t.c_str());
+  int inputType = wtoi(t.c_str());
   int ttype = 0;
   if (inputType >0 && inputType <10000)
     ttype = inputType;

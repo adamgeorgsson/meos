@@ -414,7 +414,7 @@ void oCard::deletePunch(pPunch pp)
 wstring oCard::getInfo() const
 {
   wchar_t bf[128];
-  swprintf_s(bf, lang.tl("Löparbricka %d").c_str(), cardNo);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl("Löparbricka %d").c_str(), cardNo);
   return bf;
 }
 
@@ -826,7 +826,7 @@ wstring oCard::getCardVoltage(int miliVolt) {
   int vd = (miliVolt % 1000) / 10;
 
   wchar_t bf[64];
-  swprintf_s(bf, L"%d.%02d V", vi, vd);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d.%02d V", vi, vd);
   return bf;
 }
 

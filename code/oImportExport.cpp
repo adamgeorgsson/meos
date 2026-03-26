@@ -235,7 +235,7 @@ bool oEvent::exportOECSV(const wchar_t *file, const set<int>& classes, int langu
       row[OEcourseno] = conv_is(pc->getId());
       row[OEcourse] = gdibase.recodeToNarrow(pc->getName());
       if (pc->getLength()>0) {
-        sprintf_s(bf, "%d.%d", pc->getLength() / 1000, pc->getLength() % 1000);
+        snprintf(bf, sizeof(bf), "%d.%d", pc->getLength() / 1000, pc->getLength() % 1000);
         row[OElength] = bf;
       }
       row[OEclimb] = conv_is(pc->getDI().getInt("Climb"));
@@ -760,7 +760,7 @@ bool oEvent::addOECSVCompetitorDB(const vector<wstring> &row)
     OEclubno = 6, OEclub = 7, OEclubcity = 8, OEnat = 9, OEclassno = 10, OEclassshort = 11, OEclasslong = 12
   };
 
-  int pid = _wtoi(row[OEid].c_str());
+  int pid = wtoi(row[OEid].c_str());
 
   wstring given = row[OEfirstname];
   wstring family = row[OEsurname];
@@ -790,7 +790,7 @@ bool oEvent::addOECSVCompetitorDB(const vector<wstring> &row)
 
   // Extract club data
 
-  int clubId = _wtoi(row[OEclubno].c_str());
+  int clubId = wtoi(row[OEclubno].c_str());
   wstring clubName;
   wstring shortClubName;
 
@@ -815,7 +815,7 @@ bool oEvent::addOECSVCompetitorDB(const vector<wstring> &row)
 
   RunnerWDBEntry *rde = runnerDB->getRunnerById(pid);
 
-  int cardno = _wtoi(row[OEcard].c_str());
+  int cardno = wtoi(row[OEcard].c_str());
   if (!rde) {
     rde = runnerDB->getRunnerByCard(cardno);
 

@@ -55,44 +55,44 @@ wstring oPunch::getInfo() const
 string oPunch::codeString() const
 {
   char bf[32];
-  sprintf_s(bf, 32, "%d-%d;", type, punchTime);
+  snprintf(bf, 32, "%d-%d;", type, punchTime);
   return bf;
 }
 
 void oPunch::appendCodeString(string &dst) const {
   char ubf[16];
   if (punchUnit > 0)
-    sprintf_s(ubf, "@%d", punchUnit);
+    snprintf(ubf, sizeof(ubf), "@%d", punchUnit);
   else
     ubf[0] = 0;
 
   char ubo[16];
   if (origin != 0)
-    sprintf_s(ubo, "#%d", origin);
+    snprintf(ubo, sizeof(ubo), "#%d", origin);
   else
     ubo[0] = 0;
 
   char bf[48];
   if (timeConstSecond == 10 && punchTime != -1) {
     if (punchTime >= 0)
-      sprintf_s(bf, 32, "%d-%d.%d%s%s;", type, punchTime / timeConstSecond,
+      snprintf(bf, 32, "%d-%d.%d%s%s;", type, punchTime / timeConstSecond,
         punchTime % timeConstSecond, ubf, ubo);
     else {
-      sprintf_s(bf, 32, "%d--%d.%d%s%s;", type, (-punchTime) / timeConstSecond, 
+      snprintf(bf, 32, "%d--%d.%d%s%s;", type, (-punchTime) / timeConstSecond, 
         (-punchTime) % timeConstSecond, ubf, ubo);
     }
   }
   else if (timeConstSecond == 100 && punchTime != -1) {
     if (punchTime >= 0)
-      sprintf_s(bf, 32, "%d-%d.%02d%s%s;", type, punchTime / timeConstSecond,
+      snprintf(bf, 32, "%d-%d.%02d%s%s;", type, punchTime / timeConstSecond,
         punchTime % timeConstSecond, ubf, ubo);
     else {
-      sprintf_s(bf, 32, "%d--%d.%02d%s%s;", type, (-punchTime) / timeConstSecond,
+      snprintf(bf, 32, "%d--%d.%02d%s%s;", type, (-punchTime) / timeConstSecond,
         (-punchTime) % timeConstSecond, ubf, ubo);
     }
   }
   else
-    sprintf_s(bf, 32, "%d-%d%s%s;", type, punchTime, ubf, ubo);
+    snprintf(bf, 32, "%d-%d%s%s;", type, punchTime, ubf, ubo);
 
   dst.append(bf);
 }
@@ -184,15 +184,15 @@ wstring oPunch::getString() const {
 
   if (type == oPunch::PunchStart || type == oPunch::PunchCheck || type == oPunch::PunchFinish) {
     if (false && punchUnit > 0)
-      swprintf_s(bf, L"%s/%d\t%s", tp, punchUnit, ct);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s/%d\t%s", tp, punchUnit, ct);
     else
-      swprintf_s(bf, L"%s\t%s", tp, ct);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s\t%s", tp, ct);
   }
   else {
     if (isUsed)
-      swprintf_s(bf, L"%d\t%s", type, ct);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d\t%s", type, ct);
     else
-      swprintf_s(bf, L"  %d*\t%s", type, ct);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"  %d*\t%s", type, ct);
   }
 
   return bf;

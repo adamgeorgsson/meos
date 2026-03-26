@@ -317,3 +317,7 @@ const wstring &widen(const string &input);
 const string &narrow(const wstring &input);
 const string &toUTF8(const wstring &input);
 const wstring &fromUTF8(const string &input);
+
+// Cross-platform replacement for Win32 _wtoi
+inline int wtoi(const wchar_t* s) { return s ? static_cast<int>(std::wcstol(s, nullptr, 10)) : 0; }
+inline int wtoi(const std::wstring& s) { return static_cast<int>(std::wcstol(s.c_str(), nullptr, 10)); }

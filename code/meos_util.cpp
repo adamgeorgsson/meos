@@ -120,7 +120,7 @@ wstring getLocalTimeFileName()
   GetLocalTime(&st);
 
   wchar_t bf[32];
-  swprintf_s(bf, L"%d%02d%02d_%02d%02d%02d", st.wYear, st.wMonth, st.wDay,
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d%02d%02d_%02d%02d%02d", st.wYear, st.wMonth, st.wDay,
     st.wHour, st.wMinute, st.wSecond);
 
   return bf;
@@ -184,7 +184,7 @@ SYSTEMTIME Int64TenthSecondToSystemTime(__int64 time) {
 string convertSystemTimeN(const SYSTEMTIME &st)
 {
   char bf[64];
-  sprintf_s(bf, "%d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay,
+  snprintf(bf, sizeof(bf), "%d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay,
     st.wHour, st.wMinute, st.wSecond);
 
   return bf;
@@ -194,7 +194,7 @@ string convertSystemTimeN(const SYSTEMTIME &st)
 wstring convertSystemTime(const SYSTEMTIME &st)
 {
   wchar_t bf[64];
-  swprintf_s(bf, L"%d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay,
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay,
     st.wHour, st.wMinute, st.wSecond);
 
   return bf;
@@ -203,14 +203,14 @@ wstring convertSystemTime(const SYSTEMTIME &st)
 string convertSystemTimeOnlyN(const SYSTEMTIME &st)
 {
   char bf[32];
-  sprintf_s(bf, "%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+  snprintf(bf, sizeof(bf), "%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
 
   return bf;
 }
 
 wstring convertSystemTimeOnly(const SYSTEMTIME &st) {
   wchar_t bf[32];
-  swprintf_s(bf, L"%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
 
   return bf;
 }
@@ -218,7 +218,7 @@ wstring convertSystemTimeOnly(const SYSTEMTIME &st) {
 string convertSystemDateN(const SYSTEMTIME &st)
 {
   char bf[32];
-  sprintf_s(bf, "%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
+  snprintf(bf, sizeof(bf), "%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
 
   return bf;
 }
@@ -226,7 +226,7 @@ string convertSystemDateN(const SYSTEMTIME &st)
 wstring convertSystemDate(const SYSTEMTIME &st)
 {
   wchar_t bf[32];
-  swprintf_s(bf, L"%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
 
   return bf;
 }
@@ -234,7 +234,7 @@ wstring convertSystemDate(const SYSTEMTIME &st)
 string formatDateN(int m, bool useIsoFormat) {
   char bf[24];
   if (m > 0 && m < 30000101) {
-    sprintf_s(bf, 24, "%d-%02d-%02d", m/(100*100), (m/100)%100, m%100);
+    snprintf(bf, 24, "%d-%02d-%02d", m/(100*100), (m/100)%100, m%100);
   }
   else {
     bf[0] = '-';
@@ -246,7 +246,7 @@ string formatDateN(int m, bool useIsoFormat) {
 wstring formatDate(int m, bool useIsoFormat) {
   wchar_t bf[24];
   if (m > 0 && m < 30000101) {
-    swprintf_s(bf, 24, L"%d-%02d-%02d", m/(100*100), (m/100)%100, m%100);
+    swprintf(bf, 24, L"%d-%02d-%02d", m/(100*100), (m/100)%100, m%100);
   }
   else {
     bf[0] = '-';
@@ -629,37 +629,37 @@ const wstring &formatTimeMS(int m, bool force2digit, SubSecond mode) {
   if (am < timeConstHour || !MeOSUtil::useHourFormat) {
     if (force2digit) {
       if (mode == SubSecond::Off || (mode == SubSecond::Auto && m % 10 == 0))
-        swprintf_s(bf, L"-%02d:%02d", am / timeConstMinute, (am / timeConstSecond) % 60);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%02d:%02d", am / timeConstMinute, (am / timeConstSecond) % 60);
       else if (timeUnitsPerSecond == 10)
-        swprintf_s(bf, L"-%02d:%02d.%d", am / timeConstMinute, (am / timeConstSecond) % 60, am % timeConstSecond);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%02d:%02d.%d", am / timeConstMinute, (am / timeConstSecond) % 60, am % timeConstSecond);
       else
-        swprintf_s(bf, L"-%02d:%02d.%02d", am / timeConstMinute, (am / timeConstSecond) % 60, am % timeConstSecond);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%02d:%02d.%02d", am / timeConstMinute, (am / timeConstSecond) % 60, am % timeConstSecond);
     }
     else {
       if (mode == SubSecond::Off || (mode == SubSecond::Auto && m % 10 == 0))
-        swprintf_s(bf, L"-%d:%02d", am / timeConstMinute, (am / timeConstSecond) % 60);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%d:%02d", am / timeConstMinute, (am / timeConstSecond) % 60);
       else if (timeUnitsPerSecond == 10)
-        swprintf_s(bf, L"-%d:%02d.%d", am / timeConstMinute, (am / timeConstSecond) % 60, am % timeConstSecond);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%d:%02d.%d", am / timeConstMinute, (am / timeConstSecond) % 60, am % timeConstSecond);
       else
-        swprintf_s(bf, L"-%d:%02d.%02d", am / timeConstMinute, (am / timeConstSecond) % 60, am % timeConstSecond);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%d:%02d.%02d", am / timeConstMinute, (am / timeConstSecond) % 60, am % timeConstSecond);
     }
   }
   else if (am < timeConstHour * 48) {
     if (force2digit) {
       if (mode == SubSecond::Off || (mode == SubSecond::Auto && m % 10 == 0))
-        swprintf_s(bf, L"-%02d:%02d:%02d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%02d:%02d:%02d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60);
       else if (timeUnitsPerSecond == 10)
-        swprintf_s(bf, L"-%02d:%02d:%02d.%d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60, am % timeConstSecond);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%02d:%02d:%02d.%d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60, am % timeConstSecond);
       else
-        swprintf_s(bf, L"-%02d:%02d:%02d.%02d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60, am % timeConstSecond);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%02d:%02d:%02d.%02d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60, am % timeConstSecond);
     }
     else {
       if (mode == SubSecond::Off || (mode == SubSecond::Auto && m % 10 == 0))
-        swprintf_s(bf, L"-%d:%02d:%02d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%d:%02d:%02d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60);
       else if (timeUnitsPerSecond == 10)
-        swprintf_s(bf, L"-%d:%02d:%02d.%d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60, am % timeConstSecond);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%d:%02d:%02d.%d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60, am % timeConstSecond);
       else 
-        swprintf_s(bf, L"-%d:%02d:%02d.%02d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60, am % timeConstSecond);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%d:%02d:%02d.%02d", am / timeConstHour, (am / timeConstMinute) % 60, (am / timeConstSecond) % 60, am % timeConstSecond);
     }
   }
   else {
@@ -682,22 +682,22 @@ const wstring &formatTime(int rt, SubSecond mode) {
     wchar_t bf[40];
     if (mode == SubSecond::Off || (mode == SubSecond::Auto && rt % timeUnitsPerSecond == 0)) {
       if (rt >= timeConstHour && MeOSUtil::useHourFormat)
-        swprintf_s(bf, L"%d:%02d:%02d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d:%02d:%02d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60);
       else
-        swprintf_s(bf, L"%d:%02d", (rt / timeConstMinute), (rt / timeConstSecond) % 60);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d:%02d", (rt / timeConstMinute), (rt / timeConstSecond) % 60);
     }
     else {
       if (timeUnitsPerSecond == 10) {
         if (rt >= timeConstHour && MeOSUtil::useHourFormat)
-          swprintf_s(bf, L"%d:%02d:%02d.%d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60, rt % timeConstSecond);
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d:%02d:%02d.%d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60, rt % timeConstSecond);
         else
-          swprintf_s(bf, L"%d:%02d.%d", (rt / timeConstMinute), (rt / timeConstSecond) % 60, rt % timeConstSecond);
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d:%02d.%d", (rt / timeConstMinute), (rt / timeConstSecond) % 60, rt % timeConstSecond);
       }
       else {
         if (rt >= timeConstHour && MeOSUtil::useHourFormat)
-          swprintf_s(bf, L"%d:%02d:%02d.%02d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60, rt % timeConstSecond);
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d:%02d:%02d.%02d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60, rt % timeConstSecond);
         else
-          swprintf_s(bf, L"%d:%02d.%02d", (rt / timeConstMinute), (rt / timeConstSecond) % 60, rt % timeConstSecond);
+          swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d:%02d.%02d", (rt / timeConstMinute), (rt / timeConstSecond) % 60, rt % timeConstSecond);
       }
     }
     res = bf;
@@ -713,9 +713,9 @@ const string &formatTimeN(int rt) {
   if (rt>0 && rt<timeConstHour *999) {
     char bf[16];
     if (rt>= timeConstHour && MeOSUtil::useHourFormat)
-      sprintf_s(bf, 16, "%d:%02d:%02d", rt/ timeConstHour,(rt/timeConstMinute)%60, (rt/timeConstSecond)%60);
+      snprintf(bf, 16, "%d:%02d:%02d", rt/ timeConstHour,(rt/timeConstMinute)%60, (rt/timeConstSecond)%60);
     else
-      sprintf_s(bf, 16, "%d:%02d", (rt/timeConstMinute), (rt/timeConstSecond)%60);
+      snprintf(bf, 16, "%d:%02d", (rt/timeConstMinute), (rt/timeConstSecond)%60);
 
     res = bf;
     return res;
@@ -729,11 +729,11 @@ const wstring &formatTimeHMS(int rt, SubSecond mode) {
   if (rt>=0) {
     wchar_t bf[40];
     if (mode == SubSecond::Off || (mode == SubSecond::Auto && rt%timeUnitsPerSecond == 0))
-      swprintf_s(bf, 16, L"%02d:%02d:%02d", rt/timeConstHour,(rt/timeConstMinute)%60, (rt/timeConstSecond)%60);
+      swprintf(bf, 16, L"%02d:%02d:%02d", rt/timeConstHour,(rt/timeConstMinute)%60, (rt/timeConstSecond)%60);
     else if (timeUnitsPerSecond == 10)
-      swprintf_s(bf, 16, L"%02d:%02d:%02d.%d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60, rt % timeConstSecond);
+      swprintf(bf, 16, L"%02d:%02d:%02d.%d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60, rt % timeConstSecond);
     else
-      swprintf_s(bf, 16, L"%02d:%02d:%02d.%02d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60, rt % timeConstSecond);
+      swprintf(bf, 16, L"%02d:%02d:%02d.%02d", rt / timeConstHour, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60, rt % timeConstSecond);
 
     res = bf;
     return res;
@@ -748,7 +748,7 @@ wstring formatTimeIOF(int rt, int zeroTime)
   if (rt > 0) {
     rt += zeroTime;
     wchar_t bf[16];
-    swprintf_s(bf, 16, L"%02d:%02d:%02d", (rt / timeConstHour) % 24, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60);
+    swprintf(bf, 16, L"%02d:%02d:%02d", (rt / timeConstHour) % 24, (rt / timeConstMinute) % 60, (rt / timeConstSecond) % 60);
 
     return bf;
   }
@@ -911,13 +911,13 @@ const wstring &makeDash(const wchar_t *t) {
 
 wstring formatRank(int rank) {
   wchar_t r[16];
-  swprintf_s(r, L"(%04d)", rank);
+  swprintf(r, sizeof(r)/sizeof(wchar_t), L"(%04d)", rank);
   return r;
 }
 
 const wstring &itow(int i) {
   wchar_t bf[32];
-  _itow_s(i, bf, 10);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d", i);
   wstring &res = StringCache::getInstance().wget();
   res = bf;
   return res;
@@ -1555,7 +1555,7 @@ int getNumberSuffix(const wstring &str)
 
   if (pos == str.length())
     return 0;
-  return _wtoi(str.c_str() + pos);
+  return wtoi(str.c_str() + pos);
 }
 
 int extractAnyNumber(const wstring &str, wstring &prefix, wstring &suffix)
@@ -1564,7 +1564,7 @@ int extractAnyNumber(const wstring &str, wstring &prefix, wstring &suffix)
   for (size_t k = 0; k<str.length(); k++) {
     if (isdigit(ptr[k])) {
       prefix = str.substr(0, k);
-      int num = _wtoi(str.c_str() + k);
+      int num = wtoi(str.c_str() + k);
       while(k<str.length() && (str[++k] & ~0x7F) == 0 && isdigit(str[k]));
         suffix = str.substr(k);
 
@@ -1652,7 +1652,7 @@ wstring getErrorMessage(int code) {
   if (s==0 || !msg) {
     if (code != 0) {
       wchar_t ch[128];
-      swprintf_s(ch, L"Error code: %d", code);
+      swprintf(ch, sizeof(ch)/sizeof(wchar_t), L"Error code: %d", code);
       return ch;
     }
     return L"";
@@ -1661,7 +1661,7 @@ wstring getErrorMessage(int code) {
   wstring str = LPCTSTR(msg);
   if (str.empty() && code>0) {
     wchar_t ch[128];
-    swprintf_s(ch, L"Error code: %d", code);
+    swprintf(ch, sizeof(ch)/sizeof(wchar_t), L"Error code: %d", code);
     str = ch;
   }
 
@@ -1962,7 +1962,7 @@ bool matchNumber(int a, const wchar_t *b) {
     return false;
 
   wchar_t bf[32];
-  _itow_s(a, bf, 10);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d", a);
 
   // Check matching substring
   for (int k = 0; k < 12; k++) {
@@ -2143,12 +2143,12 @@ wstring getTimeZoneString(const wstring &date) {
     return L"+00:00";
   else if (a>0) {
     wchar_t bf[12];
-    swprintf_s(bf, L"-%02d:%02d", a/timeConstSecPerHour, (a/timeConstMinPerHour)%60);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%02d:%02d", a/timeConstSecPerHour, (a/timeConstMinPerHour)%60);
     return bf;
   }
   else {
     wchar_t bf[12];
-    swprintf_s(bf, L"+%02d:%02d", a/-timeConstSecPerHour, (a/-timeConstMinPerHour)%60);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"+%02d:%02d", a/-timeConstSecPerHour, (a/-timeConstMinPerHour)%60);
     return bf;
   }
 }
@@ -2344,7 +2344,7 @@ void processGeneralTime(const wstring &generalTime, wstring &meosTime, wstring &
     for (size_t k = 0; k < parts.size(); k++) {
       if (parts[k].empty())
         continue;
-      int number = _wtoi(parts[k].c_str());
+      int number = wtoi(parts[k].c_str());
       if (number == 0 && parts[k][0] != '0')
         number = -1; // Not a number
 
@@ -2401,7 +2401,7 @@ void processGeneralTime(const wstring &generalTime, wstring &meosTime, wstring &
     if (!pm)
       meosTime = parts[hour] + L":" + parts[minute] + L":" + parts[second];
     else {
-      int rawHour = _wtoi(parts[hour].c_str());
+      int rawHour = wtoi(parts[hour].c_str());
       if (rawHour < 12)
         rawHour+=12;
       meosTime = itow(rawHour) + L":" + parts[minute] + L":" + parts[second];
@@ -2411,14 +2411,14 @@ void processGeneralTime(const wstring &generalTime, wstring &meosTime, wstring &
   if (year >= 0 && month >= 0 && day >= 0) {
     int y = -1, m = -1, d = -1;
     if (year != month) {
-      y = _wtoi(parts[year].c_str());
-      m = _wtoi(parts[month].c_str());
-      d = _wtoi(parts[day].c_str());
+      y = wtoi(parts[year].c_str());
+      m = wtoi(parts[month].c_str());
+      d = wtoi(parts[day].c_str());
 
       //meosDate = parts[year] + "-" + parts[month] + "-" + parts[day];
     } 
     else {
-      int td = _wtoi(parts[year].c_str());
+      int td = wtoi(parts[year].c_str());
       int y1 = td / 10000;
       int m1 = (td / 100) % 100;
       int d1 = td % 100;
@@ -2439,7 +2439,7 @@ void processGeneralTime(const wstring &generalTime, wstring &meosTime, wstring &
     }
     if (y > 0) {
       wchar_t bf[24];
-      swprintf_s(bf, 24, L"%d-%02d-%02d", y, m, d);
+      swprintf(bf, 24, L"%d-%02d-%02d", y, m, d);
       meosDate = bf;
     }
   }
@@ -2552,7 +2552,7 @@ int parseRelativeTime(const char *data) {
 
 int parseRelativeTime(const wchar_t *data) {
   if (data) {
-    int ret = _wtoi(data);
+    int ret = wtoi(data);
     if (timeConstSecond == 10) {
       int j = 0;
       while (data[j]) {
@@ -2608,16 +2608,16 @@ const wstring &codeRelativeTimeW(int rt) {
     return itow(rt / timeConstSecond);
   else if (rt > 0) {
     if (timeConstSecond == 10)
-      swprintf_s(bf, L"%d.%d", rt / timeConstSecond, rt % timeConstSecond);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d.%d", rt / timeConstSecond, rt % timeConstSecond);
     else if (timeConstSecond == 100)
-      swprintf_s(bf, L"%d.%02d", rt / timeConstSecond, rt % timeConstSecond);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d.%02d", rt / timeConstSecond, rt % timeConstSecond);
   }
   else {
     rt = -rt;
     if (timeConstSecond == 10)
-      swprintf_s(bf, L"-%d.%d", rt / timeConstSecond, rt % timeConstSecond);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%d.%d", rt / timeConstSecond, rt % timeConstSecond);
     else if (timeConstSecond == 100)
-      swprintf_s(bf, L"-%d.%02d", rt / timeConstSecond, rt % timeConstSecond);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"-%d.%02d", rt / timeConstSecond, rt % timeConstSecond);
   }
   wstring &res = StringCache::getInstance().wget();
   res = bf;
@@ -2663,16 +2663,16 @@ const string &codeRelativeTime(int rt) {
     return itos(rt / timeConstSecond);
   else if (rt > 0) {
     if (timeConstSecond == 10)
-      sprintf_s(bf, "%d.%d", rt / timeConstSecond, rt % timeConstSecond);
+      snprintf(bf, sizeof(bf), "%d.%d", rt / timeConstSecond, rt % timeConstSecond);
     else
-      sprintf_s(bf, "%d.%02d", rt / timeConstSecond, rt % timeConstSecond);
+      snprintf(bf, sizeof(bf), "%d.%02d", rt / timeConstSecond, rt % timeConstSecond);
   }
   else {
     rt = -rt;
     if (timeConstSecond == 10)
-      sprintf_s(bf, "-%d.%d", rt / timeConstSecond, rt % timeConstSecond);
+      snprintf(bf, sizeof(bf), "-%d.%d", rt / timeConstSecond, rt % timeConstSecond);
     else
-      sprintf_s(bf, "-%d.%02d", rt / timeConstSecond, rt % timeConstSecond);
+      snprintf(bf, sizeof(bf), "-%d.%02d", rt / timeConstSecond, rt % timeConstSecond);
   }
   string &res = StringCache::getInstance().get();
   res = bf;
