@@ -59,9 +59,41 @@ npm test           # Vitest unit tests
 npm run test:coverage  # Tests with v8 coverage
 ```
 
+## Legacy MeOS (Windows GUI)
+
+### Prerequisites
+
+- Windows 10/11 x64
+- CMake 3.20+
+- Visual Studio 2019/2022 with C++ workload
+- vcpkg (set `VCPKG_INSTALLATION_ROOT` to your vcpkg installation directory)
+
+### Build
+
+```powershell
+cmake -S code -B code/build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
+cmake --build code/build --config Release
+```
+
+vcpkg automatically installs all dependencies from `code/vcpkg.json` during configure:
+`zlib`, `minizip`, `libpng`, `libharu`, `libmysql`, `openssl`, `restbed`.
+
+Output: `code/build/Release/MeOS.exe`
+
+The build automatically copies data files from `code/Lists/` to the output directory via a CMake POST_BUILD step.
+
+### Runtime DLLs
+
+All required DLLs are provided by vcpkg. Copy everything from
+`code/build/vcpkg_installed/x64-windows/bin/` alongside `MeOS.exe` before running.
+
+For redistribution, also include the MSVC runtime DLLs (`MSVCP140.dll`,
+`VCRUNTIME140.dll`, `VCRUNTIME140_1.dll`) from your Visual Studio installation.
+
 ## CI/CD
 
 GitHub Actions workflows run automatically on every push and pull request.
 
 - **C++ CI** (`.github/workflows/cpp.yml`) — builds and tests on Linux and Windows, runs clang-tidy on Linux
 - **Frontend CI** (`.github/workflows/frontend.yml`) — lint, test, and build the React frontend
+- **Legacy MeOS CI** (`.github/workflows/build-legacy.yml`) — builds the Windows GUI application using CMake + vcpkg on `legacy-build-*` branches

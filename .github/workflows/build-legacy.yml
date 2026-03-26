@@ -2,7 +2,7 @@ name: Build legacy MeOS
 
 on:
   push:
-    branches: [base, 'legacy-preparation-*']
+    branches: [base, 'legacy-preparation-*', 'legacy-build-*']
     paths:
       - 'code/**'
       - '.github/workflows/build-legacy.yml'
@@ -14,49 +14,60 @@ jobs:
       matrix:
         configuration: [Release]
         platform: [x64]
+    env:
+      VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-binary-cache,readwrite'
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
+      - name: Cache vcpkg binary packages
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/vcpkg-binary-cache
+          key: vcpkg-binary-${{ runner.os }}-${{ hashFiles('code/vcpkg.json') }}
+          restore-keys: |
+            vcpkg-binary-${{ runner.os }}-
 
-      - name: Install OpenSSL 1.1
-        run: choco install openssl --version=1.1.1.2100 -y --no-progress
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'code/vcpkg.json'
+          vcpkgGitCommitId: '67f167b2f7c170f83688919c90edcd896239330e'
+
+      - name: Configure
+        run: cmake -S code -B code/build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 
       - name: Build
-        working-directory: code
-        run: msbuild MeOS.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+        run: cmake --build code/build --config ${{ matrix.configuration }}
 
       - name: Package release
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path code -Recurse -Filter MeOS.exe | Select-Object -First 1
-          $outDir = $exe.DirectoryName
+          $outDir = "code/build/${{ matrix.configuration }}"
 
-          Copy-Item code/dll64/libharu.dll  $outDir
-          Copy-Item code/dll64/libmysql.dll $outDir
-
-          $opensslDir = (Get-ChildItem "C:\Program Files\OpenSSL*" -Directory | Select-Object -First 1).FullName
-          Copy-Item "$opensslDir\libssl-1_1-x64.dll"    $outDir
-          Copy-Item "$opensslDir\libcrypto-1_1-x64.dll"  $outDir
+          $vcpkgBin = "code/build/vcpkg_installed/x64-windows/bin"
+          Get-ChildItem "$vcpkgBin/*.dll" | Copy-Item -Destination $outDir
 
           $vcToolsDir = (& vswhere -latest -find "VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT") | Select-Object -Last 1
-          Copy-Item "$vcToolsDir\MSVCP140.dll"        $outDir
-          Copy-Item "$vcToolsDir\VCRUNTIME140.dll"    $outDir
-          Copy-Item "$vcToolsDir\VCRUNTIME140_1.dll"  $outDir
+          Copy-Item "$vcToolsDir\MSVCP140.dll"       $outDir
+          Copy-Item "$vcToolsDir\VCRUNTIME140.dll"   $outDir
+          Copy-Item "$vcToolsDir\VCRUNTIME140_1.dll" $outDir
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: MeOS-${{ matrix.configuration }}-${{ matrix.platform }}
           path: |
-            code/**/MeOS.exe
-            code/**/libharu.dll
-            code/**/libmysql.dll
-            code/**/libssl-1_1-x64.dll
-            code/**/libcrypto-1_1-x64.dll
-            code/**/MSVCP140.dll
-            code/**/VCRUNTIME140.dll
-            code/**/VCRUNTIME140_1.dll
+            code/build/${{ matrix.configuration }}/MeOS.exe
+            code/build/${{ matrix.configuration }}/*.dll
+            code/build/${{ matrix.configuration }}/*.xml
+            code/build/${{ matrix.configuration }}/*.csv
+            code/build/${{ matrix.configuration }}/*.listdef
+            code/build/${{ matrix.configuration }}/*.lxml
+            code/build/${{ matrix.configuration }}/*.template
+            code/build/${{ matrix.configuration }}/*.meos
+            code/build/${{ matrix.configuration }}/*.mwd
+            code/build/${{ matrix.configuration }}/*.wpersons
+            code/build/${{ matrix.configuration }}/*.brules
+            code/build/${{ matrix.configuration }}/*.cardsystem
           if-no-files-found: warn

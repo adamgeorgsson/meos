@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "builtin-baseline": "67f167b2f7c170f83688919c90edcd896239330e",
+  "dependencies": [
+    "zlib",
+    "minizip",
+    "libpng",
+    "libharu",
+    "libmysql",
+    "openssl",
+    {
+      "name": "restbed",
+      "features": ["openssl"]
+    }
+  ]
+}
