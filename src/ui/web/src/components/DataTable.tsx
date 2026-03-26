@@ -15,6 +15,7 @@ export interface DataTableProps<T> {
   enableSelection?: boolean;
   getItemId?: (item: T) => string | number;
   onSelectionChange?: (selected: Set<string | number>) => void;
+  renderRowActions?: (item: T) => React.ReactNode;
 }
 
 type SortDir = "asc" | "desc" | null;
@@ -27,6 +28,7 @@ export function DataTable<T>({
   enableSelection = false,
   getItemId,
   onSelectionChange,
+  renderRowActions,
 }: DataTableProps<T>) {
   const getId = getItemId ?? ((item: T) => (item as { id: string | number }).id);
 
@@ -121,7 +123,7 @@ export function DataTable<T>({
     );
   }
 
-  const colSpan = columns.length + (enableSelection ? 1 : 0);
+  const colSpan = columns.length + (enableSelection ? 1 : 0) + (renderRowActions ? 1 : 0);
   const allOnPageSelected =
     paginated.length > 0 && paginated.every((row) => selected.has(getId(row)));
 
@@ -166,6 +168,7 @@ export function DataTable<T>({
                 {sortKey === col.key && sortDir === "desc" && " ↓"}
               </th>
             ))}
+            {renderRowActions && <th className="p-2 w-32 border-b" />}
           </tr>
         </thead>
         <tbody>
@@ -198,6 +201,11 @@ export function DataTable<T>({
                       {String(col.accessor(row) ?? "")}
                     </td>
                   ))}
+                  {renderRowActions && (
+                    <td className="p-2 border-b text-right">
+                      {renderRowActions(row)}
+                    </td>
+                  )}
                 </tr>
               );
             })
