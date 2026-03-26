@@ -15,6 +15,9 @@ Ported to C++ and modified to suite MeOS.
 #include <fcntl.h>
 #include <vector>
 
+#include <chrono>
+#include <filesystem>
+
 #include <direct.h>
 #include <io.h>
 
@@ -37,16 +40,23 @@ filename : the filename of the file where date/time must be modified
 dosdate : the new date at the MSDos format (4 bytes)
 tmu_date : the SAME new date at the tm_unz format */
 void change_file_date(const wchar_t *filename, uLong dosdate, tm_unz tmu_date) {
-  HANDLE hFile;
-  FILETIME ftm,ftLocal,ftCreate,ftLastAcc,ftLastWrite;
-
-  hFile = CreateFile(filename,GENERIC_READ | GENERIC_WRITE,
-    0,NULL,OPEN_EXISTING,0,NULL);
-  GetFileTime(hFile,&ftCreate,&ftLastAcc,&ftLastWrite);
-  DosDateTimeToFileTime((WORD)(dosdate>>16),(WORD)dosdate,&ftLocal);
-  LocalFileTimeToFileTime(&ftLocal,&ftm);
-  SetFileTime(hFile,&ftm,&ftLastAcc,&ftm);
-  CloseHandle(hFile);
+  std::tm t = {};
+  t.tm_sec   = tmu_date.tm_sec;
+  t.tm_min   = tmu_date.tm_min;
+  t.tm_hour  = tmu_date.tm_hour;
+  t.tm_mday  = tmu_date.tm_mday;
+  t.tm_mon   = tmu_date.tm_mon;
+  t.tm_year  = tmu_date.tm_year - 1900;
+  t.tm_isdst = -1;
+  std::time_t tt = std::mktime(&t);
+  if (tt == (std::time_t)-1) return;
+  // Convert time_t to file_time_type (C++17 compatible)
+  using ftp = std::filesystem::file_time_type;
+  auto sys_tp = std::chrono::system_clock::from_time_t(tt);
+  auto ftime = ftp::clock::now() + std::chrono::duration_cast<ftp::duration>(
+      sys_tp - std::chrono::system_clock::now());
+  std::error_code ec;
+  std::filesystem::last_write_time(std::filesystem::path(filename), ftime, ec);
 }
 
 
@@ -253,20 +263,29 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
 
 
 uLong filetime(const wchar_t *f, uLong *dt) {
-  int ret = 0;
-  FILETIME ftLocal;
-  HANDLE hFind;
-  WIN32_FIND_DATA ff32;
-
-  hFind = FindFirstFile(f,&ff32);
-  if (hFind != INVALID_HANDLE_VALUE)
-  {
-    FileTimeToLocalFileTime(&(ff32.ftLastWriteTime),&ftLocal);
-    FileTimeToDosDateTime(&ftLocal,((LPWORD)dt)+1,((LPWORD)dt)+0);
-    FindClose(hFind);
-    ret = 1;
-  }
-  return ret;
+  std::error_code ec;
+  auto ftime = std::filesystem::last_write_time(f, ec);
+  if (ec) return 0;
+  // Convert file_time_type to time_t (C++17 compatible)
+  using ftp = std::filesystem::file_time_type;
+  auto sys_tp = std::chrono::system_clock::now() +
+      std::chrono::duration_cast<std::chrono::system_clock::duration>(
+          ftime - ftp::clock::now());
+  std::time_t tt = std::chrono::system_clock::to_time_t(sys_tp);
+  std::tm local_tm = {};
+#ifdef _WIN32
+  localtime_s(&local_tm, &tt);
+#else
+  localtime_r(&tt, &local_tm);
+#endif
+  uLong date_val = (uLong)((local_tm.tm_year + 1900 - 1980) << 9) |
+                   (uLong)((local_tm.tm_mon + 1) << 5) |
+                   (uLong)(local_tm.tm_mday);
+  uLong time_val = (uLong)(local_tm.tm_hour << 11) |
+                   (uLong)(local_tm.tm_min << 5) |
+                   (uLong)(local_tm.tm_sec / 2);
+  *dt = (date_val << 16) | time_val;
+  return 1;
 }
 
 int check_exist_file(const wchar_t* filename)
