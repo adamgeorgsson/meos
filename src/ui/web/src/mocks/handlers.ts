@@ -156,6 +156,17 @@ export const handlers = [
     return HttpResponse.json(item, { status: 201 });
   }),
 
+  http.post(`${BASE}/runners/batch`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>[];
+    const created = body.map((item) => {
+      const id = nextId(db.runners);
+      const runner = { ...item, id };
+      db.runners.push(runner as (typeof db.runners)[0]);
+      return runner;
+    });
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
   http.put(`${BASE}/runners/:id`, async ({ params, request }) => {
     const idx = db.runners.findIndex((r) => r.id === Number(params.id));
     if (idx === -1) return notFound();

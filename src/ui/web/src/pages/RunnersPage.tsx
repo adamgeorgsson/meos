@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { Runner, Club, Class } from "../types";
@@ -11,6 +12,7 @@ import { FormField } from "../components/FormField";
 import { FormInput } from "../components/FormInput";
 import { SearchableSelect } from "../components/SearchableSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { CsvImportDialog } from "../components/CsvImportDialog";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -26,6 +28,8 @@ export function RunnersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Runner | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Runner | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: runners = [], isLoading } = useEntities<Runner>("runners");
   const { data: clubs = [] } = useEntities<Club>("clubs");
@@ -117,12 +121,20 @@ export function RunnersPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Runners</h1>
-        <button
-          onClick={openAdd}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-        >
-          Add Runner
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setImportOpen(true)}
+            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm"
+          >
+            Import CSV
+          </button>
+          <button
+            onClick={openAdd}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+          >
+            Add Runner
+          </button>
+        </div>
       </div>
 
       <DataTable
@@ -202,6 +214,15 @@ export function RunnersPage() {
         message={`Delete runner "${deleteTarget?.name ?? ""}"?`}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <CsvImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => void queryClient.invalidateQueries({ queryKey: ["runners"] })}
+        runners={runners}
+        clubs={clubs}
+        classes={classes}
       />
     </div>
   );
