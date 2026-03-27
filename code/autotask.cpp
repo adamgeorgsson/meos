@@ -30,6 +30,7 @@
 #include "meosexception.h"
 #include <cstdint>
 #include <chrono>
+#include <iostream>
 
 const int SYNC_FACTOR = 4; 
 
@@ -192,7 +193,7 @@ void AutoTask::synchronize(const vector<gdioutput *> &windows) {
 
     lastSynchTime = toc;
 #ifdef DEBUGPRINT
-    OutputDebugString((" updated: " + itos(toc-tic) + "\n").c_str());
+    std::cerr << narrow((" updated: " + itos(toc-tic) + "\n"));
 #endif
   }
 
@@ -225,7 +226,7 @@ void AutoTask::advancePunchInformation(const vector<gdioutput *> &windows) {
       addSynchTime(toc-tic);
     lastSynchTime = toc;
 #ifdef DEBUGPRINT
-    OutputDebugString((" direct update: " + itos(toc-tic) + "\n").c_str());
+    std::cerr << narrow((" direct update: " + itos(toc-tic) + "\n"));
 #endif
   }
 }
@@ -337,12 +338,12 @@ bool AutoTask::advancePunchInformationImpl(const vector<gdioutput *> &windows) {
   }
   catch (meosException &ex) {
     wstring msg = ex.wwhat();
-    OutputDebugString(msg.c_str());
+    std::cerr << narrow(msg);
   }
   catch (std::exception &ex) {
     wstring str;
     string2Wide(ex.what(), str);
-    OutputDebugString(str.c_str());
+    std::cerr << narrow(str);
   }
   catch (...) {
   }

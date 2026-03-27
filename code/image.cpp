@@ -25,6 +25,7 @@
 #include "png/png.h"
 #include <vector>
 #include <algorithm>
+#include <filesystem>
 #include <Wincodec.h>
 #include <fstream>
 #include "meosexception.h"
@@ -404,13 +405,9 @@ uint64_t Image::loadFromFile(const wstring& path, ImageMethod method) {
 
   auto res = images.emplace(hash, Bmp());
   if (res.second) {
-    wchar_t drive[20];
-    wchar_t dir[MAX_PATH];
-    wchar_t name[MAX_PATH];
-    wchar_t ext[MAX_PATH];
-    _wsplitpath_s(path.c_str(), drive, dir, name, ext);
+    std::filesystem::path fspath(path);
     Bmp &out = res.first->second;
-    out.fileName = wstring(name) + ext;
+    out.fileName = fspath.filename().wstring();
     out.rawData = bytes;
     auto [hImage, pixels, alpha] = read_png(std::move(bytes), out.width, out.height, method);
     out.image = hImage;

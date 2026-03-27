@@ -48,6 +48,7 @@
 #include "metalist.h"
 #include "xmlparser.h"
 #include <cstdint>
+#include <iostream>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -2887,7 +2888,7 @@ ClassMetaType oClass::interpretClassType() const {
 
   if (oe->classTypeNameToType.empty()) {
     // Lazy readout of baseclasstypes
-    wchar_t path[_MAX_PATH];
+    wchar_t path[260];
     getUserFile(path, L"baseclass.xml");
     xmlparser xml;
     xml.read(path);
@@ -3433,7 +3434,7 @@ void oClass::clearSplitAnalysis()
 {
 #ifdef _DEBUG
   if (!tSplitAnalysisData.empty())
-    OutputDebugString((L"Clear splits " + Name + L"\n").c_str());
+    std::cerr << narrow((L"Clear splits " + Name + L"\n"));
 #endif
   tFirstStart.clear();
   tLastStart.clear();
@@ -3501,7 +3502,7 @@ void oClass::insertAccLegPlace(int courseId, int controlNo, int time, int place)
 { /*
   char bf[256];
   snprintf(bf, sizeof(bf), "Insert to %d, %d, time %d\n", courseId, controlNo, time);
-  OutputDebugString(bf);
+  std::cerr << bf;
   */
   if (tLegAccTimeToPlace) {
     int key = time + (controlNo + courseId*128)*16013;
@@ -3556,7 +3557,7 @@ int oClass::getAccLegPlace(int courseId, int controlNo, int time) const
 {/*
   char bf[256];
   snprintf(bf, sizeof(bf), "Get from %d,  %d, time %d\n", courseId, controlNo, time);
-  OutputDebugString(bf);
+  std::cerr << bf;
   */
   if (tLegAccTimeToPlace) {
     int key = time + (controlNo + courseId*128)*16013;

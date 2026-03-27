@@ -38,6 +38,7 @@
 #include "progress.h"
 #include "machinecontainer.h"
 #include <chrono>
+#include <iostream>
 
 int AutomaticCB(gdioutput *gdi, GuiEventType type, BaseInfo* data);
 
@@ -559,7 +560,7 @@ void OnlineResults::process(gdioutput &gdi, oEvent *oe, AutoSyncType ast) {
             is.close();
             removeTempFile(result);
             buffer[length] = 0;
-            OutputDebugStringA(buffer);
+            std::cerr << buffer;
             split(buffer, "\n", errorLines);
             delete[] buffer;
             formatError(gdi);

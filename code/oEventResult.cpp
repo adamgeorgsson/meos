@@ -27,6 +27,7 @@
 #include <cassert>
 #include <algorithm>
 #include <limits>
+#include <iostream>
 
 #include "oEvent.h"
 #include "oDataContainer.h"
@@ -823,7 +824,7 @@ void oEvent::loadGeneralResults(bool forceReload, bool loadFromDisc) const {
           }
 
           string db = "Retag " + newTag + "\n";
-          OutputDebugStringA(db.c_str());
+          std::cerr << db;
 
           if (rmAll[i].ctr)
             rmAll[i].ctr->retagResultModule(newTag, true);

@@ -741,14 +741,10 @@ void oEvent::duplicate(const wstring &annotationIn, bool keepTags) {
 
   getUserFile(file, filename);
 
-  _wsplitpath_s(filename, NULL, 0, NULL,0, nameid, 64, NULL, 0);
-  int i=0;
-  while (nameid[i]) {
-    if (nameid[i]=='.') {
-      nameid[i]=0;
-      break;
-    }
-    i++;
+  {
+    wstring nameIdStr = std::filesystem::path(filename).stem().wstring();
+    wcsncpy(nameid, nameIdStr.c_str(), 63);
+    nameid[63] = L'\0';
   }
 
   wchar_t oldFile[260];
@@ -823,7 +819,7 @@ bool oEvent::save()
     int toDelete = maxBackup;
 
     for(int k = 0; k <= maxBackup; k++) {
-      swprintf(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, k);
+      swprintf(fn1, 260, L"%s.bu%d", CurrentFile, k);
       struct _stat st;
       int ret = _wstat(fn1, &st);
       if (ret==0) {
@@ -848,12 +844,12 @@ bool oEvent::save()
       }
     }
 
-    swprintf(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, toDelete);
+    swprintf(fn1, 260, L"%s.bu%d", CurrentFile, toDelete);
     ::_wremove(fn1);
 
     for(int k=toDelete;k>0;k--) {
-      swprintf(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, k-1);
-      swprintf(fn2, MAX_PATH, L"%s.bu%d", CurrentFile, k);
+      swprintf(fn1, 260, L"%s.bu%d", CurrentFile, k-1);
+      swprintf(fn2, 260, L"%s.bu%d", CurrentFile, k);
       _wrename(fn1, fn2);
     }
 
@@ -985,17 +981,14 @@ bool oEvent::save(const wstring &fileArg, bool internalFormat, bool isAutoSave) 
         }
 
         wstring imgFile = fileArg.substr(0, lp + 1)  + itow(imgId) + L".png";
-        FILE *fout = nullptr;
-        _wfopen_s(&fout, imgFile.c_str(), L"wb");
-        if (fout == nullptr) 
+        std::ofstream fout(std::filesystem::path(imgFile), std::ios::binary);
+        if (!fout)
           error = L"Error opening " + imgFile;
         else {
-          if (fwrite(rawData.data(), rawData.size(), 1, fout) != 1)
+          if (!fout.write(reinterpret_cast<const char*>(rawData.data()), rawData.size()))
             error = L"Error writing image.";
           else
             added = true;
-
-          fclose(fout);
         }
 
         if (added) {
@@ -1138,14 +1131,10 @@ namespace {
     getUserFile(file, filename);
 
     wchar_t CurrentNameId[64];
-    _wsplitpath_s(file, NULL, 0, NULL, 0, CurrentNameId, 64, NULL, 0);
-    int i = 0;
-    while (CurrentNameId[i]) {
-      if (CurrentNameId[i] == '.') {
-        CurrentNameId[i] = 0;
-        break;
-      }
-      i++;
+    {
+      wstring nameIdStr = std::filesystem::path(file).stem().wstring();
+      wcsncpy(CurrentNameId, nameIdStr.c_str(), 63);
+      CurrentNameId[63] = L'\0';
     }
 
     fn = file;
@@ -1193,17 +1182,13 @@ bool oEvent::open(const wstring &file, bool doImport, bool forMerge, bool forceN
   newCompetition(L"-");
   auto newNameId = currentNameId;
   if (!doImport) {
-    wcscpy_s(CurrentFile, MAX_PATH, file.c_str()); //Keep new file name, if imported
+    wcscpy_s(CurrentFile, 260, file.c_str()); //Keep new file name, if imported
 
     wchar_t CurrentNameId[64];
-    _wsplitpath_s(CurrentFile, NULL, 0, NULL,0, CurrentNameId, 64, NULL, 0);
-    int i=0;
-    while (CurrentNameId[i]) {
-      if (CurrentNameId[i]=='.') {
-        CurrentNameId[i]=0;
-        break;
-      }
-      i++;
+    {
+      wstring nameIdStr = std::filesystem::path(CurrentFile).stem().wstring();
+      wcsncpy(CurrentNameId, nameIdStr.c_str(), 63);
+      CurrentNameId[63] = L'\0';
     }
     currentNameId = CurrentNameId;
   }
@@ -1575,17 +1560,13 @@ bool oEvent::open(const xmlparser &xml, const wstring &fileArg) {
 
           wstring imgFile = fileArg.substr(0, lp + 1) + itow(imgId) + L".png";
 
-          FILE* pFile = nullptr;
-          _wfopen_s(&pFile, imgFile.c_str(), L"rb");
-
-          if (pFile != nullptr) {
-            fseek(pFile, 0, SEEK_END);
-            size_t pos = ftell(pFile);
-            fseek(pFile, 0, SEEK_SET);
+          std::ifstream pFile(std::filesystem::path(imgFile), std::ios::binary | std::ios::ate);
+          if (pFile) {
+            auto pos = static_cast<size_t>(pFile.tellg());
+            pFile.seekg(0);
             bytes.resize(pos);
-            size_t read = fread_s(bytes.data(), bytes.size(), pos, 1, pFile);
-            bool ok = read == 1;
-            fclose(pFile);
+            bool ok = static_cast<bool>(pFile.read(reinterpret_cast<char*>(bytes.data()), pos));
+            pFile.close();
 
             if (ok)
               image.provideFromMemory(imgId, fileName, bytes);
@@ -3994,14 +3975,9 @@ void oEvent::deleteBackups(const BackupInfo &bu) {
       toRemove.push_back(it->FullPath);
   }
   if (!toRemove.empty()) {
-    wchar_t path[260];
-    wchar_t drive[48];
-    wchar_t filename[260];
-    wchar_t ext[64];
-    //_splitpath_s(toRemove.back().c_str(), drive, ds, path, dirs, filename, fns, ext, exts);
-    _wsplitpath_s(toRemove.back().c_str(), drive, path, filename, ext);
-
-    wstring dest = wstring(drive) + path;
+    wstring dest = std::filesystem::path(toRemove.back()).parent_path().wstring();
+    if (!dest.empty() && dest.back() != L'/' && dest.back() != L'\\')
+      dest += L'/';
     toRemove.push_back(dest + bu.fileName + L".persons");
     toRemove.push_back(dest + bu.fileName + L".clubs");
     toRemove.push_back(dest + bu.fileName + L".wclubs");
@@ -4408,7 +4384,7 @@ void oEvent::newCompetition(const wstring &name)
 
   wstring file;
   getNewFileName(file, currentNameId);
-  wcscpy_s(CurrentFile, MAX_PATH, file.c_str());
+  wcscpy_s(CurrentFile, 260, file.c_str());
 
   oe->updateTabs();
 }

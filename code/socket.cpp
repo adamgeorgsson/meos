@@ -188,6 +188,6 @@ void DirectSocket::sendPunch(SocketPunchInfo &pi) {
   int ret = sendto(sendSocket, (char*)&epi, sizeof(epi), 0, (sockaddr*)&brdcastaddr, len);
 
   if (ret < 0) {
-    OutputDebugStringA("Error broadcasting to the clients");
+    std::cerr << "Error broadcasting to the clients" << '\n';
   }
 }

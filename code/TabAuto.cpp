@@ -573,6 +573,14 @@ void TabAuto::settings(gdioutput& gdi, AutoMachine* sm, AutoMachine::State state
   gdi.refresh();
 }
 
+bool MySQLReconnect::stop() {
+  if (interval==0)
+    return true;
+
+  return MessageBox(0, L"If this service is stopped, MeOS will not reconnect to the network. Continue?",
+    L"Warning", MB_YESNO|MB_ICONWARNING)==IDYES;
+}
+
 void TabAuto::killMachines() {
   while (!machines.empty()) {
     machines.back()->stop();

@@ -48,13 +48,6 @@ MySQLReconnect::~MySQLReconnect() {
     hThread.join();
 }
 
-bool MySQLReconnect::stop() {
-  if (interval==0)
-    return true;
-
-  return MessageBox(0, L"If this service is stopped, MeOS will not reconnect to the network. Continue?",
-    L"Warning", MB_YESNO|MB_ICONWARNING)==IDYES;
-}
 
 static std::mutex CS_MySQL;
 static volatile uint32_t mysqlConnecting=0;

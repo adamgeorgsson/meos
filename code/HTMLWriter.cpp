@@ -27,6 +27,7 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include "meos_util.h"
 #include "localizer.h"
 #include "gdiconstants.h"
@@ -47,7 +48,7 @@ double getLocalScale(const wstring &fontName, wstring &faceName);
 wstring getMeosCompectVersion();
 
 map <string, shared_ptr<HTMLWriter>> HTMLWriter::tCache;
-extern wchar_t exePath[MAX_PATH];
+extern wchar_t exePath[260];
 
 static string getColor(int color) {
   int r = color & 0xFF;
@@ -580,13 +581,10 @@ void HTMLWriter::writeHTML(gdioutput &gdi, const wstring &file,
   if (fout.bad())
     throw std::exception("Bad output stream");
   
-  wchar_t drive[20];
-  wchar_t dir[MAX_PATH];
-  wchar_t name[MAX_PATH];
-  wchar_t ext[MAX_PATH];
-  _wsplitpath_s(file.c_str(), drive, dir, name, ext);
-  wstring path = wstring(drive) + dir;
-  
+  wstring path = std::filesystem::path(file).parent_path().wstring();
+  if (!path.empty() && path.back() != L'/' && path.back() != L'\\')
+    path += L'/';
+
   writeHTML(gdi, fout, title, true, path, refreshTimeOut, scale);
 }
 
@@ -646,12 +644,9 @@ void HTMLWriter::writeTableHTML(gdioutput &gdi,
   if (fout.bad())
     return throw std::exception("Bad output stream");
 
-  wchar_t drive[20];
-  wchar_t dir[MAX_PATH];
-  wchar_t name[MAX_PATH];
-  wchar_t ext[MAX_PATH];
-  _wsplitpath_s(file.c_str(), drive, dir, name, ext);
-  wstring path = wstring(drive) + dir;
+  wstring path = std::filesystem::path(file).parent_path().wstring();
+  if (!path.empty() && path.back() != L'/' && path.back() != L'\\')
+    path += L'/';
 
   writeTableHTML(gdi, fout, title, true, path, false, refreshTimeOut, scale);
 }
@@ -702,7 +697,7 @@ void HTMLWriter::writeTableHTML(gdioutput& gdi,
   fout << "</html>" << endl;
 }
 
-extern wchar_t programPath[MAX_PATH];
+extern wchar_t programPath[260];
 
 namespace {
   bool isWord(const string& str, const string& word, size_t off) {
@@ -765,7 +760,7 @@ void HTMLWriter::parseTagName(const string &str, string &tag, wstring &name) {
 void HTMLWriter::enumTemplates(TemplateType type, vector<TemplateInfo> &descriptionFile) {
   vector<wstring> res;
 
-  wchar_t listpath[MAX_PATH];
+  wchar_t listpath[260];
   getUserFile(listpath, L"");
   expandDirectory(listpath, L"*.meostmpl", res);
   expandDirectory(listpath, L"*.template", res);
@@ -1225,12 +1220,9 @@ void HTMLWriter::write(gdioutput &gdi, const wstring &file, const wstring &title
   checkWriteAccess(file);
   ofstream fout(file.c_str());
 
-  wchar_t drive[20];
-  wchar_t dir[MAX_PATH];
-  wchar_t name[MAX_PATH];
-  wchar_t ext[MAX_PATH];
-  _wsplitpath_s(file.c_str(), drive, dir, name, ext);
-  wstring path = wstring(drive) + dir;
+  wstring path = std::filesystem::path(file).parent_path().wstring();
+  if (!path.empty() && path.back() != L'/' && path.back() != L'\\')
+    path += L'/';
 
   write(gdi, fout, title, true, path, contentsDescription, respectPageBreak, typeTag, refresh,
         rows, cols, time_ms, margin, scale);

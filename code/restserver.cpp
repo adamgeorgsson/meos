@@ -41,6 +41,7 @@ Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 #include "RunnerDB.h"
 #include "image.h"
 #include "cardsystem.h"
+#include <iostream>
 
 extern Image image;
 using namespace restbed;
@@ -217,7 +218,7 @@ void RestServer::compute(oEvent &ref) {
   waitForCompletion.notify_all();
 }
 
-extern wchar_t programPath[MAX_PATH];
+extern wchar_t programPath[260];
 
 void RestServer::computeInternal(oEvent &ref, shared_ptr<RestServer::EventRequest> &rq) {
   if (rq->parameters.empty()) {
@@ -1537,7 +1538,7 @@ int RestServer::getNewInstanceId() {
   for (auto &c : isContainers) {
     int baseId = (c.nextInstanceId - idOffset) % smallPrime;
     usedBaseId.insert(baseId);
-    OutputDebugString((L"used: " + itow(baseId) + L"\n").c_str());
+    std::cerr << narrow((L"used: " + itow(baseId) + L"\n"));
   }
   if (!randGen) {
     random_device r;
@@ -1550,7 +1551,7 @@ int RestServer::getNewInstanceId() {
     if (!usedBaseId.count(s)) {
       int id = s + smallPrime * ((*randGen)() % 32767) + idOffset;
       int f = smallPrime * ((113 + (*randGen)() % 32767) % (largePrime - 1) + 1);
-      OutputDebugString((L"add: " + itow(s) + L", " + itow(f) + L"\n").c_str());
+      std::cerr << narrow((L"add: " + itow(s) + L", " + itow(f) + L"\n"));
       
       isContainers.emplace_front(id, f);
       return id;

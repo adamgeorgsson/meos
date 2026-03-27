@@ -251,7 +251,8 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
   }
   while ( std::filesystem::exists(target) );
 
-  if (CreateDirectory(target.c_str(), NULL) == 0)
+  std::error_code ec;
+  if (!std::filesystem::create_directory(target, ec))
     throw std::exception("Failed to create temporary folder");
 
   registerTempFile(target);
