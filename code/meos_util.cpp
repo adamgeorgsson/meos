@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <chrono>
 #include <ctime>
+#include <filesystem>
 
 using namespace std;
 
@@ -1068,7 +1069,7 @@ wstring trim(const wstring &s) {
 
 bool fileExists(const wstring &file)
 {
-  return GetFileAttributes(file.c_str()) != INVALID_FILE_ATTRIBUTES;
+  return std::filesystem::exists(file);
 }
 
 bool stringMatch(const wstring &a, const wstring &b) {
@@ -1897,44 +1898,39 @@ void convertDynamicBase(long long val, int base, wchar_t out[16]) {
 
 bool expandDirectory(const wchar_t *file, const wchar_t *filetype, vector<wstring> &res)
 {
-  WIN32_FIND_DATA fd;
+  namespace fs = std::filesystem;
 
-  wchar_t dir[MAX_PATH];
-  wchar_t fullPath[MAX_PATH];
-
-  if (file[0] == '.') {
-    GetCurrentDirectory(MAX_PATH, dir);
-    wcscat_s(dir, file+1);
+  // Build base directory path; handle leading '.' by resolving against current_path
+  fs::path basePath;
+  if (file[0] == L'.') {
+    basePath = fs::current_path() / (file + 1);
+  } else {
+    basePath = file;
   }
-  else
-    wcscpy_s(dir, MAX_PATH, file);
 
-  if (dir[wcslen(dir)-1]!='\\')
-    wcscat_s(dir, MAX_PATH, L"/");
+  // Extract suffix from wildcard pattern (e.g. "*.meos" -> ".meos")
+  wstring pattern(filetype);
+  wstring suffix;
+  auto star = pattern.find(L'*');
+  if (star != wstring::npos)
+    suffix = pattern.substr(star + 1);
 
-  wcscpy_s(fullPath, MAX_PATH, dir);
-  wcscat_s(dir, MAX_PATH, filetype);
-
-  HANDLE h=FindFirstFile(dir, &fd);
-
-  if (h == INVALID_HANDLE_VALUE)
-    return false;
-
-  bool more = true;
-
-  while (more) {
-    if (fd.cFileName[0] != '.') {
-      //Avoid .. and .
-      wchar_t fullPathFile[MAX_PATH];
-      wcscpy_s(fullPathFile, MAX_PATH, fullPath);
-      wcscat_s(fullPathFile, MAX_PATH, fd.cFileName);
-      res.push_back(fullPathFile);
+  std::error_code ec;
+  bool found = false;
+  for (const auto& entry : fs::directory_iterator(basePath, ec)) {
+    if (entry.is_directory())
+      continue;
+    wstring name = entry.path().filename().wstring();
+    if (name.empty() || name[0] == L'.')
+      continue;
+    if (suffix.empty() ||
+        (name.size() >= suffix.size() &&
+         name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0)) {
+      res.push_back(entry.path().wstring());
+      found = true;
     }
-    more=FindNextFile(h, &fd)!=0;
   }
-
-  FindClose(h);
-  return true;
+  return found;
 }
 
 wstring encodeSex(PersonSex sex) {
@@ -2475,7 +2471,7 @@ void wide2String(const wstring &in, string &out) {
 
 void checkWriteAccess(const wstring &file) {
   int flag = CREATE_NEW;
-  if (_waccess(file.c_str(), 4) == 0) {
+  if (std::filesystem::exists(file.c_str())) {
     flag = OPEN_EXISTING;
   }
 
@@ -2496,11 +2492,11 @@ void checkWriteAccess(const wstring &file) {
 }
 
 void moveFile(const wstring& src, const wstring& dst) {
-  DeleteFile(dst.c_str());
+  { std::error_code ec; std::filesystem::remove(dst, ec); }
   if (!CopyFile(src.c_str(), dst.c_str(), false)) {
     throw meosException(L"Kunde inte skriva till 'X'.#" + dst);
   }
-  DeleteFile(src.c_str());
+  { std::error_code ec; std::filesystem::remove(src, ec); }
 }
 
 int compareStringIgnoreCase(const wstring &a, const wstring &b) {

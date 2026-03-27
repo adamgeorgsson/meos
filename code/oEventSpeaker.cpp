@@ -39,6 +39,7 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <filesystem>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -1420,7 +1421,7 @@ void oEvent::tryPrewarningSounds(const wstring &basedir, int number)
 
   wstring file=basedir+L"/"+wave;
 
-  if (_waccess(file.c_str(), 0)==-1)
+  if (!std::filesystem::exists(file.c_str()))
     gdibase.alert(L"Fel: hittar inte filen X.#" + file);
 
   PlaySound(file.c_str(), 0, SND_SYNC|SND_FILENAME );
@@ -1440,7 +1441,7 @@ void oEvent::playPrewarningSounds(const wstring &basedir, set<int> &controls)
 
         wstring file=basedir+L"/"+ r->getDI().getString("Nationality") +L"/"+wave;
 
-        if (_waccess(file.c_str(), 0)==-1)
+        if (!std::filesystem::exists(file.c_str()))
           file=basedir+L"/"+wave;
 
         PlaySound(file.c_str(), 0, SND_SYNC|SND_FILENAME );

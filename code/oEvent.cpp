@@ -67,6 +67,8 @@
 #include "Table.h"
 #include <cstdint>
 #include <ctime>
+#include <iostream>
+#include <filesystem>
 
 extern Image image;
 
@@ -3832,48 +3834,50 @@ void oEvent::clearListedCmp()
 
 bool oEvent::enumerateCompetitions(const wchar_t *file, const wchar_t *filetype)
 {
-  WIN32_FIND_DATA fd;
+  namespace fs = std::filesystem;
 
-  wchar_t dir[MAX_PATH];
-  wchar_t FullPath[MAX_PATH];
+  // Build base directory path
+  fs::path basePath(file);
 
-  wcscpy_s(dir, MAX_PATH, file);
+  // Extract suffix from wildcard pattern (e.g. "*.meos" -> ".meos")
+  wstring pattern(filetype);
+  wstring suffix;
+  auto star = pattern.find(L'*');
+  if (star != wstring::npos)
+    suffix = pattern.substr(star + 1);
 
-  if (dir[wcslen(file)-1]!='\\')
-    wcscat_s(dir, MAX_PATH, L"/");
-
-  wcscpy_s(FullPath, MAX_PATH, dir);
-
-  wcscat_s(dir, MAX_PATH, filetype);
-
-  HANDLE h=FindFirstFile(dir, &fd);
-
-  if (h==INVALID_HANDLE_VALUE)
-    return false;
-
-  bool more=true;
   int id=1;
   cinfo.clear();
 
-  while (more) {
-    if (fd.cFileName[0]!='.') //Avoid .. and .
-    {
-      wchar_t FullPathFile[MAX_PATH];
-      wcscpy_s(FullPathFile, MAX_PATH, FullPath);
-      wcscat_s(FullPathFile, MAX_PATH, fd.cFileName);
+  std::error_code ec;
+  bool found = false;
+  for (const auto& fd_entry : fs::directory_iterator(basePath, ec)) {
+    if (fd_entry.is_directory())
+      continue;
+    wstring fname = fd_entry.path().filename().wstring();
+    if (fname.empty() || fname[0] == L'.')
+      continue;
+    if (!suffix.empty() &&
+        (fname.size() < suffix.size() ||
+         fname.compare(fname.size() - suffix.size(), suffix.size(), suffix) != 0))
+      continue;
 
+    found = true;
+    {
       CompetitionInfo ci;
 
-      ci.FullPath=FullPathFile;
+      ci.FullPath=fd_entry.path().wstring();
       ci.Name=L"";
       ci.Date=L"2007-01-01";
       ci.Id=id++;
 
-      // Convert FILETIME (UTC, 100ns intervals since 1601) to std::tm via time_t
+      // Get file modification time via std::filesystem
       {
-        constexpr uint64_t WIN_UNIX_OFFSET_100NS = 116444736000000000ULL;
-        uint64_t ft_val = ((uint64_t)fd.ftLastWriteTime.dwHighDateTime << 32) | fd.ftLastWriteTime.dwLowDateTime;
-        std::time_t _tt = (std::time_t)((ft_val - WIN_UNIX_OFFSET_100NS) / 10000000ULL);
+        auto ftime = fd_entry.last_write_time();
+        // Convert file_time_type to time_t (C++17 portable workaround)
+        auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+            ftime - decltype(ftime)::clock::now() + std::chrono::system_clock::now());
+        std::time_t _tt = std::chrono::system_clock::to_time_t(sctp);
         std::tm st = {};
 #ifdef _WIN32
         gmtime_s(&st, &_tt);
@@ -3885,7 +3889,7 @@ bool oEvent::enumerateCompetitions(const wchar_t *file, const wchar_t *filetype)
       xmlparser xp;
 
       try {
-        xp.read(FullPathFile, 30);
+        xp.read(ci.FullPath, 30);
 
         const xmlobject date=xp.getObject("Date");
 
@@ -3928,10 +3932,10 @@ bool oEvent::enumerateCompetitions(const wchar_t *file, const wchar_t *filetype)
         // XXX Do what??
       }
     }
-    more=FindNextFile(h, &fd)!=0;
   }
 
-  FindClose(h);
+  if (!found)
+    return false;
 
   if (!getServerName().empty())
     sqlConnection->listCompetitions(this, true);
@@ -3948,10 +3952,10 @@ bool oEvent::enumerateCompetitions(const wchar_t *file, const wchar_t *filetype)
   }
   sort(cc.begin(), cc.end());
   for (auto &c : cc) {
-    OutputDebugString(c.first.c_str());
-    OutputDebugString(L", ");
-    OutputDebugString(c.second.c_str());
-    OutputDebugString(L"\n");
+    std::cerr << narrow(c.first);
+    std::cerr << ", ";
+    std::cerr << narrow(c.second);
+    std::cerr << "" << '\n';
   }
 */
   return true;
@@ -4004,7 +4008,7 @@ void oEvent::deleteBackups(const BackupInfo &bu) {
     toRemove.push_back(dest + bu.fileName + L".wpersons");
 
     for (list<wstring>::iterator it = toRemove.begin(); it != toRemove.end(); ++it) {
-      DeleteFile(it->c_str());
+      { std::error_code ec; std::filesystem::remove(*it, ec); }
     }
   }
 }
@@ -4072,84 +4076,94 @@ bool BackupInfo::operator<(const BackupInfo &ci)
 
 bool oEvent::enumerateBackups(const wstring &file, const wstring &filetype, int type)
 {
-  WIN32_FIND_DATA fd;
-  wchar_t dir[MAX_PATH];
-  wchar_t FullPath[MAX_PATH];
+  namespace fs = std::filesystem;
 
-  wcscpy_s(dir, MAX_PATH, file.c_str());
-
-  if (dir[file.length()-1]!='\\')//WCS
-    wcscat_s(dir, MAX_PATH, L"/");
-
-  wcscpy_s(FullPath, MAX_PATH, dir);
-  wcscat_s(dir, MAX_PATH, filetype.c_str());
-  HANDLE h=FindFirstFile(dir, &fd);
-
-  if (h==INVALID_HANDLE_VALUE)
-    return false;
-
-  bool more=true;
-  while (more) {
-    if (fd.cFileName[0]!='.') {//Avoid .. and .
-      wchar_t FullPathFile[MAX_PATH];
-      wcscpy_s(FullPathFile, MAX_PATH, FullPath);
-      wcscat_s(FullPathFile, MAX_PATH, fd.cFileName);
-
-      BackupInfo ci;
-
-      ci.type = type;
-      ci.FullPath=FullPathFile;
-      ci.Name=L"";
-      ci.Date=L"2007-01-01";
-      ci.fileName = fd.cFileName;
-      ci.fileSize = fd.nFileSizeLow;
-      size_t pIndex = ci.fileName.find_first_of(L".");
-      if (pIndex>0 && pIndex<ci.fileName.size())
-        ci.fileName = ci.fileName.substr(0, pIndex);
-
-      // Convert FILETIME (UTC) to local std::tm via time_t + localtime
-      {
-        constexpr uint64_t WIN_UNIX_OFFSET_100NS = 116444736000000000ULL;
-        uint64_t ft_val = ((uint64_t)fd.ftLastWriteTime.dwHighDateTime << 32) | fd.ftLastWriteTime.dwLowDateTime;
-        std::time_t _tt = (std::time_t)((ft_val - WIN_UNIX_OFFSET_100NS) / 10000000ULL);
-        std::tm st = {};
-#ifdef _WIN32
-        localtime_s(&st, &_tt);
-#else
-        localtime_r(&_tt, &st);
-#endif
-        ci.Modified=convertSystemTimeN(st);
-      }
-      xmlparser xp;
-
-      try {
-        xp.read(FullPathFile, 5);
-        //xmlobject *xo=xp.getObject("meosdata");
-        const xmlobject date=xp.getObject("Date");
-
-        if (date) ci.Date=date.getWStr();
-
-        const xmlobject name=xp.getObject("Name");
-
-        if (name) {
-          ci.Name=name.getWStr();
-          if (ci.Name.size() > 1 && ci.Name.at(0) == '%') {
-            ci.Name = lang.tl(ci.Name.substr(1));
-          }
-        }
-
-        backupInfo.push_front(ci);
-      }
-      catch (std::exception &) {
-        //XXX Do what?
+  // Wildcard match: supports * (any sequence) and ? (single char)
+  auto matchWildcard = [](const wstring& name, const wstring& pattern) -> bool {
+    size_t n = name.size(), m = pattern.size();
+    size_t i = 0, j = 0, star_j = wstring::npos, star_i = 0;
+    while (i < n) {
+      if (j < m && (pattern[j] == L'?' || pattern[j] == name[i])) {
+        i++; j++;
+      } else if (j < m && pattern[j] == L'*') {
+        star_j = j++; star_i = i;
+      } else if (star_j != wstring::npos) {
+        j = star_j + 1; i = ++star_i;
+      } else {
+        return false;
       }
     }
-    more=FindNextFile(h, &fd)!=0;
+    while (j < m && pattern[j] == L'*') j++;
+    return j == m;
+  };
+
+  fs::path basePath(file);
+
+  std::error_code ec;
+  bool found = false;
+  for (const auto& fd_entry : fs::directory_iterator(basePath, ec)) {
+    if (fd_entry.is_directory())
+      continue;
+    wstring fname = fd_entry.path().filename().wstring();
+    if (fname.empty() || fname[0] == L'.')
+      continue;
+    if (!matchWildcard(fname, filetype))
+      continue;
+
+    BackupInfo ci;
+
+    ci.type = type;
+    ci.FullPath = fd_entry.path().wstring();
+    ci.Name=L"";
+    ci.Date=L"2007-01-01";
+    ci.fileName = fname;
+    ci.fileSize = fd_entry.file_size(ec);
+    size_t pIndex = ci.fileName.find_first_of(L".");
+    if (pIndex>0 && pIndex<ci.fileName.size())
+      ci.fileName = ci.fileName.substr(0, pIndex);
+
+    // Get file modification time via std::filesystem
+    {
+      auto ftime = fd_entry.last_write_time();
+      // Convert file_time_type to time_t (C++17 portable workaround)
+      auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+          ftime - decltype(ftime)::clock::now() + std::chrono::system_clock::now());
+      std::time_t _tt = std::chrono::system_clock::to_time_t(sctp);
+      std::tm st = {};
+#ifdef _WIN32
+      localtime_s(&st, &_tt);
+#else
+      localtime_r(&_tt, &st);
+#endif
+      ci.Modified=convertSystemTimeN(st);
+    }
+    found = true;
+    xmlparser xp;
+
+    try {
+      xp.read(ci.FullPath, 5);
+      //xmlobject *xo=xp.getObject("meosdata");
+      const xmlobject date=xp.getObject("Date");
+
+      if (date) ci.Date=date.getWStr();
+
+      const xmlobject name=xp.getObject("Name");
+
+      if (name) {
+        ci.Name=name.getWStr();
+        if (ci.Name.size() > 1 && ci.Name.at(0) == '%') {
+          ci.Name = lang.tl(ci.Name.substr(1));
+        }
+      }
+
+      backupInfo.push_front(ci);
+    }
+    catch (std::exception &) {
+      //XXX Do what?
+    }
   }
 
-  FindClose(h);
-
-  return true;
+  return found;
 }
 
 bool oEvent::fillCompetitions(gdioutput &gdi,
@@ -4232,7 +4246,7 @@ void oEvent::checkDB()
       for(int i=0;i < min<int>(err.size(), 10);i++)
         msg+=wstring(L"\n")+err[i];
 
-      MessageBox(0, msg.c_str(), L"Varning/Fel", MB_OK);
+      std::cerr << narrow(msg) << '\n';
     }
 #endif
   }
@@ -4674,7 +4688,7 @@ void oEvent::reCalculateLeaderTimes(int classId)
 #ifdef _DEBUG
   wchar_t bf[128];
   swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Calculate leader times %d\n", classId);
-  OutputDebugString(bf);
+  std::cerr << bf;
 #endif
   for (oClassList::iterator it=Classes.begin(); it != Classes.end(); ++it) {
     if (!it->isRemoved() && (classId==it->getId() || classId==0))
