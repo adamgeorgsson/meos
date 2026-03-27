@@ -9,3 +9,7 @@ endmacro()
 
 # Smoke test
 meos_add_test(smoke_test smoke_test.cpp)
+
+# Util unit tests
+meos_add_test(util_test util_test.cpp)
+target_link_libraries(util_test PRIVATE meos_util)
