@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 export interface ColumnDef<T> {
   key: string;
@@ -15,6 +15,7 @@ export interface DataTableProps<T> {
   enableSelection?: boolean;
   getItemId?: (item: T) => string | number;
   onSelectionChange?: (selected: Set<string | number>) => void;
+  clearSelectionTrigger?: number;
   renderRowActions?: (item: T) => React.ReactNode;
 }
 
@@ -28,11 +29,16 @@ export function DataTable<T>({
   enableSelection = false,
   getItemId,
   onSelectionChange,
+  clearSelectionTrigger,
   renderRowActions,
 }: DataTableProps<T>) {
   const getId = getItemId ?? ((item: T) => (item as { id: string | number }).id);
 
   const [filter, setFilter] = useState("");
+  useEffect(() => {
+    if (clearSelectionTrigger === undefined) return;
+    setSelected(new Set());
+  }, [clearSelectionTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [page, setPage] = useState(0);

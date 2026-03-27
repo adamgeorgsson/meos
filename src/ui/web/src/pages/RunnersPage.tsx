@@ -5,11 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { Runner, Club, Class } from "../types";
 import { useEntities, useCreateEntity, useUpdateEntity, useDeleteEntity } from "../api/hooks";
+import { update as apiUpdate } from "../api/client";
 import { DataTable } from "../components/DataTable";
 import type { ColumnDef } from "../components/DataTable";
 import { FormDialog } from "../components/FormDialog";
 import { FormField } from "../components/FormField";
 import { FormInput } from "../components/FormInput";
+import { FormSelect } from "../components/FormSelect";
 import { SearchableSelect } from "../components/SearchableSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ImportDialog } from "../components/ImportDialog";
@@ -24,11 +26,47 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const STATUS_OPTIONS = [
+  { value: "ok", label: "OK" },
+  { value: "dns", label: "DNS" },
+  { value: "dnf", label: "DNF" },
+  { value: "mp", label: "MP" },
+  { value: "disq", label: "DISQ" },
+  { value: "ot", label: "OT" },
+];
+
+function parseHMS(s: string): number | null {
+  const parts = s.split(":").map(Number);
+  if (parts.length === 3 && parts.every((p) => !isNaN(p))) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+  return null;
+}
+
+function formatHMS(totalSecs: number): string {
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 export function RunnersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Runner | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Runner | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
+  const [clearTrigger, setClearTrigger] = useState(0);
+
+  // Bulk action dialogs
+  const [bulkDialog, setBulkDialog] = useState<"class" | "starttime" | "status" | null>(null);
+  const [bulkClassId, setBulkClassId] = useState("");
+  const [bulkStatus, setBulkStatus] = useState("ok");
+  const [bulkStartTime, setBulkStartTime] = useState("");
+  const [bulkInterval, setBulkInterval] = useState("2");
+
   const queryClient = useQueryClient();
 
   const { data: runners = [], isLoading } = useEntities<Runner>("runners");
@@ -117,6 +155,47 @@ export function RunnersPage() {
     }
   }
 
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setClearTrigger((n) => n + 1);
+  }
+
+  async function executeBulkAssignClass() {
+    if (!bulkClassId) return;
+    const classId = Number(bulkClassId);
+    const ids = Array.from(selectedIds).map(Number);
+    await Promise.all(ids.map((id) => apiUpdate<Runner>("runners", id, { classId })));
+    setBulkDialog(null);
+    setBulkClassId("");
+    clearSelection();
+    void queryClient.invalidateQueries({ queryKey: ["runners"] });
+  }
+
+  async function executeBulkChangeStatus() {
+    const ids = Array.from(selectedIds).map(Number);
+    await Promise.all(ids.map((id) => apiUpdate<Runner>("runners", id, { status: bulkStatus })));
+    setBulkDialog(null);
+    clearSelection();
+    void queryClient.invalidateQueries({ queryKey: ["runners"] });
+  }
+
+  async function executeBulkDrawStartTimes() {
+    const start = parseHMS(bulkStartTime);
+    if (start === null) return;
+    const interval = Number(bulkInterval) * 60;
+    if (isNaN(interval) || interval <= 0) return;
+    const ids = Array.from(selectedIds).map(Number);
+    await Promise.all(
+      ids.map((id, i) => apiUpdate<Runner>("runners", id, { startTime: formatHMS(start + i * interval) }))
+    );
+    setBulkDialog(null);
+    setBulkStartTime("");
+    clearSelection();
+    void queryClient.invalidateQueries({ queryKey: ["runners"] });
+  }
+
+  const selectedCount = selectedIds.size;
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -137,10 +216,49 @@ export function RunnersPage() {
         </div>
       </div>
 
+      {selectedCount > 0 && (
+        <div
+          className="flex items-center gap-3 mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded"
+          aria-label="Bulk actions"
+        >
+          <span className="text-sm font-medium text-blue-700">
+            {selectedCount} runner{selectedCount !== 1 ? "s" : ""} selected
+          </span>
+          <button
+            onClick={() => setBulkDialog("class")}
+            className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50"
+          >
+            Assign Class
+          </button>
+          <button
+            onClick={() => setBulkDialog("starttime")}
+            className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50"
+          >
+            Draw Start Times
+          </button>
+          <button
+            onClick={() => setBulkDialog("status")}
+            className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50"
+          >
+            Change Status
+          </button>
+          <button
+            onClick={clearSelection}
+            className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       <DataTable
         columns={COLUMNS}
         data={runners}
         isLoading={isLoading}
+        enableSelection
+        getItemId={(r) => r.id}
+        onSelectionChange={setSelectedIds}
+        clearSelectionTrigger={clearTrigger}
         renderRowActions={(runner) => (
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
@@ -224,6 +342,68 @@ export function RunnersPage() {
         clubs={clubs}
         classes={classes}
       />
+
+      {/* Bulk assign class dialog */}
+      <FormDialog
+        open={bulkDialog === "class"}
+        onClose={() => setBulkDialog(null)}
+        onSave={() => void executeBulkAssignClass()}
+        title={`Assign Class to ${selectedCount} Runner${selectedCount !== 1 ? "s" : ""}`}
+        size="sm"
+      >
+        <FormField label="Class">
+          <FormSelect
+            options={classOptions}
+            placeholder="Select a class"
+            value={bulkClassId}
+            onChange={(e) => setBulkClassId(e.target.value)}
+          />
+        </FormField>
+      </FormDialog>
+
+      {/* Bulk draw start times dialog */}
+      <FormDialog
+        open={bulkDialog === "starttime"}
+        onClose={() => setBulkDialog(null)}
+        onSave={() => void executeBulkDrawStartTimes()}
+        title={`Draw Start Times for ${selectedCount} Runner${selectedCount !== 1 ? "s" : ""}`}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <FormField label="First Start Time (HH:MM:SS)">
+            <FormInput
+              value={bulkStartTime}
+              onChange={(e) => setBulkStartTime(e.target.value)}
+              placeholder="10:00:00"
+            />
+          </FormField>
+          <FormField label="Interval (minutes)">
+            <FormInput
+              type="number"
+              value={bulkInterval}
+              onChange={(e) => setBulkInterval(e.target.value)}
+              min="1"
+            />
+          </FormField>
+        </div>
+      </FormDialog>
+
+      {/* Bulk change status dialog */}
+      <FormDialog
+        open={bulkDialog === "status"}
+        onClose={() => setBulkDialog(null)}
+        onSave={() => void executeBulkChangeStatus()}
+        title={`Change Status for ${selectedCount} Runner${selectedCount !== 1 ? "s" : ""}`}
+        size="sm"
+      >
+        <FormField label="Status">
+          <FormSelect
+            options={STATUS_OPTIONS}
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value)}
+          />
+        </FormField>
+      </FormDialog>
     </div>
   );
 }
