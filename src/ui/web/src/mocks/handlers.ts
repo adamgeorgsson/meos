@@ -223,6 +223,20 @@ export const handlers = [
   // ── Results ────────────────────────────────────────────────────────────────
   http.get(`${BASE}/results`, () => HttpResponse.json(db.results)),
 
+  http.get(`${BASE}/results/export/xml`, () =>
+    new HttpResponse(
+      `<?xml version="1.0" encoding="UTF-8"?><ResultList xmlns="http://www.orienteering.org/datastandard/3.0"/>`,
+      { headers: { "Content-Type": "application/xml" } }
+    )
+  ),
+
   // ── Start List ─────────────────────────────────────────────────────────────
   http.get(`${BASE}/startlist`, () => HttpResponse.json(db.startList)),
+
+  http.get(`${BASE}/startlist/export/xml`, () =>
+    new HttpResponse(
+      `<?xml version="1.0" encoding="UTF-8"?><StartList xmlns="http://www.orienteering.org/datastandard/3.0"/>`,
+      { headers: { "Content-Type": "application/xml" } }
+    )
+  ),
 ];

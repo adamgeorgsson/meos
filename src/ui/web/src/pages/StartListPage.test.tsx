@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -144,5 +144,52 @@ describe("StartListPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Print" }));
     expect(printSpy).toHaveBeenCalledOnce();
     printSpy.mockRestore();
+  });
+});
+
+describe("StartListPage — export", () => {
+  beforeEach(() => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:fake-url");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("has Export CSV button", async () => {
+    render(<StartListPage />, { wrapper });
+    await waitFor(() => screen.getByText("Anna Lindström"));
+    expect(screen.getByRole("button", { name: "Export CSV" })).toBeInTheDocument();
+  });
+
+  it("has Export IOF XML button", async () => {
+    render(<StartListPage />, { wrapper });
+    await waitFor(() => screen.getByText("Anna Lindström"));
+    expect(screen.getByRole("button", { name: "Export IOF XML" })).toBeInTheDocument();
+  });
+
+  it("downloads a CSV blob when Export CSV clicked", async () => {
+    render(<StartListPage />, { wrapper });
+    await waitFor(() => screen.getByText("Anna Lindström"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+
+    expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:fake-url");
+  });
+
+  it("downloads an IOF XML blob when Export IOF XML clicked", async () => {
+    render(<StartListPage />, { wrapper });
+    await waitFor(() => screen.getByText("Anna Lindström"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Export IOF XML" }));
+
+    await waitFor(() => {
+      expect(URL.createObjectURL).toHaveBeenCalled();
+    });
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
   });
 });
