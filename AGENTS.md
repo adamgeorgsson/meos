@@ -5,10 +5,37 @@ Orienteering competition management. Windows desktop app (C++17, Win32/GDI, MySQ
 ## Structure
 
 - `code/` — Legacy codebase (see `code/AGENTS.md` for architecture/conventions)
-- `src/` — Modern target (CMake/vcpkg). Stub `main.cpp` + React shell in `src/ui/web/`
-- `tests/` — Google Test
+- `src/` — Modern target (CMake/vcpkg):
+  - `src/util/` — utilities, string conversions, platform shims (`meos_util`)
+  - `src/domain/` — core domain entities: oEvent, oRunner, oClass, etc. (`meos_domain`)
+  - `src/db/` — SQLite abstraction + migrations (`meos_db`)
+  - `src/io/` — file I/O, IOF XML, CSV, HTML, PDF (`meos_io`)
+  - `src/net/` — HTTP server + REST API (`meos_net`)
+  - `src/app/` — application wiring + entry point (`meos_app`)
+  - `src/ui/web/` — React SPA frontend
+  - `src/main.cpp` — executable entry point (links `meos_app`)
+- `tests/` — Google Test (use `meos_add_test` macro from `tests/CMakeLists.txt`)
 - `plan/` — PRDs and migration planning
 - `.github/workflows/` — CI: `cpp.yml`, `frontend.yml`, `build-legacy.yml`
+
+## Build
+
+```bash
+VCPKG_ROOT=/home/adam.georgsson@fnox.it/vcpkg cmake --preset default
+cmake --build build
+cd build && ctest --output-on-failure
+```
+
+## Module Dependencies (no circular)
+
+```
+util  ←  domain  ←  db
+                 ←  io
+                 ←  net (also ← db)
+                 ←  app (← all)
+```
+
+Each module's include directory is exported PUBLIC so bare `#include "header.h"` works.
 
 ## Modernization
 

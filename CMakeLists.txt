@@ -27,8 +27,17 @@ if(MEOS_ENABLE_COVERAGE)
   endif()
 endif()
 
-# Stub executable
+# Module libraries (dependency order: util -> domain -> db/io -> net -> app)
+add_subdirectory(src/util)
+add_subdirectory(src/domain)
+add_subdirectory(src/db)
+add_subdirectory(src/io)
+add_subdirectory(src/net)
+add_subdirectory(src/app)
+
+# Main executable
 add_executable(meos src/main.cpp)
+target_link_libraries(meos PRIVATE meos_app)
 
 # Testing
 enable_testing()
