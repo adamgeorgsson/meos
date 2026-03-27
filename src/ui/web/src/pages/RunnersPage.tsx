@@ -12,7 +12,7 @@ import { FormField } from "../components/FormField";
 import { FormInput } from "../components/FormInput";
 import { SearchableSelect } from "../components/SearchableSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { CsvImportDialog } from "../components/CsvImportDialog";
+import { ImportDialog } from "../components/ImportDialog";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -126,7 +126,7 @@ export function RunnersPage() {
             onClick={() => setImportOpen(true)}
             className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm"
           >
-            Import CSV
+            Import
           </button>
           <button
             onClick={openAdd}
@@ -216,7 +216,7 @@ export function RunnersPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      <CsvImportDialog
+      <ImportDialog
         open={importOpen}
         onClose={() => setImportOpen(false)}
         onImported={() => void queryClient.invalidateQueries({ queryKey: ["runners"] })}
