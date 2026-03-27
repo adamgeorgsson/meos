@@ -197,6 +197,7 @@
     <ClCompile Include="oBase.cpp" />
     <ClCompile Include="oCard.cpp" />
     <ClCompile Include="oClass.cpp" />
+    <ClCompile Include="oClassConfig.cpp" />
     <ClCompile Include="oClub.cpp" />
     <ClCompile Include="oControl.cpp" />
     <ClCompile Include="oCourse.cpp" />
