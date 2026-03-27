@@ -21,3 +21,7 @@ target_link_libraries(xmlparser_test PRIVATE meos_util)
 # CSV parser tests
 meos_add_test(csvparser_test csvparser_test.cpp)
 target_link_libraries(csvparser_test PRIVATE meos_util)
+
+# TimeStamp tests
+meos_add_test(timestamp_test timestamp_test.cpp)
+target_link_libraries(timestamp_test PRIVATE meos_util)
