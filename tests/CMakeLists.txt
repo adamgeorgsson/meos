@@ -25,3 +25,7 @@ target_link_libraries(csvparser_test PRIVATE meos_util)
 # TimeStamp tests
 meos_add_test(timestamp_test timestamp_test.cpp)
 target_link_libraries(timestamp_test PRIVATE meos_util)
+
+# Localizer tests
+meos_add_test(localizer_test localizer_test.cpp)
+target_link_libraries(localizer_test PRIVATE meos_util)
