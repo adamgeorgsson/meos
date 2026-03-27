@@ -53,3 +53,11 @@ export function remove(endpoint: string, id: number): Promise<void> {
     method: "DELETE",
   });
 }
+
+export async function exportBlob(endpoint: string): Promise<Blob> {
+  const response = await fetch(`${BASE_URL}/${endpoint}`);
+  if (!response.ok) {
+    throw new Error(`Export failed: ${response.statusText}`);
+  }
+  return response.blob();
+}

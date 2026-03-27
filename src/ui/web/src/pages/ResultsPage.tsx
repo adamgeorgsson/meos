@@ -1,6 +1,8 @@
 import { useState, Fragment, useEffect, useRef } from "react";
+import Papa from "papaparse";
 import type { Result, Class, Runner, Club, Control } from "../types";
 import { useEntities } from "../api/hooks";
+import { exportBlob } from "../api/client";
 
 export function formatTime(seconds: number): string {
   if (seconds < 3600) {
@@ -28,6 +30,15 @@ const STATUS_LABELS: Record<string, string> = {
   dsq: "DSQ",
   mp: "MP",
 };
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const POLL_INTERVALS = [
   { label: "5s", value: 5000 },
@@ -121,6 +132,34 @@ export function ResultsPage() {
     });
   }
 
+  function exportResultsCsv() {
+    const rows = sorted.map((result) => {
+      const runner = runners.find((r) => r.id === result.runnerId);
+      const club = runner?.clubId != null ? clubs.find((c) => c.id === runner.clubId) : undefined;
+      const cls = classes.find((c) => c.id === result.classId);
+      const leaderTime = leaderTimes.get(result.classId);
+      return {
+        Position: result.status === "ok" ? (result.position ?? "") : "",
+        Name: runner?.name ?? "",
+        Club: club?.name ?? "",
+        Class: cls?.name ?? "",
+        Time: result.totalTime != null ? formatTime(result.totalTime) : "",
+        Behind:
+          result.status === "ok" && result.totalTime != null && leaderTime != null
+            ? formatTimeBehind(result.totalTime, leaderTime)
+            : "",
+        Status: result.status !== "ok" ? (STATUS_LABELS[result.status] ?? result.status.toUpperCase()) : "",
+      };
+    });
+    const csv = Papa.unparse(rows);
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), "results.csv");
+  }
+
+  async function exportResultsXml() {
+    const blob = await exportBlob("results/export/xml");
+    downloadBlob(blob, "results.xml");
+  }
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Results</h1>
@@ -187,6 +226,21 @@ export function ResultsPage() {
             </span>
           )}
         </div>
+      </div>
+
+      <div className="mb-4 flex items-center gap-2 no-print">
+        <button
+          onClick={exportResultsCsv}
+          className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
+        >
+          Export CSV
+        </button>
+        <button
+          onClick={() => void exportResultsXml()}
+          className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
+        >
+          Export IOF XML
+        </button>
       </div>
 
       {resultsLoading ? (

@@ -1,6 +1,17 @@
 import { useState } from "react";
+import Papa from "papaparse";
 import type { StartListEntry, Class, Runner, Club } from "../types";
 import { useEntities } from "../api/hooks";
+import { exportBlob } from "../api/client";
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export function StartListPage() {
   const [selectedClassId, setSelectedClassId] = useState<string>("");
@@ -16,16 +27,52 @@ export function StartListPage() {
 
   const sorted = [...filtered].sort((a, b) => a.startTime.localeCompare(b.startTime));
 
+  function exportStartListCsv() {
+    const rows = sorted.map((entry) => {
+      const runner = runners.find((r) => r.id === entry.runnerId);
+      const club = runner?.clubId != null ? clubs.find((c) => c.id === runner.clubId) : undefined;
+      const cls = classes.find((c) => c.id === entry.classId);
+      return {
+        Bib: entry.bib ?? "",
+        "Start Time": entry.startTime,
+        Name: runner?.name ?? "",
+        Club: club?.name ?? "",
+        Class: cls?.name ?? "",
+      };
+    });
+    const csv = Papa.unparse(rows);
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), "startlist.csv");
+  }
+
+  async function exportStartListXml() {
+    const blob = await exportBlob("startlist/export/xml");
+    downloadBlob(blob, "startlist.xml");
+  }
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Start List</h1>
-        <button
-          onClick={() => window.print()}
-          className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 no-print"
-        >
-          Print
-        </button>
+        <div className="flex items-center gap-2 no-print">
+          <button
+            onClick={exportStartListCsv}
+            className="px-3 py-2 border rounded text-sm font-medium hover:bg-gray-50"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={() => void exportStartListXml()}
+            className="px-3 py-2 border rounded text-sm font-medium hover:bg-gray-50"
+          >
+            Export IOF XML
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+          >
+            Print
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 flex items-center gap-2 no-print">
