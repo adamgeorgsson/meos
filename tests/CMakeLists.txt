@@ -13,3 +13,11 @@ meos_add_test(smoke_test smoke_test.cpp)
 # Util unit tests
 meos_add_test(util_test util_test.cpp)
 target_link_libraries(util_test PRIVATE meos_util)
+
+# XML parser tests
+meos_add_test(xmlparser_test xmlparser_test.cpp)
+target_link_libraries(xmlparser_test PRIVATE meos_util)
+
+# CSV parser tests
+meos_add_test(csvparser_test csvparser_test.cpp)
+target_link_libraries(csvparser_test PRIVATE meos_util)
