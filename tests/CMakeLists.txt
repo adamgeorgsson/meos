@@ -29,3 +29,7 @@ target_link_libraries(timestamp_test PRIVATE meos_util)
 # Localizer tests
 meos_add_test(localizer_test localizer_test.cpp)
 target_link_libraries(localizer_test PRIVATE meos_util)
+
+# Domain tests (US-003a)
+meos_add_test(domain_test domain_test.cpp)
+target_link_libraries(domain_test PRIVATE meos_domain meos_util)
