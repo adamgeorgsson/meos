@@ -1,4 +1,4 @@
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect, useRef } from "react";
 import type { Result, Class, Runner, Club, Control } from "../types";
 import { useEntities } from "../api/hooks";
 
@@ -29,15 +29,66 @@ const STATUS_LABELS: Record<string, string> = {
   mp: "MP",
 };
 
+const POLL_INTERVALS = [
+  { label: "5s", value: 5000 },
+  { label: "10s", value: 10000 },
+  { label: "30s", value: 30000 },
+  { label: "60s", value: 60000 },
+] as const;
+
 export function ResultsPage() {
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [pollInterval, setPollInterval] = useState(10000);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
+  const [highlightedIds, setHighlightedIds] = useState<Set<number>>(new Set());
+  const prevResultsRef = useRef<Map<number, string>>(new Map());
+  const wasFetchingRef = useRef(false);
 
-  const { data: results = [], isLoading: resultsLoading } = useEntities<Result>("results");
+  const {
+    data: results = [],
+    isLoading: resultsLoading,
+    isFetching: resultsFetching,
+  } = useEntities<Result>("results", {
+    refetchInterval: autoRefresh ? pollInterval : false,
+  });
   const { data: classes = [] } = useEntities<Class>("classes");
   const { data: runners = [] } = useEntities<Runner>("runners");
   const { data: clubs = [] } = useEntities<Club>("clubs");
   const { data: controls = [] } = useEntities<Control>("controls");
+
+  // Update last refreshed time when a fetch completes
+  useEffect(() => {
+    if (!resultsFetching && wasFetchingRef.current) {
+      setLastRefreshedAt(new Date());
+    }
+    wasFetchingRef.current = resultsFetching;
+  }, [resultsFetching]);
+
+  // Detect changed rows and briefly highlight them
+  useEffect(() => {
+    if (!results.length) return;
+    const changed = new Set<number>();
+    for (const r of results) {
+      const key = JSON.stringify({ totalTime: r.totalTime, status: r.status, position: r.position });
+      const prev = prevResultsRef.current.get(r.id);
+      if (prev !== undefined && prev !== key) {
+        changed.add(r.id);
+      }
+      prevResultsRef.current.set(r.id, key);
+    }
+    if (changed.size === 0) return;
+    setHighlightedIds((prev) => new Set([...prev, ...changed]));
+    const timer = setTimeout(() => {
+      setHighlightedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of changed) next.delete(id);
+        return next;
+      });
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [results]);
 
   const filtered = selectedClassId
     ? results.filter((r) => r.classId === Number(selectedClassId))
@@ -74,23 +125,68 @@ export function ResultsPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Results</h1>
 
-      <div className="mb-4 flex items-center gap-2">
-        <label htmlFor="class-selector" className="text-sm font-medium text-gray-700">
-          Class:
+      <div className="mb-4 flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <label htmlFor="class-selector" className="text-sm font-medium text-gray-700">
+            Class:
+          </label>
+          <select
+            id="class-selector"
+            value={selectedClassId}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value="">All classes</option>
+            {classes.map((c) => (
+              <option key={c.id} value={String(c.id)}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+            aria-label="Auto-refresh"
+          />
+          Auto-refresh
         </label>
-        <select
-          id="class-selector"
-          value={selectedClassId}
-          onChange={(e) => setSelectedClassId(e.target.value)}
-          className="border rounded px-2 py-1 text-sm"
-        >
-          <option value="">All classes</option>
-          {classes.map((c) => (
-            <option key={c.id} value={String(c.id)}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+
+        {autoRefresh && (
+          <select
+            value={pollInterval}
+            onChange={(e) => setPollInterval(Number(e.target.value))}
+            className="border rounded px-2 py-1 text-sm"
+            aria-label="Refresh interval"
+          >
+            {POLL_INTERVALS.map(({ label, value }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        )}
+
+        <div className="flex items-center gap-2 text-sm ml-auto">
+          <span aria-label="Auto-refresh status">
+            {autoRefresh ? (
+              <span className="flex items-center gap-1 text-green-600">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Auto-refresh active
+              </span>
+            ) : (
+              <span className="text-gray-400">Auto-refresh off</span>
+            )}
+          </span>
+          {lastRefreshedAt && (
+            <span aria-label="Last refreshed" className="text-gray-500">
+              · Last: {lastRefreshedAt.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
       </div>
 
       {resultsLoading ? (
@@ -126,12 +222,17 @@ export function ResultsPage() {
                       : undefined;
                   const leaderTime = leaderTimes.get(result.classId);
                   const isExpanded = expandedIds.has(result.id);
+                  const isHighlighted = highlightedIds.has(result.id);
 
                   return (
                     <Fragment key={result.id}>
                       <tr
                         onClick={() => toggleExpand(result.id)}
-                        className="border-b hover:bg-gray-50 cursor-pointer"
+                        className={`border-b cursor-pointer transition-colors duration-1000 ${
+                          isHighlighted
+                            ? "bg-yellow-100 hover:bg-yellow-100"
+                            : "hover:bg-gray-50"
+                        }`}
                         aria-expanded={isExpanded}
                       >
                         <td className="p-2">

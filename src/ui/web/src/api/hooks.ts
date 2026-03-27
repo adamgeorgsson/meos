@@ -1,10 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as client from "./client";
 
-export function useEntities<T>(endpoint: string) {
+export function useEntities<T>(
+  endpoint: string,
+  options?: { refetchInterval?: number | false }
+) {
   return useQuery<T[]>({
     queryKey: [endpoint],
     queryFn: () => client.getAll<T>(endpoint),
+    ...options,
   });
 }
 

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { ResultsPage, formatTime, formatTimeBehind } from "./ResultsPage";
+import type { Result } from "../types";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -56,7 +57,7 @@ describe("ResultsPage", () => {
 
   it("shows class selector with All classes option", async () => {
     render(<ResultsPage />, { wrapper });
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     expect(selector).toBeInTheDocument();
     expect(screen.getByText("All classes")).toBeInTheDocument();
   });
@@ -96,7 +97,7 @@ describe("ResultsPage", () => {
     // Wait for classes to load
     await waitFor(() => screen.getByText("D21E"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "2" } }); // D21E = id 2
 
     await waitFor(() => {
@@ -114,7 +115,7 @@ describe("ResultsPage", () => {
     // Select H21E to see Lars Nilsson (dns)
     await waitFor(() => screen.getByText("H21E"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "1" } }); // H21E = id 1
 
     await waitFor(() => {
@@ -127,7 +128,7 @@ describe("ResultsPage", () => {
     // Select H21A to see Sven Ek (dnf)
     await waitFor(() => screen.getByText("H21A"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "3" } }); // H21A = id 3
 
     await waitFor(() => {
@@ -139,7 +140,7 @@ describe("ResultsPage", () => {
     render(<ResultsPage />, { wrapper });
     await waitFor(() => screen.getByText("D21E"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "2" } }); // D21E
 
     await waitFor(() => {
@@ -154,7 +155,7 @@ describe("ResultsPage", () => {
     render(<ResultsPage />, { wrapper });
     await waitFor(() => screen.getByText("D21E"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "2" } }); // D21E
 
     await waitFor(() => {
@@ -167,7 +168,7 @@ describe("ResultsPage", () => {
     render(<ResultsPage />, { wrapper });
     await waitFor(() => screen.getByText("D21E"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "2" } }); // D21E
 
     await waitFor(() => screen.getByText("Anna Lindström"));
@@ -187,7 +188,7 @@ describe("ResultsPage", () => {
     render(<ResultsPage />, { wrapper });
     await waitFor(() => screen.getByText("D21E"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "2" } }); // D21E
 
     await waitFor(() => screen.getByText("Anna Lindström"));
@@ -206,7 +207,7 @@ describe("ResultsPage", () => {
     render(<ResultsPage />, { wrapper });
     await waitFor(() => screen.getByText("D21E"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "2" } }); // D21E
 
     await waitFor(() => screen.getByText("Anna Lindström"));
@@ -225,7 +226,7 @@ describe("ResultsPage", () => {
     render(<ResultsPage />, { wrapper });
     await waitFor(() => screen.getByText("H35")); // class id 5 has no results
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "5" } }); // H35 has no results
 
     await waitFor(() => {
@@ -237,7 +238,7 @@ describe("ResultsPage", () => {
     render(<ResultsPage />, { wrapper });
     await waitFor(() => screen.getByText("D21E"));
 
-    const selector = screen.getByRole("combobox");
+    const selector = screen.getByRole("combobox", { name: "Class:" });
     fireEvent.change(selector, { target: { value: "2" } }); // D21E
 
     await waitFor(() => expect(screen.queryByText("Erik Johansson")).not.toBeInTheDocument());
@@ -246,6 +247,104 @@ describe("ResultsPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Erik Johansson")).toBeInTheDocument();
+    });
+  });
+});
+
+describe("ResultsPage — auto-refresh", () => {
+  it("shows auto-refresh toggle checked by default", () => {
+    render(<ResultsPage />, { wrapper });
+    const toggle = screen.getByLabelText("Auto-refresh");
+    expect(toggle).toBeInTheDocument();
+    expect(toggle).toBeChecked();
+  });
+
+  it("shows interval selector with 5s, 10s, 30s, 60s options when auto-refresh is on", () => {
+    render(<ResultsPage />, { wrapper });
+    const intervalSelect = screen.getByLabelText("Refresh interval") as HTMLSelectElement;
+    expect(intervalSelect).toBeInTheDocument();
+    const options = Array.from(intervalSelect.options).map((o) => o.text);
+    expect(options).toContain("5s");
+    expect(options).toContain("10s");
+    expect(options).toContain("30s");
+    expect(options).toContain("60s");
+  });
+
+  it("default polling interval is 10s", () => {
+    render(<ResultsPage />, { wrapper });
+    const intervalSelect = screen.getByLabelText("Refresh interval") as HTMLSelectElement;
+    expect(intervalSelect.value).toBe("10000");
+  });
+
+  it("shows auto-refresh active status indicator when enabled", () => {
+    render(<ResultsPage />, { wrapper });
+    expect(screen.getByLabelText("Auto-refresh status")).toHaveTextContent("Auto-refresh active");
+  });
+
+  it("disabling auto-refresh hides interval selector and changes status", () => {
+    render(<ResultsPage />, { wrapper });
+    const toggle = screen.getByLabelText("Auto-refresh");
+
+    fireEvent.click(toggle);
+
+    expect(toggle).not.toBeChecked();
+    expect(screen.queryByLabelText("Refresh interval")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Auto-refresh status")).toHaveTextContent("Auto-refresh off");
+  });
+
+  it("shows last refreshed time after initial data loads", async () => {
+    render(<ResultsPage />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByLabelText("Last refreshed")).toBeInTheDocument();
+    });
+  });
+
+  it("does not show loading spinner during background refetch (silent refresh)", async () => {
+    render(<ResultsPage />, { wrapper });
+    // Wait for initial load to complete
+    await waitFor(() => expect(screen.queryByLabelText("Loading")).not.toBeInTheDocument());
+    // Loading div must stay gone once data is available
+    expect(screen.queryByLabelText("Loading")).not.toBeInTheDocument();
+  });
+
+  it("highlights rows when result data changes", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter>
+          <ResultsPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    // Wait for initial data to load and prevResultsRef to be populated
+    await waitFor(() => {
+      const data = qc.getQueryData<Result[]>(["results"]);
+      expect(data).toBeDefined();
+      expect(data!.length).toBeGreaterThan(0);
+    });
+
+    // Give useEffect a tick to populate prevResultsRef
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    const initialResults = qc.getQueryData<Result[]>(["results"])!;
+
+    // Simulate a background refresh that changes a result's time
+    act(() => {
+      qc.setQueryData<Result[]>(
+        ["results"],
+        initialResults.map((r, i) =>
+          i === 0 ? { ...r, totalTime: (r.totalTime ?? 9999) + 100 } : r
+        )
+      );
+    });
+
+    // At least one row should be highlighted
+    await waitFor(() => {
+      const highlightedRows = document.querySelectorAll("tr.bg-yellow-100");
+      expect(highlightedRows.length).toBeGreaterThan(0);
     });
   });
 });
