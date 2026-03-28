@@ -33,3 +33,7 @@ target_link_libraries(localizer_test PRIVATE meos_util)
 # Domain tests (US-003a)
 meos_add_test(domain_test domain_test.cpp)
 target_link_libraries(domain_test PRIVATE meos_domain meos_util)
+
+# Control and punch tests (US-003b)
+meos_add_test(control_test control_test.cpp)
+target_link_libraries(control_test PRIVATE meos_domain meos_util)

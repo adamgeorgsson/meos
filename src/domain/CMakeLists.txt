@@ -2,6 +2,8 @@ add_library(meos_domain STATIC
   domain.cpp
   oBase.cpp
   oDataContainer.cpp
+  oPunch.cpp
+  oControl.cpp
 )
 
 target_include_directories(meos_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

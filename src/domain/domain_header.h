@@ -34,8 +34,13 @@ using std::move;
 
 // ── Win32 type shims (non-Windows) ─────────────────────────────────────────
 #ifndef _WIN32
+  typedef uint8_t   BYTE;
   typedef uint8_t*  LPBYTE;
   typedef int64_t   __int64;
+
+  #include <strings.h>  // for strcasecmp / strncasecmp
+  inline int _stricmp(const char* a, const char* b) { return strcasecmp(a, b); }
+  inline int _strnicmp(const char* a, const char* b, size_t n) { return strncasecmp(a, b, n); }
 
   // 3-arg strcpy_s
   inline void strcpy_s(char* dst, size_t dstsz, const char* src) noexcept {
