@@ -37,3 +37,7 @@ target_link_libraries(domain_test PRIVATE meos_domain meos_util)
 # Control and punch tests (US-003b)
 meos_add_test(control_test control_test.cpp)
 target_link_libraries(control_test PRIVATE meos_domain meos_util)
+
+# Club tests (US-003c)
+meos_add_test(club_test club_test.cpp)
+target_link_libraries(club_test PRIVATE meos_domain meos_util)

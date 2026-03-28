@@ -6,9 +6,12 @@
 #include "../util/meos_util.h"
 #include "oCourse.h"
 #include "oClass.h"
+#include "oClub.h"
+#include "intkeymap.hpp"
 
 class oBase;
 class oDataContainer;
+typedef list<oClub> oClubList;
 
 class oEvent {
 public:
@@ -44,12 +47,46 @@ public:
   list<oCourse> Courses;
   list<oClass>  Classes;
 
+  // ── Club collection ───────────────────────────────────────────────────────
+  oClubList Clubs;
+  mutable intkeymap<pClub> clubIdIndex;
+
   // ── oDataContainer pointers (initialized by test fixture or oEvent ctor) ──
   oDataContainer* oControlData = nullptr;
+  oDataContainer* oClubData    = nullptr;
 
   // ── SQL change tracking ───────────────────────────────────────────────────
   SqlUpdated sqlControls;
+  SqlUpdated sqlClubs;
   bool globalModification = false;
+
+  // ── Free-ID counters (increment-and-return pattern) ─────────────────────
+  int qFreeClubId = 1;
+  int getFreeClubId() { return ++qFreeClubId; }
+
+  // ── Club management (implemented in oClub.cpp) ───────────────────────────
+  pClub getClub(int Id) const;
+  pClub getClub(const wstring &pname) const;
+  pClub addClub(const wstring &pname, int createId = 0);
+  pClub addClub(const oClub &oc);
+  void  getClubs(vector<pClub> &c, bool sort);
+
+  // ── Vacant / no-club stubs (full impl in US-003i) ────────────────────────
+  int getVacantClub(bool /*returnNoClubClub*/) { return 0; }
+  int getVacantClubIfExist(bool /*returnNoClubClub*/) const { return 0; }
+
+  // ── Club membership stubs ────────────────────────────────────────────────
+  bool isClubUsed(int /*id*/) const { return false; }
+  void removeClub(int id) {
+    pClub pc = getClub(id);
+    if (pc) { pc->Removed = true; clubIdIndex.remove(id); }
+  }
+  bool useRunnerDb() const { return false; }
+
+  // ── Property store stubs (full impl in US-003i) ──────────────────────────
+  int getPropertyInt(const char* /*name*/, int def) const { return def; }
+  void setProperty(const char* /*name*/, int /*val*/) {}
+  void setProperty(const char* /*name*/, const wstring& /*val*/) {}
 
   // ── Punch index (cleared when control numbers change) ────────────────────
   struct PunchIndexStub { void clear() {} } punchIndex;

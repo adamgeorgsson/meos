@@ -70,6 +70,12 @@ using std::move;
   }
 #endif
 
+// ── Well-known virtual club/org IDs (match legacy oEvent.h) ─────────────────
+#ifndef cVacantId
+  #define cVacantId  888888888
+  #define cNoClubId  999999999
+#endif
+
 // ── SqlUpdated (extracted from oEvent.h to break circular dep) ─────────────
 struct SqlUpdated {
   string updated;
