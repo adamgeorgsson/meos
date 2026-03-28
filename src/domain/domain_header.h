@@ -36,6 +36,9 @@ using std::move;
 #ifndef _WIN32
   typedef uint8_t   BYTE;
   typedef uint8_t*  LPBYTE;
+  typedef uint32_t  DWORD;
+  typedef uint16_t  WORD;
+  typedef int16_t   SHORT;
   typedef int64_t   __int64;
 
   #include <strings.h>  // for strcasecmp / strncasecmp

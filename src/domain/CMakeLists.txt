@@ -5,6 +5,7 @@ add_library(meos_domain STATIC
   oPunch.cpp
   oControl.cpp
   oClub.cpp
+  oCourse.cpp
 )
 
 target_include_directories(meos_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

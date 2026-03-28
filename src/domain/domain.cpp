@@ -4,6 +4,7 @@
 #include "oEvent.h"
 #include "oControl.h"       // for oControl::dataSize
 #include "oClub.h"          // for oClub::dataSize
+#include "oCourse.h"        // for oCourse::dataSize
 #include "oDataContainer.h" // for oDataContainer
 
 oEvent::oEvent() {
@@ -36,6 +37,23 @@ oEvent::oEvent() {
   oClubData->addVariableInt("ExtId",       oDataContainer::oIS64,    "Externt Id");
   oClubData->addVariableInt("InvoiceNo",   oDataContainer::oIS16U,   "Fakturanummer");
   oClubData->addVariableInt("StartGroup",  oDataContainer::oIS32,    "Startgrupp");
+
+  // ── oCourse data fields (matches legacy oEvent.cpp exactly) ─────────────
+  // Legacy dataSize = 128 bytes. On Linux wchar_t = 4 bytes, so StartName(16) = 64 bytes.
+  // Total ~ 90 bytes, well within 128.
+  oCourseData = new oDataContainer(oCourse::dataSize);
+  oCourseData->addVariableInt("NumberMaps",       oDataContainer::oIS16,   "Kartor");
+  oCourseData->addVariableString("StartName",     16,                       "Start");
+  oCourseData->addVariableInt("Climb",            oDataContainer::oIS16,   "Stigning");
+  oCourseData->addVariableInt("RPointLimit",      oDataContainer::oIS32,   "Poänggräns");
+  oCourseData->addVariableInt("RTimeLimit",       oDataContainer::oISTime, "Tidsgräns");
+  oCourseData->addVariableInt("RReduction",       oDataContainer::oIS32,   "Poängreduktion");
+  oCourseData->addVariableInt("RReductionMethod", oDataContainer::oIS8U,   "Reduktionsmetod");
+  oCourseData->addVariableInt("NoLatePoints",     oDataContainer::oIS8U,   "Inga sena poäng");
+  oCourseData->addVariableInt("FirstAsStart",     oDataContainer::oIS8U,   "Från första");
+  oCourseData->addVariableInt("LastAsFinish",     oDataContainer::oIS8U,   "Till sista");
+  oCourseData->addVariableInt("CControl",         oDataContainer::oIS16U,  "Varvningskontroll");
+  oCourseData->addVariableInt("Shorten",          oDataContainer::oIS32,   "Avkortning");
 }
 
 oEvent::~oEvent() {
@@ -43,4 +61,6 @@ oEvent::~oEvent() {
   oControlData = nullptr;
   delete oClubData;
   oClubData = nullptr;
+  delete oCourseData;
+  oCourseData = nullptr;
 }
