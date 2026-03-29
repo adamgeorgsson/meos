@@ -49,3 +49,7 @@ target_link_libraries(course_test PRIVATE meos_domain meos_util)
 # Class tests (US-003e)
 meos_add_test(class_test class_test.cpp)
 target_link_libraries(class_test PRIVATE meos_domain meos_util)
+
+# Card and FreePunch tests (US-003f)
+meos_add_test(card_test card_test.cpp)
+target_link_libraries(card_test PRIVATE meos_domain meos_util)

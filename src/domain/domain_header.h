@@ -24,6 +24,7 @@ using std::vector;
 using std::list;
 using std::set;
 using std::map;
+using std::multimap;
 using std::shared_ptr;
 using std::make_shared;
 using std::pair;
