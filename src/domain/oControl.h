@@ -59,8 +59,8 @@ protected:
 
   static const int dataSize = 64;
   int getDISize() const final { return dataSize; }
-  BYTE oData[dataSize];
-  BYTE oDataOld[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
 
   /// Table methods (no-op stubs — GUI coupling removed)
   void addTableRow(Table& table) const;

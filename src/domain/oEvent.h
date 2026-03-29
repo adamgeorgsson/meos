@@ -8,14 +8,26 @@
 #include "oCourse.h"
 #include "oClass.h"
 #include "oClub.h"
+#include "oCard.h"
+#include "oFreePunch.h"
+#include "oRunner.h"
 #include "intkeymap.hpp"
 
 class oBase;
-class oDataContainer;
+#include "oDataContainer.h"
 
-typedef list<oClub>   oClubList;
-typedef list<oCourse> oCourseList;
-typedef list<oControl> oControlList;
+// ── List ID enum (used by synchronizeList) ─────────────────────────────────
+enum class oListId {
+  oLRunnerId = 1, oLClassId = 2,  oLCourseId = 4,
+  oLControlId = 8, oLClubId = 16, oLCardId = 32,
+  oLPunchId = 64, oLTeamId = 128, oLEventId = 256
+};
+
+typedef list<oClub>      oClubList;
+typedef list<oCourse>    oCourseList;
+typedef list<oControl>   oControlList;
+typedef list<oCard>      oCardList;
+typedef list<oFreePunch> oFreePunchList;
 
 class oEvent {
 public:
@@ -64,15 +76,95 @@ public:
 
   // ── Class collection ──────────────────────────────────────────────────────
   list<oClass> Classes;
+  mutable intkeymap<pClass> classIdIndex;
+  int qFreeClassId = 1;
+  SqlUpdated sqlClasses;
 
   // ── Club collection ───────────────────────────────────────────────────────
   oClubList Clubs;
   mutable intkeymap<pClub> clubIdIndex;
 
+  // ── Card collection ───────────────────────────────────────────────────────
+  oCardList Cards;
+  int qFreeCardId = 1;
+  int getFreeCardId() { return ++qFreeCardId; }
+  SqlUpdated sqlCards;
+
+  pCard getCard(int Id) const;
+  void getCards(vector<pCard>& cards, bool synchronize, bool onlyUnpaired);
+  pCard addCard(const oCard& oc);
+  pCard getCardByNumber(int cno) const;
+  bool isCardRead(const SICard& card) const;
+  void removeCard(int Id);
+  void generateCardTableData(Table& table, oCard* addCard);
+
+  // ── FreePunch collection ──────────────────────────────────────────────────
+  // PunchIndex: maps control-hash → multimap(cardNo → pFreePunch)
+  typedef multimap<int, pFreePunch>        PunchIndexType;
+  typedef PunchIndexType::const_iterator   PunchConstIterator;
+  map<int, PunchIndexType> punchIndex;
+  oFreePunchList punches;
+  map<pair<int, int>, oFreePunch> advanceInformationPunches;
+  set<pair<int, int>> readPunchHash;
+
+  int qFreePunchId = 1;
+  int getFreePunchId() { return ++qFreePunchId; }
+  SqlUpdated sqlPunches;
+
+  // Mutable caches for hired-card detection
+  mutable set<int> hiredCardHash;
+  mutable int tHiredCardHashDataRevision = -1;
+
+  void insertIntoPunchHash(int card, int code, int time);
+  void removeFromPunchHash(int card, int code, int time);
+  bool isInPunchHash(int card, int code, int time);
+
+  pFreePunch addFreePunch(int time, int type, int unit, int card, bool updateStartFinish, bool isOriginal);
+  pFreePunch addFreePunch(oFreePunch& fp);
+  void removeFreePunch(int Id);
+  pFreePunch getPunch(int Id) const;
+  pFreePunch getPunch(int runnerId, int courseControlId, int card) const;
+  vector<pFreePunch> getPunchesByType(int type, int unit) const;
+  void getPunchesForRunner(int runnerId, bool doSort, vector<pFreePunch>& runnerPunches) const;
+  void getFreeControls(set<int>& controlId) const;
+  void getLatestPunches(int firstTime, vector<const oFreePunch*>& punchesOut) const;
+  int getControlIdFromPunch(int time, int type, int card, bool markClassChanged, oFreePunch& punch);
+
+  bool isHiredCard(int cardNo) const;
+  void setHiredCard(int cardNo, bool flag);
+  bool hasHiredCardData();
+  void clearHiredCards();
+  vector<int> getHiredCards() const;
+
+  void generatePunchTableData(Table& table, oFreePunch* addPunch);
+
+  // ── Runner stubs (oRunner not yet fully migrated) ─────────────────────────
+  enum class CardLookupProperty { Any, OnlyMain };
+
+  pRunner getRunner(int /*Id*/, int /*race*/) const { return nullptr; }
+  pRunner getRunnerByCardNo(int /*cardNo*/, int /*time*/, CardLookupProperty /*prop*/) const { return nullptr; }
+
+  // ── Synchronize stubs ─────────────────────────────────────────────────────
+  void synchronizeList(oListId) {}
+  void synchronizeList(std::initializer_list<oListId>) {}
+
+  // ── Table management stubs ────────────────────────────────────────────────
+  bool hasTable(const string&) const { return false; }
+  const shared_ptr<Table>& getTable(const string&) const { static shared_ptr<Table> t; return t; }
+  void setTable(const string&, const shared_ptr<Table>&) {}
+
   // ── oDataContainer pointers (initialized by test fixture or oEvent ctor) ──
   oDataContainer* oControlData = nullptr;
   oDataContainer* oClubData    = nullptr;
   oDataContainer* oCourseData  = nullptr;
+  oDataContainer* oClassData   = nullptr;
+  oDataContainer* oEventData   = nullptr;
+
+  // ── oEvent own data buffer ────────────────────────────────────────────────
+  static constexpr int eventDataSize = 1024;
+  BYTE oEventDataBuf[eventDataSize] = {};
+
+  oDataConstInterface getDCI() const;
 
   // ── SQL change tracking ───────────────────────────────────────────────────
   SqlUpdated sqlControls;
@@ -94,9 +186,6 @@ public:
   int getRelativeTime(const wstring& /*t*/) const { return 0; }
   int getZeroTimeNum() const { return 0; }
   int getUnitAdjustment(int /*type*/, int /*unit*/) const { return 0; }
-
-  // ── Punch index (cleared when control numbers change) ────────────────────
-  struct PunchIndexStub { void clear() {} } punchIndex;
 
   // ── Revision helpers ─────────────────────────────────────────────────────
   int getRevision() const { return static_cast<int>(dataRevision); }
@@ -168,7 +257,6 @@ public:
     return lang.tl("Bana ") + itow(n + 1);
   }
   void calculateNumRemainingMaps(bool /*forceRecalculate*/) {
-    // Stub: set all maps-used counters to 0 (no Runners/Teams in stub).
     for (auto& c : Courses) {
       c.tMapsUsed = 0;
       c.tMapsUsedNoVacant = 0;
@@ -184,8 +272,24 @@ public:
   pClub addClub(const oClub& oc);
   void  getClubs(vector<pClub>& c, bool sort);
 
-  // ── Class management stubs (full impl in US-003e) ────────────────────────
-  void getClasses(vector<pClass>& cls, bool /*synchronize*/) const { cls.clear(); }
+  // ── Class management (implemented in oClass.cpp) ─────────────────────────
+  int getFreeClassId();
+  pClass getClass(int Id) const;
+  pClass getClass(const wstring& cname) const;
+  pClass addClass(const wstring& pname, int CourseId = 0, int classId = 0);
+  pClass addClass(const oClass& c);
+  void getClasses(vector<pClass>& cls, bool synchronize) const;
+  void removeClass(int id);
+  bool isClassUsed(int id) const;
+  void reinitializeClasses() const;
+  void classChanged(oClass* cls, bool doSync);
+  void updateTabs();
+  int getMaximalTime() const;
+  void reCalculateLeaderTimes(int classId);
+  void reEvaluateAll(const set<int>& classIds, bool sync);
+  bool hasPrevStage() const;
+  bool hasNextStage() const;
+  void getPredefinedClassTypes(map<wstring, ClassMetaType>& types) const;
 
   // ── Vacant / no-club stubs (full impl in US-003i) ────────────────────────
   int getVacantClub(bool /*returnNoClubClub*/) { return 0; }
@@ -203,4 +307,7 @@ public:
   int getPropertyInt(const char* /*name*/, int def) const { return def; }
   void setProperty(const char* /*name*/, int /*val*/) {}
   void setProperty(const char* /*name*/, const wstring& /*val*/) {}
+
+  // ── Direct change notification (stub) ─────────────────────────────────────
+  void pushDirectChange() {}
 };

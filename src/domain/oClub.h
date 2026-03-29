@@ -52,8 +52,8 @@ protected:
   // 768 was the Windows size; use 2048 to hold the same strings on Linux.
   static const int dataSize = 2048;
   int getDISize() const final { return dataSize; }
-  BYTE oData[dataSize];
-  BYTE oDataOld[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
 
   int tNumRunners = 0;
   int tFee = 0;

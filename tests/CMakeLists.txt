@@ -45,3 +45,7 @@ target_link_libraries(club_test PRIVATE meos_domain meos_util)
 # Course tests (US-003d)
 meos_add_test(course_test course_test.cpp)
 target_link_libraries(course_test PRIVATE meos_domain meos_util)
+
+# Class tests (US-003e)
+meos_add_test(class_test class_test.cpp)
+target_link_libraries(class_test PRIVATE meos_domain meos_util)
