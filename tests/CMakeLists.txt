@@ -57,3 +57,7 @@ target_link_libraries(card_test PRIVATE meos_domain meos_util)
 # Runner tests (US-003g)
 meos_add_test(runner_test runner_test.cpp)
 target_link_libraries(runner_test PRIVATE meos_domain meos_util)
+
+# Team tests (US-003h)
+meos_add_test(team_test team_test.cpp)
+target_link_libraries(team_test PRIVATE meos_domain meos_util)

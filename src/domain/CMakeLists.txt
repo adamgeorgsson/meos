@@ -12,6 +12,7 @@ add_library(meos_domain STATIC
   oCard.cpp
   oFreePunch.cpp
   oRunner.cpp
+  oTeam.cpp
 )
 
 target_include_directories(meos_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

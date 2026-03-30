@@ -2697,3 +2697,4 @@ void oEvent::reEvaluateAll(const set<int> & /*classIds*/, bool /*sync*/) {
 
 bool oEvent::hasPrevStage() const { return false; }
 bool oEvent::hasNextStage() const { return false; }
+

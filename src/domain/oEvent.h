@@ -10,11 +10,12 @@
 #include "oClub.h"
 #include "oCard.h"
 #include "oFreePunch.h"
+#include "oDataContainer.h"
 #include "oRunner.h"
+#include "oTeam.h"
 #include "intkeymap.hpp"
 
 class oBase;
-#include "oDataContainer.h"
 
 // ── List ID enum (used by synchronizeList) ─────────────────────────────────
 enum class oListId {
@@ -28,6 +29,7 @@ typedef list<oCourse>    oCourseList;
 typedef list<oControl>   oControlList;
 typedef list<oCard>      oCardList;
 typedef list<oFreePunch> oFreePunchList;
+// oTeamList is defined in oTeam.h
 
 class oEvent {
 public:
@@ -147,6 +149,20 @@ public:
 
   // ── oRunnerData container ─────────────────────────────────────────────────
   oDataContainer* oRunnerData = nullptr;
+
+  // ── Team collection ───────────────────────────────────────────────────────
+  oTeamList Teams;
+  mutable intkeymap<pTeam> teamById;
+  int qFreeTeamId = 1;
+  SqlUpdated sqlTeams;
+  oDataContainer* oTeamData = nullptr;
+
+  int getFreeTeamId();
+  pTeam addTeam(const wstring &pname, int ClubId = 0, int ClassId = 0);
+  pTeam addTeam(const oTeam &t);
+  pTeam getTeam(int Id) const;
+  void  getTeams(int classId, vector<pTeam> &t, bool sort) const;
+  void  removeTeam(int Id);
 
   // ── Computer time (used by getPrelRunningTime) ────────────────────────────
   int getComputerTime() const { return 0; }
@@ -347,4 +363,23 @@ public:
 
   // ── Direct change notification (stub) ─────────────────────────────────────
   void pushDirectChange() {}
+
+  // ── Stage / multi-day (stub) ──────────────────────────────────────────────
+  int getStageNumber() const { return 1; }
+
+  // ── Team result calculation (stub — full impl in US-003i) ─────────────────
+  enum class ResultType { ClassResult, TotalResult };
+  void calculateTeamResults(const std::set<int> &/*classIds*/, ResultType /*type*/) {}
+
+  // ── Status formatting ─────────────────────────────────────────────────────
+  static const wstring &formatStatus(RunnerStatus status, bool /*forPrint*/);
+
+  // ── isRunnerUsed stub ─────────────────────────────────────────────────────
+  bool isRunnerUsed(int /*id*/) const { return false; }
+
+  // ── useStartSeconds stub ──────────────────────────────────────────────────
+  bool useStartSeconds() const { return false; }
+
+  // ── getAbsTime overload convenience ───────────────────────────────────────
+  wstring getAbsTime(int t) const { return getAbsTime(t, SubSecond::Auto); }
 };

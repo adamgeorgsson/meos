@@ -36,6 +36,11 @@ public:
   // On Linux wchar_t = 4 bytes.
   static constexpr int dataSize = 512 * static_cast<int>(sizeof(wchar_t)) + 64;
 
+public:
+  // ── Multi-leg / relay state (public for oTeam/test access) ───────────────
+  pTeam  tInTeam       = nullptr;  // Team this runner belongs to
+  int    tLeg          = 0;        // Leg index within team
+
 protected:
   // ── Core identity ─────────────────────────────────────────────────────────
   wstring tRealName;      // Normalized display name (whitespace-collapsed)
@@ -56,9 +61,13 @@ protected:
   int tReduction            = 0;
   wstring tProblemDescription;
 
-  // ── Multi-leg / relay state ───────────────────────────────────────────────
-  pTeam  Team          = nullptr;
-  int    tDuplicateLeg = 0;   // Relay leg index
+  // ── Multi-leg / relay state (continued) ──────────────────────────────────
+  int    tLegEquClass  = 0;        // Equivalent-class leg index (parallel)
+  bool   tNeedNoCard   = false;    // Runner needs no SI card (e.g. LTIgnore)
+  int    speakerPriority = 0;      // Priority for speaker display
+  pRunner tParentRunner = nullptr; // Parent runner for multi-leg duplicates
+  vector<pRunner> multiRunner;     // Additional leg duplicates owned by this runner
+  int    tDuplicateLeg = 0;        // Relay leg index
   int    tNumShortening = 0;
   bool   tUseStartPunch = true;
 
@@ -96,6 +105,7 @@ public:
   const wstring& getClass(bool virtualClass) const override;
 
   // ── Card ──────────────────────────────────────────────────────────────────
+  pCard  getCard() const { return Card; }
   int  getCardNo() const { return cardNumber; }
   void setCardNo(int cno, bool matchCard, bool updateFromDatabase);
   int  setCard(int cardId);
@@ -111,11 +121,39 @@ public:
   const vector<SplitData>& getSplitTimes(bool normalized) const;
 
   // ── Status ────────────────────────────────────────────────────────────────
-  RunnerStatus getStatusComputed(bool allowUpdate) const;
+  RunnerStatus getStatusComputed(bool allowUpdate) const override;
 
   // ── Team (relay) ─────────────────────────────────────────────────────────
-  cTeam getTeam() const override { return Team; }
-  pTeam getTeam()       override { return Team; }
+  cTeam getTeam() const override { return tInTeam; }
+  pTeam getTeam()       override { return tInTeam; }
+
+  // ── Relay helper methods (stubs — full impl when relay is tested) ──────────
+  pRunner getMultiRunner(int index) {
+    return (index >= 0 && size_t(index) < multiRunner.size()) ? multiRunner[index] : nullptr;
+  }
+  void createMultiRunner(bool /*visible*/, bool /*sync*/) {}
+  bool prelStatusOK(bool computed, bool /*extra*/, bool /*relaxed*/) const {
+    RunnerStatus s = computed ? tComputedStatus : tStatus;
+    if (s == StatusUnknown) s = tStatus;
+    return s == StatusOK || s == StatusOutOfCompetition || s == StatusNoTiming;
+  }
+  int getFinishTimeAdjusted(bool /*adj*/) const { return FinishTime; }
+  int getPrelRunningTime() const {
+    if (FinishTime > 0 && tStartTime > 0) return FinishTime - tStartTime;
+    return 0;
+  }
+  wstring getStartTimeCompact() const;
+  wstring getUIName() const { return getName(); }
+  int  getCourseId() const { return Course ? Course->getId() : 0; }
+  void setCourseId(int id);
+  bool statusOK(bool computed, bool /*checkTeam*/) const { return prelStatusOK(computed, false, false); }
+  bool preventRestart() const { return tPreventRestartCache; }
+  void markForCorrection() { correctionNeeded = true; }
+  void getSplitTime(int /*courseControlId*/, RunnerStatus& st, int& rt) const {
+    st = StatusUnknown; rt = 0;
+  }
+  int getTimeAdjustment(bool /*preliminary*/) const { return tTimeAdjustment; }
+  int getPointAdjustment() const { return tPointAdjustment; }
 
   // ── Totals / relay ───────────────────────────────────────────────────────
   RunnerStatus getTotalStatus(bool computed) const override;
@@ -125,7 +163,7 @@ public:
 
   // ── Race / leg identity ───────────────────────────────────────────────────
   int  getRaceNo() const override { return tDuplicateLeg; }
-  int  classInstance() const;
+  int  classInstance() const override;
 
   // ── Rogaining ────────────────────────────────────────────────────────────
   int  getRogainingPoints(bool computed, bool total) const override;
@@ -141,19 +179,20 @@ public:
   bool isResultUpdated(bool) const override;
 
   // ── Apply / synchronize ───────────────────────────────────────────────────
-  void apply(ChangeType ct, pRunner src);
+  void apply(ChangeType ct, pRunner src) override;
+  int  getTimeAfter(int leg, bool allowUpdate) const override;
   void synchronize(bool writeOnly = false);
   bool synchronizeAll(bool writeOnly = false);
 
   // ── StartNo / bib ────────────────────────────────────────────────────────
   void setStartNo(int no, ChangeType ct) override;
-  void setBib(const wstring& bib, int numericalBib, bool updateRace);
+  void setBib(const wstring& bib, int numericalBib, bool updateRace) override;
 
   // ── Flags ─────────────────────────────────────────────────────────────────
   bool matchAbstractRunner(const oAbstractRunner* target) const override;
 
   // ── Class changed notification ────────────────────────────────────────────
-  void markClassChanged(int controlId);
+  void markClassChanged(int controlId) override;
 
   // ── Remove ────────────────────────────────────────────────────────────────
   void remove() override;
@@ -163,7 +202,7 @@ public:
   void merge(const oBase& input, const oBase* base) override;
 
   // ── Race info ────────────────────────────────────────────────────────────
-  const pair<wstring, int> getRaceInfo();
+  const pair<wstring, int> getRaceInfo() override;
 
   // ── Serialization ────────────────────────────────────────────────────────
   bool Write(xmlparser& xml);
@@ -185,5 +224,6 @@ public:
   friend class oEvent;
   friend class oClass;
   friend class oCard;
+  friend class oTeam;
   friend class MeosSQL;
 };

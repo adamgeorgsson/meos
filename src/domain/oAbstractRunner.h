@@ -79,6 +79,9 @@ inline bool orderByClass(SortOrder s) {
 // ── RunnerStatusOrderMap declaration ─────────────────────────────────────────
 extern char RunnerStatusOrderMap[100];
 
+// ── MaxRankingConstant ────────────────────────────────────────────────────────
+constexpr int MaxRankingConstant = std::numeric_limits<int>::max();
+
 // ── oAbstractRunner ───────────────────────────────────────────────────────────
 class oAbstractRunner : public oBase {
 public:
@@ -116,6 +119,7 @@ public:
     bool isOld(const oEvent& oe) const;
     void update(const oEvent& oe, int val) const;
     int get() const { return value; }
+    int get(bool /*skipUpdate*/) const { return value; }
     void reset() { revision = static_cast<unsigned long>(-1); value = 0; }
   };
 
@@ -125,9 +129,13 @@ protected:
   pClass Class = nullptr;
 
   int startTime    = 0;
-  int tStartTime   = 0;
   int FinishTime   = 0;
   bool finishTimeWasSet = false;
+
+public:
+  int tStartTime   = 0;  // Effective start time (may differ from startTime after draw)
+
+protected:
 
   int tComputedTime   = 0;
   RunnerStatus status  = StatusUnknown;
@@ -228,12 +236,70 @@ public:
   virtual bool matchAbstractRunner(const oAbstractRunner* target) const = 0;
   virtual wstring getNameAndRace(bool withRace) const = 0;
 
-  // ── Status encode/decode helpers ─────────────────────────────────────────
+  // ── Relay / multi-runner interface ────────────────────────────────────────
+  virtual void markClassChanged(int controlId) = 0;
+  virtual void apply(ChangeType ct, pRunner src) = 0;
+  virtual int  getTimeAfter(int leg, bool allowUpdate) const = 0;
+  virtual int  classInstance() const = 0;
+  virtual void setBib(const wstring& bib, int numericalBib, bool updateStartNo) = 0;
+  virtual const pair<wstring, int> getRaceInfo() = 0;
+  virtual RunnerStatus getStatusComputed(bool allowUpdate) const = 0;
+
+  // ── Status helpers ────────────────────────────────────────────────────────
   static wstring    encodeStatus(RunnerStatus s);
   static RunnerStatus decodeStatus(const wstring& s);
 
+  // isResultStatus: true for OK/MP/DNF/DQ/MAX — not DNS/CANCEL/OutOfComp/Unknown
+  static bool isResultStatus(RunnerStatus st) {
+    switch (st) {
+      case StatusDNS: case StatusCANCEL: case StatusOutOfCompetition:
+      case StatusNotCompeting: case StatusUnknown: case StatusNoTiming:
+        return false;
+      default:
+        return true;
+    }
+  }
+
   // ── Status string ─────────────────────────────────────────────────────────
   virtual const wstring& getStatusS(bool shortFormat, SubSecond mode) const;
+
+  // ── Club ref ──────────────────────────────────────────────────────────────
+  pClub getClubRef() const { return Club; }
+  bool  isVacant()   const { return Club && Club->getId() == cVacantId; }
+
+  // ── Bib / StartNo helpers ────────────────────────────────────────────────
+  wstring getBib() const;
+
+  // ── Time/result helpers (string formatting) ───────────────────────────────
+  wstring getStartTimeS() const;
+  wstring getRunningTimeS(bool computed, SubSecond mode) const;
+  wstring getFinishTimeS(bool adjusted, SubSecond mode) const;
+  wstring getPlaceS() const { int p = getPlace(true); return (p > 0 && p < 10000) ? itow(p) : L""; }
+  wstring getInputTimeS()   const { return inputTime   > 0 ? formatTime(inputTime) : L"-"; }
+  wstring getInputStatusS() const;
+
+  // ── Start time from string ────────────────────────────────────────────────
+  void setStartTimeS(const wstring& /*s*/) {}
+
+  // ── Total result convenience (no-arg) ────────────────────────────────────
+  RunnerStatus getTotalStatus() const { return getTotalStatus(true); }
+  int getTotalRunningTime() const { return getRunningTime(true); }
+  int getTotalPlace() const { return getTotalPlace(true); }
+
+  // ── Adjustments (multi-day / external) ───────────────────────────────────
+  int getTimeAdjustment(bool /*preliminary*/) const { return tTimeAdjustment; }
+  int getPointAdjustment() const { return tPointAdjustment; }
+  virtual int getBuiltinAdjustment() const { return 0; }
+
+  // ── Prevent restart flag ──────────────────────────────────────────────────
+  bool preventRestart() const { return tPreventRestartCache; }
+
+  // ── Multi-day input result ────────────────────────────────────────────────
+  void addToInputResult(int /*stage*/, const oAbstractRunner* /*src*/) {}
+
+  // ── Bib comparison helpers ────────────────────────────────────────────────
+  static bool compareBib(const wstring& a, const wstring& b);
+  static int  compareClubs(const oClub* ca, const oClub* cb);
 
   // ── Merge (no-op base) ────────────────────────────────────────────────────
   void merge(const oBase& input, const oBase* base) override;

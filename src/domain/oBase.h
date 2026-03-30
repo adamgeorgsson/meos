@@ -118,6 +118,7 @@ public:
 
   virtual void remove() = 0;
   virtual bool canRemove() const = 0;
+  virtual bool isTeam() const { return false; }
 
   void setExtIdentifier(int64_t id);
   int64_t getExtIdentifier() const;

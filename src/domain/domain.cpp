@@ -7,6 +7,7 @@
 #include "oCourse.h"        // for oCourse::dataSize
 #include "oClass.h"         // for oClass::dataSize
 #include "oRunner.h"        // for oRunner::dataSize
+#include "oTeam.h"          // for oTeam::dataSize
 #include "oDataContainer.h" // for oDataContainer
 
 oEvent::oEvent() {
@@ -119,6 +120,32 @@ oEvent::oEvent() {
   oClassData->addVariableString("TextA",      40, "Text");
   oClassData->addVariableInt("NoTotalResult", oDataContainer::oIS8U,  "Endast etappresultat");
 
+  // ── oTeam data fields (matches legacy oEvent.cpp exactly) ────────────────
+  oTeamData = new oDataContainer(oTeam::dataSize);
+  oTeamData->addVariableCurrency("Fee",     "Anm. avgift");
+  oTeamData->addVariableCurrency("Paid",    "Betalat");
+  oTeamData->addVariableInt("PayMode",    oDataContainer::oIS8U,         "Betalsätt");
+  oTeamData->addVariableCurrency("Taxable", "Skattad avgift");
+  oTeamData->addVariableDate("EntryDate",   "Anm. datum");
+  oTeamData->addVariableInt("EntryTime",  oDataContainer::oISTime,       "Anm. tid");
+  oTeamData->addVariableString("Nationality", 3,                         "Nationalitet");
+  oTeamData->addVariableString("Country",    23,                         "Land");
+  oTeamData->addVariableString("Bib",         8,                         "Nummerlapp");
+  oTeamData->addVariableInt("ExtId",      oDataContainer::oIS64,         "Externt Id");
+  oTeamData->addVariableInt("Priority",   oDataContainer::oIS8U,         "Prioritering");
+  oTeamData->addVariableInt("SortIndex",  oDataContainer::oIS16,         "Sortering");
+  oTeamData->addVariableInt("TimeAdjust", oDataContainer::oISTimeAdjust, "Tidsjustering");
+  oTeamData->addVariableInt("PointAdjust",oDataContainer::oIS32,         "Poängjustering");
+  oTeamData->addVariableInt("TransferFlags", oDataContainer::oIS32,      "Överföring");
+  oTeamData->addVariableInt("EntrySource",oDataContainer::oIS32,         "Källa");
+  oTeamData->addVariableInt("Heat",       oDataContainer::oIS8U,         "Heat");
+  oTeamData->addVariableInt("NoRestart",  oDataContainer::oIS8U,         "Ej omstart");
+  oTeamData->addVariableString("InputResult", "Tidigare resultat");
+  oTeamData->addVariableInt("DataA",      oDataContainer::oIS32,         "TeamDataA");
+  oTeamData->addVariableInt("DataB",      oDataContainer::oIS32,         "TeamDataB");
+  oTeamData->addVariableString("TextA",      40,                         "TeamTextA");
+  oTeamData->addVariableString("Annotation", "Kommentarer");
+
   // ── oRunner data fields ───────────────────────────────────────────────────
   oRunnerData = new oDataContainer(oRunner::dataSize);
   oRunnerData->addVariableCurrency("Fee",      "Anm. avgift");
@@ -182,8 +209,42 @@ oEvent::~oEvent() {
   oCourseData = nullptr;
   delete oClassData;
   oClassData = nullptr;
+  delete oTeamData;
+  oTeamData = nullptr;
   delete oRunnerData;
   oRunnerData = nullptr;
   delete oEventData;
   oEventData = nullptr;
+}
+
+// ── oEvent::formatStatus ──────────────────────────────────────────────────────
+const wstring &oEvent::formatStatus(RunnerStatus status, bool forPrint) {
+  static const wstring sUnknown    = L"?";
+  static const wstring sDash       = L"\u2014";
+  static const wstring sTimeDash   = L"-";
+  static const wstring sOK         = L"Godkänd";
+  static const wstring sDNS        = L"Ej start";
+  static const wstring sCANCEL     = L"Återbud";
+  static const wstring sMP         = L"Felst.";
+  static const wstring sDNF        = L"Utg.";
+  static const wstring sDQ         = L"Disk.";
+  static const wstring sMAX        = L"Maxtid";
+  static const wstring sNotComp    = L"Deltar ej";
+  static const wstring sOOC        = L"Utom tävlan";
+  static const wstring sNoTiming   = L"Utan tidtagning";
+
+  switch (status) {
+    case StatusOK:               return sOK;
+    case StatusDNS:              return sDNS;
+    case StatusCANCEL:           return sCANCEL;
+    case StatusMP:               return sMP;
+    case StatusDNF:              return sDNF;
+    case StatusDQ:               return sDQ;
+    case StatusMAX:              return sMAX;
+    case StatusNotCompeting:     return forPrint ? sDash : sNotComp;
+    case StatusOutOfCompetition: return sOOC;
+    case StatusNoTiming:         return forPrint ? sOK : sNoTiming;
+    case StatusUnknown:
+    default:                     return forPrint ? sTimeDash : sUnknown;
+  }
 }

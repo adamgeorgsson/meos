@@ -115,6 +115,12 @@ const wstring& oAbstractRunner::getClass(bool /*virtualClass*/) const {
   return _EmptyWString;
 }
 
+// ── oAbstractRunner::getBib ───────────────────────────────────────────────────
+
+wstring oAbstractRunner::getBib() const {
+  return getDCI().getString("Bib");
+}
+
 // ── oAbstractRunner::encodeStatus / decodeStatus ─────────────────────────────
 
 wstring oAbstractRunner::encodeStatus(RunnerStatus s) {
@@ -439,7 +445,7 @@ bool oRunner::evaluateCard(bool doApply, vector<pair<int, pControl>>& missingPun
 
 void oRunner::apply(ChangeType /*ct*/, pRunner /*src*/) {
   // Simplified: propagate permanent values to transient when no team/multirunner
-  if (!Team) {
+  if (!tInTeam) {
     tStartTime = startTime;
     tStatus    = status;
   }
@@ -570,6 +576,23 @@ void oRunner::setStartNo(int no, ChangeType ct) {
 
 void oRunner::setBib(const wstring& /*bib*/, int /*numericalBib*/, bool /*updateRace*/) {
   // Stub — full impl in a later US
+}
+
+// ── oRunner::getStartTimeCompact / setCourseId ────────────────────────────────
+
+wstring oRunner::getStartTimeCompact() const {
+  return oe ? oe->getAbsTime(tStartTime, SubSecond::Auto) : L"";
+}
+
+void oRunner::setCourseId(int id) {
+  if (oe) Course = oe->getCourse(id);
+}
+
+// ── oRunner::getTimeAfter ─────────────────────────────────────────────────────
+
+int oRunner::getTimeAfter(int /*leg*/, bool /*allowUpdate*/) const {
+  // Stub — full implementation in a later US (oRunnerData migration)
+  return 0;
 }
 
 // ── oRunner::synchronize ──────────────────────────────────────────────────────
@@ -713,4 +736,45 @@ void oEvent::getRunners(const set<int>& classIds, vector<pRunner>& r,
         classIds.find(runner.getClassId(true)) == classIds.end()) continue;
     r.push_back(&runner);
   }
+}
+
+// ── oAbstractRunner — missing helper implementations ──────────────────────────
+
+wstring oAbstractRunner::getFinishTimeS(bool adjusted, SubSecond mode) const {
+  if (FinishTime > 0) {
+    if (adjusted)
+      return oe->getAbsTime(FinishTime, mode);
+    else
+      return oe->getAbsTime(FinishTime - getBuiltinAdjustment(), mode);
+  }
+  return makeDash(L"-");
+}
+
+bool oAbstractRunner::compareBib(const wstring &b1, const wstring &b2) {
+  int l1 = (int)b1.length();
+  int l2 = (int)b2.length();
+  if (l1 != l2)
+    return l1 < l2;
+  if (l1 == 0) return false;
+
+  wchar_t maxc = 0, minc = std::numeric_limits<wchar_t>::max();
+  for (int k = 0; k < l1; k++) { maxc = std::max(maxc, b1[k]); minc = std::min(minc, b1[k]); }
+  for (int k = 0; k < l2; k++) { maxc = std::max(maxc, b2[k]); minc = std::min(minc, b2[k]); }
+
+  unsigned coeff = maxc - minc + 1;
+  unsigned z1 = 0, z2 = 0;
+  for (int k = 0; k < l1; k++) z1 = coeff * z1 + (b1[k] - minc);
+  for (int k = 0; k < l2; k++) z2 = coeff * z2 + (b2[k] - minc);
+  return z1 < z2;
+}
+
+int oAbstractRunner::compareClubs(const oClub *ca, const oClub *cb) {
+  if (ca == cb) return 0;
+  if (!ca) return 1;
+  if (!cb) return -1;
+  const wstring an = ca->getName();
+  const wstring bn = cb->getName();
+  if (an < bn) return -1;
+  if (an > bn) return  1;
+  return 0;
 }
