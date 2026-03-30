@@ -6,6 +6,7 @@
 #include "oClub.h"          // for oClub::dataSize
 #include "oCourse.h"        // for oCourse::dataSize
 #include "oClass.h"         // for oClass::dataSize
+#include "oRunner.h"        // for oRunner::dataSize
 #include "oDataContainer.h" // for oDataContainer
 
 oEvent::oEvent() {
@@ -118,6 +119,42 @@ oEvent::oEvent() {
   oClassData->addVariableString("TextA",      40, "Text");
   oClassData->addVariableInt("NoTotalResult", oDataContainer::oIS8U,  "Endast etappresultat");
 
+  // ── oRunner data fields ───────────────────────────────────────────────────
+  oRunnerData = new oDataContainer(oRunner::dataSize);
+  oRunnerData->addVariableCurrency("Fee",      "Anm. avgift");
+  oRunnerData->addVariableCurrency("CardFee",  "Brickhyra");
+  oRunnerData->addVariableCurrency("Paid",     "Betalat");
+  oRunnerData->addVariableInt("PayMode",    oDataContainer::oIS8U,         "Betalsätt");
+  oRunnerData->addVariableInt("BirthYear",  oDataContainer::oISDateOrYear, "RunnerBirthDate");
+  oRunnerData->addVariableString("Bib",     8,                              "Nummerlapp");
+  oRunnerData->addVariableInt("Rank",       oDataContainer::oIS32,         "Ranking");
+  oRunnerData->addVariableDate("EntryDate", "Anm. datum");
+  oRunnerData->addVariableInt("EntryTime",  oDataContainer::oISTime,       "Anm. tid");
+
+  {
+    vector<pair<wstring, wstring>> sex;
+    sex.push_back({L"M", L"Herr"});
+    sex.push_back({L"F", L"Dam"});
+    sex.push_back({L"",  makeDash(L"-")});
+    oRunnerData->addVariableEnum("Sex",       1,                             "Kön", sex);
+  }
+  oRunnerData->addVariableString("Nationality", 3,                         "Nationalitet");
+  oRunnerData->addVariableString("Country",   23,                          "Land");
+  oRunnerData->addVariableInt("ExtId",      oDataContainer::oIS64,         "Externt Id");
+  oRunnerData->addVariableInt("ExtId2",     oDataContainer::oIS64,         "Externt Id 2");
+  oRunnerData->addVariableInt("Priority",   oDataContainer::oIS8U,         "Prioritering");
+  oRunnerData->addVariableString("Phone",   20,                            "Telefon");
+  oRunnerData->addVariableInt("RaceId",     oDataContainer::oIS32,         "Lopp-id");
+  oRunnerData->addVariableInt("TimeAdjust", oDataContainer::oISTimeAdjust, "Tidsjustering");
+  oRunnerData->addVariableInt("PointAdjust",oDataContainer::oIS32,         "Poängjustering");
+  oRunnerData->addVariableInt("Heat",       oDataContainer::oIS8U,         "Heat");
+  oRunnerData->addVariableInt("Reference",  oDataContainer::oIS32,         "Referens");
+  oRunnerData->addVariableInt("InputResult",oDataContainer::oIS32,         "Inresultat");
+  oRunnerData->addVariableInt("TransferFlags", oDataContainer::oIS32,      "Överföring");
+  oRunnerData->addVariableInt("StartGroup", oDataContainer::oIS32,         "Startgrupp");
+  oRunnerData->addVariableInt("Analysis",   oDataContainer::oIS32,         "Analys");
+  oRunnerData->addVariableInt("RankScore",  oDataContainer::oIS32,         "Rankingpoäng");
+
   // ── oEvent own data fields (subset used by oClass fee calculations) ─────────
   // Full oEvent data initialization deferred to US-003i.
   // On Linux sizeof(wchar_t)==4 so fixed strings cost double vs Windows.
@@ -145,6 +182,8 @@ oEvent::~oEvent() {
   oCourseData = nullptr;
   delete oClassData;
   oClassData = nullptr;
+  delete oRunnerData;
+  oRunnerData = nullptr;
   delete oEventData;
   oEventData = nullptr;
 }

@@ -138,11 +138,48 @@ public:
 
   void generatePunchTableData(Table& table, oFreePunch* addPunch);
 
-  // ── Runner stubs (oRunner not yet fully migrated) ─────────────────────────
+  // ── Runner collection ────────────────────────────────────────────────────
+  list<oRunner> Runners;
+  mutable intkeymap<pRunner> runnerIdIndex;
+  int qFreeRunnerId = 1;
+  int getFreeRunnerId() { return ++qFreeRunnerId; }
+  SqlUpdated sqlRunners;
+
+  // ── oRunnerData container ─────────────────────────────────────────────────
+  oDataContainer* oRunnerData = nullptr;
+
+  // ── Computer time (used by getPrelRunningTime) ────────────────────────────
+  int getComputerTime() const { return 0; }
+
+  // ── Club create (used by setClub) ─────────────────────────────────────────
+  pClub getClubCreate(int id, const wstring& name) {
+    if (id > 0) { pClub c = getClub(id); if (c) return c; }
+    return addClub(name);
+  }
+
+  // ── bibStartNoToRunnerTeam (used by setStartNo) ───────────────────────────
+  map<int, pair<int,int>> bibStartNoToRunnerTeam;
+
+  // ── classIdToRunnerHash (used by setClassId / remove) ─────────────────────
+  shared_ptr<map<int, vector<pRunner>>> classIdToRunnerHash;
+
+  // ── CardLookupProperty ────────────────────────────────────────────────────
   enum class CardLookupProperty { Any, OnlyMain };
 
-  pRunner getRunner(int /*Id*/, int /*race*/) const { return nullptr; }
+  // ── Runner management ─────────────────────────────────────────────────────
+  pRunner addRunner(const oRunner& r);
+  pRunner getRunner(int Id, int race) const;
+  void getRunners(int classId, int courseId, vector<pRunner>& r, bool sort) const;
+  void getRunners(const set<int>& classIds, vector<pRunner>& r, bool sync);
   pRunner getRunnerByCardNo(int /*cardNo*/, int /*time*/, CardLookupProperty /*prop*/) const { return nullptr; }
+
+  // ── allocateCard (used by oRunner::Set) ───────────────────────────────────
+  pCard allocateCard(oRunner* owner) {
+    Cards.emplace_back(this, getFreeCardId());
+    pCard pc = &Cards.back();
+    pc->tOwner = owner;
+    return pc;
+  }
 
   // ── Synchronize stubs ─────────────────────────────────────────────────────
   void synchronizeList(oListId) {}

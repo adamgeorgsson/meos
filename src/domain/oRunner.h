@@ -1,42 +1,189 @@
-// oRunner.h — Minimal oRunner stub for domain-layer compilation.
-// Full implementation comes in US-003g.
+// oRunner.h — oRunner full declaration (US-003g).
+// Cross-platform, no Win32 / GUI dependencies.
 #pragma once
 
-#include "domain_header.h"
+#include "oAbstractRunner.h"
+#include "oCard.h"
 
-class oClass;
-class oCourse;
-typedef oCourse* pCourse;
+class RunnerWDBEntry;
+class oListInfo;
+class xmlparser;
+class xmlobject;
 
-class oTeam;
-typedef oTeam* pTeam;
-
-class oRunner {
+// ── SplitData ─────────────────────────────────────────────────────────────────
+class SplitData {
 public:
-  int Id = 0;
-  int FinishTime = 0;
-  int tStatus = 0;
-  int status = 0;
-  oClass* Class = nullptr;
+  enum class SplitStatus { Missing, OK, NoTime };
 
-  void changedObject() {}
-  void markClassChanged(int /*controlId*/) {}
-  int getCardNo() const { return 0; }
-  int getId() const { return Id; }
-  int getRaceNo() const { return 0; }
-  pCourse getCourse(bool /*allowVirtual*/) const { return nullptr; }
-  wstring getName() const { return L""; }
-  wstring getClass(bool /*check*/) const { return L""; }
-  pTeam getTeam() const { return nullptr; }
-  wstring getNameAndRace(bool /*withRace*/) const { return L""; }
-  bool isRemoved() const { return false; }
-  bool isChanged() const { return false; }
-  int getStatus() const { return 0; }
-  int getFinishTime() const { return 0; }
-  oClass* getClassRef(bool /*check*/) const { return nullptr; }
-  void setStartTime(int /*t*/, bool /*updateRace*/, int /*changeType*/) {}
-  void setFinishTime(int /*t*/) {}
-  void synchronize(bool /*writeOnly*/ = false) {}
-  pCourse getCourse(bool /*allowVirtual*/, bool /*forceUpdate*/) const { return nullptr; }
+private:
+  int time;
+  SplitStatus st;
+
+public:
+  SplitData() : time(-1), st(SplitStatus::Missing) {}
+  SplitData(int t, SplitStatus s) : time(t), st(s) {}
+
+  bool hasTime() const { return st == SplitStatus::OK; }
+  int  getTime(bool /*adjusted*/) const { return time; }
+  SplitStatus getStatus() const { return st; }
+  bool isMissing() const { return st == SplitStatus::Missing; }
 };
-typedef oRunner* pRunner;
+
+// ── oRunner ───────────────────────────────────────────────────────────────────
+class oRunner final : public oAbstractRunner {
+public:
+  // ── Data buffer size (used by oEvent constructor) ─────────────────────────
+  // On Linux wchar_t = 4 bytes.
+  static constexpr int dataSize = 512 * static_cast<int>(sizeof(wchar_t)) + 64;
+
+protected:
+  // ── Core identity ─────────────────────────────────────────────────────────
+  wstring tRealName;      // Normalized display name (whitespace-collapsed)
+  int     cardNumber = 0;
+  pCard   Card       = nullptr;
+
+  // ── Course / class assignment ─────────────────────────────────────────────
+  pCourse Course = nullptr;
+
+  // ── Split times ──────────────────────────────────────────────────────────
+  vector<SplitData> splitTimes;
+  vector<SplitData> normalizedSplitTimes;
+
+  // ── Rogaining ────────────────────────────────────────────────────────────
+  int tRogainingPoints      = 0;
+  int tRogainingPointsGross = 0;
+  int tRogainingOvertime    = 0;
+  int tReduction            = 0;
+  wstring tProblemDescription;
+
+  // ── Multi-leg / relay state ───────────────────────────────────────────────
+  pTeam  Team          = nullptr;
+  int    tDuplicateLeg = 0;   // Relay leg index
+  int    tNumShortening = 0;
+  bool   tUseStartPunch = true;
+
+  // ── Data buffers ──────────────────────────────────────────────────────────
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
+  vector<vector<wstring>> oDataStr;
+
+  int getDISize() const final { return dataSize; }
+
+  oDataContainer& getDataBuffers(pvoid& data, pvoid& olddata, pvectorstr& strData) const override;
+
+  void changedObject() override;
+
+public:
+  // ── Constructors / destructor ─────────────────────────────────────────────
+  explicit oRunner(oEvent* poe);
+  oRunner(oEvent* poe, int id);
+  ~oRunner() override;
+
+  // ── wstring getInfo ───────────────────────────────────────────────────────
+  wstring getInfo() const override { return L"Runner " + tRealName; }
+
+  // ── Name ──────────────────────────────────────────────────────────────────
+  void           setName(const wstring& n, bool manualUpdate) override;
+  const wstring& getName() const override;
+  wstring        getNameAndRace(bool withRace) const override;
+
+  // ── Club ──────────────────────────────────────────────────────────────────
+  void  setClub(const wstring& name) override;
+  pClub setClubId(int id) override;
+
+  // ── Class ─────────────────────────────────────────────────────────────────
+  void setClassId(int id, bool isManualUpdate) override;
+  const wstring& getClass(bool virtualClass) const override;
+
+  // ── Card ──────────────────────────────────────────────────────────────────
+  int  getCardNo() const { return cardNumber; }
+  void setCardNo(int cno, bool matchCard, bool updateFromDatabase);
+  int  setCard(int cardId);
+  void addCard(pCard card, vector<pair<int, pControl>>& missingPunches);
+  bool evaluateCard(bool doApply, vector<pair<int, pControl>>& missingPunches,
+                    int addPunch, ChangeType ct);
+
+  // ── Course ────────────────────────────────────────────────────────────────
+  pCourse getCourse(bool getAdapted) const;
+  pCourse getCourse(bool getAdapted, bool allowVirtual) const { return getCourse(getAdapted); }
+
+  // ── Split times ──────────────────────────────────────────────────────────
+  const vector<SplitData>& getSplitTimes(bool normalized) const;
+
+  // ── Status ────────────────────────────────────────────────────────────────
+  RunnerStatus getStatusComputed(bool allowUpdate) const;
+
+  // ── Team (relay) ─────────────────────────────────────────────────────────
+  cTeam getTeam() const override { return Team; }
+  pTeam getTeam()       override { return Team; }
+
+  // ── Totals / relay ───────────────────────────────────────────────────────
+  RunnerStatus getTotalStatus(bool computed) const override;
+  int  getPlace(bool computed) const override;
+  int  getTotalPlace(bool computed) const override;
+  DynamicRunnerStatus getDynamicStatus() const override;
+
+  // ── Race / leg identity ───────────────────────────────────────────────────
+  int  getRaceNo() const override { return tDuplicateLeg; }
+  int  classInstance() const;
+
+  // ── Rogaining ────────────────────────────────────────────────────────────
+  int  getRogainingPoints(bool computed, bool total) const override;
+  int  getRogainingPointsGross(bool computed) const override;
+  int  getRogainingReduction(bool computed) const override;
+  int  getRogainingOvertime(bool computed) const override;
+
+  // ── Ranking / shortening ─────────────────────────────────────────────────
+  int  getRanking()       const override;
+  int  getNumShortening() const override;
+
+  // ── Result state ─────────────────────────────────────────────────────────
+  bool isResultUpdated(bool) const override;
+
+  // ── Apply / synchronize ───────────────────────────────────────────────────
+  void apply(ChangeType ct, pRunner src);
+  void synchronize(bool writeOnly = false);
+  bool synchronizeAll(bool writeOnly = false);
+
+  // ── StartNo / bib ────────────────────────────────────────────────────────
+  void setStartNo(int no, ChangeType ct) override;
+  void setBib(const wstring& bib, int numericalBib, bool updateRace);
+
+  // ── Flags ─────────────────────────────────────────────────────────────────
+  bool matchAbstractRunner(const oAbstractRunner* target) const override;
+
+  // ── Class changed notification ────────────────────────────────────────────
+  void markClassChanged(int controlId);
+
+  // ── Remove ────────────────────────────────────────────────────────────────
+  void remove() override;
+  bool canRemove() const override;
+
+  // ── Merge ────────────────────────────────────────────────────────────────
+  void merge(const oBase& input, const oBase* base) override;
+
+  // ── Race info ────────────────────────────────────────────────────────────
+  const pair<wstring, int> getRaceInfo();
+
+  // ── Serialization ────────────────────────────────────────────────────────
+  bool Write(xmlparser& xml);
+  void Set(const xmlobject& xo);
+
+  // ── Input data (DI row editing) ───────────────────────────────────────────
+  pair<int, bool> inputData(int id, const wstring& input, int inputId,
+                             wstring& output, bool noUpdate) override;
+  void fillInput(int id, vector<pair<wstring, size_t>>& elements, size_t& selected) override;
+
+  // ── GUI/output stubs ─────────────────────────────────────────────────────
+  void printSplits(gdioutput& gdi, const oListInfo* li) const;
+  void printStartInfo(gdioutput& gdi, bool addTeam) const;
+  void fillSpeakerObject(int leg, int controlCourseId, int expectedFinishTime,
+                          bool totalResult, oSpeakerObject& spk) const;
+  void addTableRow(Table& table) const;
+  static const shared_ptr<Table>& getTable(oEvent* oe);
+
+  friend class oEvent;
+  friend class oClass;
+  friend class oCard;
+  friend class MeosSQL;
+};
