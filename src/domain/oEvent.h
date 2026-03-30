@@ -16,6 +16,7 @@
 #include "intkeymap.hpp"
 
 class oBase;
+class GeneralResult; // Forward declare — defined in generalresult.h (avoid circular dep)
 
 // ── List ID enum (used by synchronizeList) ─────────────────────────────────
 enum class oListId {
@@ -392,8 +393,33 @@ public:
   int getStageNumber() const { return 1; }
 
   // ── Team result calculation (stub — full impl in US-003i) ─────────────────
-  enum class ResultType { ClassResult, TotalResult };
+  enum class ResultType {
+    ClassResult,
+    ClassResultDefault, // Ignore per-class result module
+    TotalResult,
+    TotalResultDefault  // Ignore per-class result module
+  };
   void calculateTeamResults(const std::set<int> &/*classIds*/, ResultType /*type*/) {}
+  void calculateTeamResults(std::vector<pTeam> &/*teams*/, ResultType /*type*/) {}
+
+  // ── calculateResults with class set and preliminary flag ──────────────────
+  void calculateResults(const std::set<int> &classIds, ResultType type, bool /*includePreliminary*/ = false) {
+    calculateResults(classIds.empty() ? 0 : *classIds.begin());
+    (void)type;
+  }
+
+  // ── Split/control result stubs ────────────────────────────────────────────
+  void calculateSplitResults(int /*fromControl*/, int /*toControl*/) {}
+  void calculateTeamResultAtControl(const std::set<int> &/*clsIds*/, int /*leg*/,
+                                    int /*control*/, bool /*total*/) {}
+
+  // ── General result module registry (stub) ────────────────────────────────
+  // Returns a shared_ptr to a base GeneralResult (no dynamic module in stub)
+  // Defined in generalresult.cpp to avoid circular dependency
+  std::shared_ptr<GeneralResult> getGeneralResult(const std::string &tag, std::wstring &srcDMY);
+
+  // ── Computer time update (stub) ──────────────────────────────────────────
+  void updateComputerTime(bool /*useNetwork*/) {}
 
   // ── Status formatting ─────────────────────────────────────────────────────
   static const wstring &formatStatus(RunnerStatus status, bool /*forPrint*/);

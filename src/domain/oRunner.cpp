@@ -10,7 +10,30 @@
 #include "../util/xmlparser.h"
 
 // ── Static data ───────────────────────────────────────────────────────────────
-char RunnerStatusOrderMap[100];
+// Ordering: lower value = better result (0=OK, higher=worse/unfinished).
+// Matches initialization from legacy meos.cpp.
+char RunnerStatusOrderMap[100] = {
+  // Index = RunnerStatus enum value; all others default to 0.
+};
+
+namespace {
+  struct RunnerStatusOrderMapInit {
+    RunnerStatusOrderMapInit() {
+      for (int k = 0; k < 100; k++) RunnerStatusOrderMap[k] = 9; // default: unranked
+      RunnerStatusOrderMap[StatusOK]              = 0;
+      RunnerStatusOrderMap[StatusNoTiming]        = 1;
+      RunnerStatusOrderMap[StatusOutOfCompetition]= 2;
+      RunnerStatusOrderMap[StatusMAX]             = 3;
+      RunnerStatusOrderMap[StatusMP]              = 4;
+      RunnerStatusOrderMap[StatusDNF]             = 5;
+      RunnerStatusOrderMap[StatusDQ]              = 6;
+      RunnerStatusOrderMap[StatusCANCEL]          = 7;
+      RunnerStatusOrderMap[StatusDNS]             = 8;
+      RunnerStatusOrderMap[StatusUnknown]         = 9;
+      RunnerStatusOrderMap[StatusNotCompeting]    = 10;
+    }
+  } runnerStatusOrderMapInitializer;
+}
 
 // ── oAbstractRunner::DynamicValue ─────────────────────────────────────────────
 
@@ -482,7 +505,7 @@ RunnerStatus oRunner::getTotalStatus(bool /*computed*/) const {
 // ── oRunner::getPlace ─────────────────────────────────────────────────────────
 
 int oRunner::getPlace(bool /*computed*/) const {
-  return 0;
+  return tmpResult.place;
 }
 
 // ── oRunner::getTotalPlace ────────────────────────────────────────────────────
@@ -777,4 +800,8 @@ int oAbstractRunner::compareClubs(const oClub *ca, const oClub *cb) {
   if (an < bn) return -1;
   if (an > bn) return  1;
   return 0;
+}
+
+int oRunner::getBirthYear() const {
+  return getDCI().getInt("BirthYear");
 }

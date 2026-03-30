@@ -69,11 +69,15 @@ inline bool showResultTime(RunnerStatus s) {
 enum SortOrder {
   ClassStartTime, ClassStartTimeClub, ClassResult, ClassCourseResult,
   ClassDefaultResult, ClassTeamLeg, SortByName, SortByClub, SortByStartNo,
-  ClassPoints, CoursePoints, ClassTotalResult
+  ClassPoints, CoursePoints, ClassTotalResult,
+  SortByFinishTime, SortByFinishTimeReverse, SortByStartTime,
+  CourseResult, CourseStartTime, ClubClassStartTime, ClassFinishTime
 };
 
 inline bool orderByClass(SortOrder s) {
-  return s != SortByName && s != SortByClub && s != SortByStartNo;
+  return s != SortByName && s != SortByClub && s != SortByStartNo &&
+         s != SortByFinishTime && s != SortByFinishTimeReverse &&
+         s != SortByStartTime && s != CourseResult && s != CourseStartTime;
 }
 
 // ── RunnerStatusOrderMap declaration ─────────────────────────────────────────
@@ -100,6 +104,13 @@ public:
     int points = 0;
     int place = 0;
 
+    // Extended fields used by GeneralResult result engine
+    int startTime = 0;
+    int timeAfter = 0;
+    std::pair<int,int> internalScore = {0, 0};
+    std::vector<int> outputTimes;
+    std::vector<int> outputNumbers;
+
     TempResult() = default;
     TempResult(int rt, RunnerStatus s, int pts, int pl)
       : runningTime(rt), status(s), points(pts), place(pl) {}
@@ -108,7 +119,18 @@ public:
     RunnerStatus getStatus() const { return status; }
     int getPoints() const { return points; }
     int getPlace() const { return place; }
-    void reset() { runningTime = 0; status = StatusUnknown; points = 0; place = 0; }
+    int getStartTime() const { return startTime; }
+    int getFinishTime() const { return runningTime > 0 ? startTime + runningTime : 0; }
+    int getTimeAfter() const { return timeAfter; }
+    void reset() {
+      runningTime = 0; status = StatusUnknown; points = 0; place = 0;
+      startTime = 0; timeAfter = 0; internalScore = {0, 0};
+      outputTimes.clear(); outputNumbers.clear();
+    }
+
+    friend class GeneralResult;
+    friend class DynamicResult;
+    friend class oAbstractRunner;
   };
 
   // ── DynamicValue ──────────────────────────────────────────────────────────
@@ -217,13 +239,24 @@ public:
   void setInputPoints(int p)         { inputPoints = p; }
   void setInputPlace(int p)          { inputPlace  = p; }
 
+  // Multi-stage input results (stub — full impl when multi-day is tested)
+  void getInputResults(std::vector<RunnerStatus> &st, std::vector<int> &times,
+                       std::vector<int> &points, std::vector<int> &places) const {
+    st.clear(); times.clear(); points.clear(); places.clear();
+  }
+
+  // TempResult accessor (used by GeneralResult engine)
+  TempResult& getTempResult() { return tmpResult; }
+  const TempResult& getTempResult() const { return tmpResult; }
+  const TempResult& getTempResult(int /*index*/) const { return tmpResult; }
+
   // ── Pure-virtual interface ────────────────────────────────────────────────
   virtual cTeam getTeam() const = 0;
   virtual pTeam getTeam()       = 0;
 
   virtual RunnerStatus getTotalStatus(bool computed) const = 0;
-  virtual int  getPlace(bool computed) const = 0;
-  virtual int  getTotalPlace(bool computed) const = 0;
+  virtual int  getPlace(bool allowUpdate = true) const = 0;
+  virtual int  getTotalPlace(bool allowUpdate = true) const = 0;
   virtual DynamicRunnerStatus getDynamicStatus() const = 0;
   virtual int  getRaceNo() const = 0;
   virtual bool isResultUpdated(bool) const = 0;
@@ -286,6 +319,12 @@ public:
   int getTotalRunningTime() const { return getRunningTime(true); }
   int getTotalPlace() const { return getTotalPlace(true); }
 
+  // Sub-second precision (for DynamicResult scripted scoring)
+  int getSubSeconds() const {
+    if (timeConstSecond > 1) return getRunningTime(false) % timeConstSecond;
+    return 0;
+  }
+
   // ── Adjustments (multi-day / external) ───────────────────────────────────
   int getTimeAdjustment(bool /*preliminary*/) const { return tTimeAdjustment; }
   int getPointAdjustment() const { return tPointAdjustment; }
@@ -311,4 +350,6 @@ public:
   friend class oRunner;
   friend class oTeam;
   friend class MeosSQL;
+  friend class GeneralResult;
+  friend class DynamicResult;
 };

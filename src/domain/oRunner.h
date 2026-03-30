@@ -144,21 +144,34 @@ public:
   }
   wstring getStartTimeCompact() const;
   wstring getUIName() const { return getName(); }
+  int  getLegNumber() const { return tLeg; }
   int  getCourseId() const { return Course ? Course->getId() : 0; }
   void setCourseId(int id);
   bool statusOK(bool computed, bool /*checkTeam*/) const { return prelStatusOK(computed, false, false); }
   bool preventRestart() const { return tPreventRestartCache; }
   void markForCorrection() { correctionNeeded = true; }
+  // Result-at-control temp status/time (set by calculateSplitResults)
+  RunnerStatus getTempStatus() const { return tmpResult.status; }
+  int getTempTime()   const { return tmpResult.runningTime; }
   void getSplitTime(int /*courseControlId*/, RunnerStatus& st, int& rt) const {
     st = StatusUnknown; rt = 0;
   }
   int getTimeAdjustment(bool /*preliminary*/) const { return tTimeAdjustment; }
   int getPointAdjustment() const { return tPointAdjustment; }
 
+  // ── DynamicResult data stubs (needed for DynamicResult::prepareCalculations) ──
+  void getSplitAnalysis(std::vector<int> &delta) const { delta.clear(); }
+  void getLegTimeAfter(std::vector<int> &after) const { after.clear(); }
+  void getLegPlaces(std::vector<int> &place) const { place.clear(); }
+  int  getBirthYear() const; // implemented in oRunner.cpp (needs full DCI type)
+  int  getBirthAge() const { return 0; }
+  int  getCheckTime() const { return 0; }
+  void updateComputedResultFromTemp() {}
+
   // ── Totals / relay ───────────────────────────────────────────────────────
   RunnerStatus getTotalStatus(bool computed) const override;
-  int  getPlace(bool computed) const override;
-  int  getTotalPlace(bool computed) const override;
+  int  getPlace(bool allowUpdate = true) const override;
+  int  getTotalPlace(bool allowUpdate = true) const override;
   DynamicRunnerStatus getDynamicStatus() const override;
 
   // ── Race / leg identity ───────────────────────────────────────────────────
