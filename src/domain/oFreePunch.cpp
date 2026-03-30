@@ -384,11 +384,31 @@ bool oEvent::isInPunchHash(int card, int code, int time) {
   return readPunchHash.count(make_pair(p1, p2)) > 0;
 }
 
-// Simplified getControlIdFromPunch — returns a type-based hash without
-// runner/course lookup (full impl requires US-003g oRunner migration).
-int oEvent::getControlIdFromPunch(int /*time*/, int type, int /*card*/,
-                                  bool /*markClassChanged*/, oFreePunch& punch) {
-  punch.tRunnerId = -1;
+// Full getControlIdFromPunch — matches physical punch to course control.
+int oEvent::getControlIdFromPunch(int time, int type, int card,
+                                  bool markClassChanged, oFreePunch& punch) {
+  pRunner r = getRunnerByCardNo(card, time, CardLookupProperty::Any);
+  if (r) {
+    pCourse course = r->getCourse(false);
+    if (course) {
+      int nCtrl = course->nControls();
+      for (int k = 0; k < nCtrl; k++) {
+        pControl ctrl = course->getControl(k);
+        if (ctrl && ctrl->hasNumber(type)) {
+          int courseControlId = course->getCourseControlId(k);
+          punch.tRunnerId = r->getId();
+          punch.tMatchControlId = ctrl->getId();
+          int hash = oFreePunch::getControlHash(courseControlId, r->getRaceNo());
+          if (markClassChanged)
+            r->markClassChanged(ctrl->getId());
+          return hash;
+        }
+      }
+    }
+    punch.tRunnerId = r->getId();
+  } else {
+    punch.tRunnerId = -1;
+  }
   punch.tMatchControlId = type;
   return oFreePunch::getControlHash(type, 0);
 }

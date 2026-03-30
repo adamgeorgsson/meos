@@ -69,6 +69,7 @@ public:
 
   int getCardNo() const { return CardNo; }
   bool setCardNo(int cardNo, bool databaseUpdate = false);
+  int getTiedRunnerId() const { return tRunnerId; }
   bool setType(const wstring& t, bool databaseUpdate = false);
   void setTimeInt(int newTime, bool databaseUpdate) final;
 

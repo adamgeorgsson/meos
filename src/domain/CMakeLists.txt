@@ -13,6 +13,8 @@ add_library(meos_domain STATIC
   oFreePunch.cpp
   oRunner.cpp
   oTeam.cpp
+  oEventDraw.cpp
+  oEventResult.cpp
 )
 
 target_include_directories(meos_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

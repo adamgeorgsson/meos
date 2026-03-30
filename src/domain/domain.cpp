@@ -1,5 +1,4 @@
-// meos_domain — stub oEvent constructor/destructor.
-// The full oEvent implementation will be provided in US-003i.
+// meos_domain — oEvent constructor/destructor and core event methods.
 
 #include "oEvent.h"
 #include "oControl.h"       // for oControl::dataSize
@@ -9,6 +8,10 @@
 #include "oRunner.h"        // for oRunner::dataSize
 #include "oTeam.h"          // for oTeam::dataSize
 #include "oDataContainer.h" // for oDataContainer
+#include "../util/meos_util.h"
+
+#include <algorithm>
+#include <cwchar>
 
 oEvent::oEvent() {
   // ── oControl data fields ──────────────────────────────────────────────────
@@ -247,4 +250,139 @@ const wstring &oEvent::formatStatus(RunnerStatus status, bool forPrint) {
     case StatusUnknown:
     default:                     return forPrint ? sTimeDash : sUnknown;
   }
+}
+
+// ── Competition lifecycle ─────────────────────────────────────────────────────
+
+wstring oEvent::getName() const {
+  return tName;
+}
+
+void oEvent::setName(const wstring& m) {
+  // Trim whitespace
+  size_t first = m.find_first_not_of(L" \t\r\n");
+  if (first == wstring::npos) { tName.clear(); return; }
+  size_t last = m.find_last_not_of(L" \t\r\n");
+  tName = m.substr(first, last - first + 1);
+}
+
+wstring oEvent::getDate() const {
+  return tDate;
+}
+
+void oEvent::setDate(const wstring& date) {
+  tDate = date;
+}
+
+wstring oEvent::getZeroTime() const {
+  if (ZeroTime <= 0) return L"00:00:00";
+  return formatTimeHMS(ZeroTime);
+}
+
+void oEvent::setZeroTime(const wstring& m) {
+  int t = convertAbsoluteTimeHMS(m, -1);
+  ZeroTime = (t >= 0) ? t : 0;
+}
+
+void oEvent::newCompetition(const wstring& name) {
+  Controls.clear();
+  controlIdIndex.clear();
+  qFreeControlId = 1;
+
+  Courses.clear();
+  courseIdIndex.clear();
+  qFreeCourseId = 1;
+
+  Classes.clear();
+  classIdIndex.clear();
+  qFreeClassId = 1;
+
+  Clubs.clear();
+  clubIdIndex.clear();
+  qFreeClubId = 1;
+
+  Cards.clear();
+  qFreeCardId = 1;
+
+  Runners.clear();
+  runnerIdIndex.clear();
+  qFreeRunnerId = 1;
+
+  Teams.clear();
+  teamById.clear();
+  qFreeTeamId = 1;
+
+  punches.clear();
+  punchIndex.clear();
+  readPunchHash.clear();
+  advanceInformationPunches.clear();
+  qFreePunchId = 1;
+
+  eventProperties.clear();
+  ZeroTime = 0;
+  tDate.clear();
+  tName.clear();
+  dataRevision = 0;
+
+  setName(name);
+}
+
+// ── Property store ────────────────────────────────────────────────────────────
+
+int oEvent::getPropertyInt(const char* name, int def) const {
+  auto it = eventProperties.find(string(name));
+  if (it == eventProperties.end() || it->second.empty())
+    return def;
+  const wchar_t* p = it->second.c_str();
+  wchar_t* end = nullptr;
+  long v = std::wcstol(p, &end, 10);
+  return (end != p) ? static_cast<int>(v) : def;
+}
+
+wstring oEvent::getPropertyString(const char* name, const wstring& def) const {
+  auto it = eventProperties.find(string(name));
+  return (it != eventProperties.end()) ? it->second : def;
+}
+
+void oEvent::setProperty(const char* name, int val) {
+  eventProperties[string(name)] = itow(val);
+}
+
+void oEvent::setProperty(const char* name, const wstring& val) {
+  eventProperties[string(name)] = val;
+}
+
+// ── Control lookup ────────────────────────────────────────────────────────────
+
+pControl oEvent::getControlByNumber(int number) {
+  for (auto& ctrl : Controls) {
+    if (!ctrl.isRemoved() && ctrl.hasNumber(number))
+      return &ctrl;
+  }
+  return nullptr;
+}
+
+// ── Runner lookup ─────────────────────────────────────────────────────────────
+
+pRunner oEvent::getRunnerByCardNo(int cardNo, int time, CardLookupProperty /*prop*/) const {
+  pRunner best = nullptr;
+  int bestDelta = std::numeric_limits<int>::max();
+
+  for (auto& r : Runners) {
+    if (r.isRemoved()) continue;
+    if (r.getCardNo() != cardNo) continue;
+
+    if (time <= 0) {
+      // No time filter — return first match
+      return pRunner(&r);
+    }
+    // Pick by proximity to start time
+    int st = r.getStartTime();
+    int delta = (st > 0) ? std::abs(time - st) : std::numeric_limits<int>::max() / 2;
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      best = pRunner(&r);
+    }
+  }
+  return best;
 }

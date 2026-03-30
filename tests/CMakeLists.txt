@@ -61,3 +61,7 @@ target_link_libraries(runner_test PRIVATE meos_domain meos_util)
 # Team tests (US-003h)
 meos_add_test(team_test team_test.cpp)
 target_link_libraries(team_test PRIVATE meos_domain meos_util)
+
+# Event aggregate root tests (US-003i)
+meos_add_test(event_test event_test.cpp)
+target_link_libraries(event_test PRIVATE meos_domain meos_util)

@@ -36,6 +36,20 @@ public:
   oEvent();
   ~oEvent();
 
+  // ── Competition identity ──────────────────────────────────────────────────
+  wstring tName;
+  wstring tDate;
+  int ZeroTime = 0;
+  map<string, wstring> eventProperties;
+
+  wstring getName() const;
+  void    setName(const wstring& m);
+  wstring getDate() const;
+  void    setDate(const wstring& date);
+  wstring getZeroTime() const;
+  void    setZeroTime(const wstring& m);
+  void    newCompetition(const wstring& name);
+
   // ── Revision counter (used by DataRevisionCache) ──────────────────────────
   unsigned long dataRevision = 0;
 
@@ -187,7 +201,7 @@ public:
   pRunner getRunner(int Id, int race) const;
   void getRunners(int classId, int courseId, vector<pRunner>& r, bool sort) const;
   void getRunners(const set<int>& classIds, vector<pRunner>& r, bool sync);
-  pRunner getRunnerByCardNo(int /*cardNo*/, int /*time*/, CardLookupProperty /*prop*/) const { return nullptr; }
+  pRunner getRunnerByCardNo(int cardNo, int time, CardLookupProperty prop) const;
 
   // ── allocateCard (used by oRunner::Set) ───────────────────────────────────
   pCard allocateCard(oRunner* owner) {
@@ -237,7 +251,7 @@ public:
   // ── Time helpers (used by oPunch) ─────────────────────────────────────────
   wstring getAbsTime(int /*t*/, SubSecond /*mode*/) const { return L""; }
   int getRelativeTime(const wstring& /*t*/) const { return 0; }
-  int getZeroTimeNum() const { return 0; }
+  int getZeroTimeNum() const { return ZeroTime; }
   int getUnitAdjustment(int /*type*/, int /*unit*/) const { return 0; }
 
   // ── Revision helpers ─────────────────────────────────────────────────────
@@ -356,10 +370,20 @@ public:
   }
   bool useRunnerDb() const { return false; }
 
-  // ── Property store stubs (full impl in US-003i) ──────────────────────────
-  int getPropertyInt(const char* /*name*/, int def) const { return def; }
-  void setProperty(const char* /*name*/, int /*val*/) {}
-  void setProperty(const char* /*name*/, const wstring& /*val*/) {}
+  // ── Control lookup ────────────────────────────────────────────────────────
+  pControl getControlByNumber(int number);
+
+  // ── Draw / result methods ─────────────────────────────────────────────────
+  void sortRunnersByStartTime();
+  void drawAllClasses(int firstStart, int interval);
+  void calculateResults(int classId = 0);
+  void sortRunnersByResult(int classId = 0);
+
+  // ── Property store ────────────────────────────────────────────────────────
+  int     getPropertyInt(const char* name, int def) const;
+  wstring getPropertyString(const char* name, const wstring& def) const;
+  void    setProperty(const char* name, int val);
+  void    setProperty(const char* name, const wstring& val);
 
   // ── Direct change notification (stub) ─────────────────────────────────────
   void pushDirectChange() {}
