@@ -89,3 +89,7 @@ target_link_libraries(event_team_repo_test PRIVATE meos_db meos_domain meos_util
 # REST API framework tests (US-005a)
 meos_add_test(api_test api_test.cpp)
 target_link_libraries(api_test PRIVATE meos_net meos_domain meos_util)
+
+# Club + Control REST API tests (US-005b)
+meos_add_test(clubs_controls_api_test clubs_controls_api_test.cpp)
+target_link_libraries(clubs_controls_api_test PRIVATE meos_net meos_db meos_domain meos_util)
