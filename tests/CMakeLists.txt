@@ -97,3 +97,7 @@ target_link_libraries(clubs_controls_api_test PRIVATE meos_net meos_db meos_doma
 # Course + Class REST API tests (US-005c)
 meos_add_test(courses_classes_api_test courses_classes_api_test.cpp)
 target_link_libraries(courses_classes_api_test PRIVATE meos_net meos_db meos_domain meos_util)
+
+# Runner + Team + Competition REST API tests (US-005d)
+meos_add_test(runners_teams_competition_api_test runners_teams_competition_api_test.cpp)
+target_link_libraries(runners_teams_competition_api_test PRIVATE meos_net meos_db meos_domain meos_util)

@@ -203,6 +203,10 @@ public:
   void getRunners(int classId, int courseId, vector<pRunner>& r, bool sort) const;
   void getRunners(const set<int>& classIds, vector<pRunner>& r, bool sync);
   pRunner getRunnerByCardNo(int cardNo, int time, CardLookupProperty prop) const;
+  void removeRunner(int id) {
+    pRunner pr = getRunner(id, 0);
+    if (pr) { pr->Removed = true; runnerIdIndex.remove(id); }
+  }
 
   // ── allocateCard (used by oRunner::Set) ───────────────────────────────────
   pCard allocateCard(oRunner* owner) {
