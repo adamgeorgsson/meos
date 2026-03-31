@@ -4,6 +4,9 @@ add_library(meos_db STATIC
     db.cpp
     SQLiteDatabase.cpp
     DbMigration.cpp
+    ClubRepository.cpp
+    ControlRepository.cpp
+    CourseRepository.cpp
 )
 
 target_include_directories(meos_db PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

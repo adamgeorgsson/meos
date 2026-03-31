@@ -3,6 +3,7 @@
 #include <vector>
 #include <functional>
 #include <stdexcept>
+#include <cstdint>
 
 struct sqlite3;
 
@@ -17,6 +18,32 @@ public:
 /// Single row returned from a query: column name -> value pairs (all as strings).
 using DbRow = std::vector<std::pair<std::string, std::string>>;
 using DbResultSet = std::vector<DbRow>;
+
+/// Typed parameter for mixed (text + blob) SQL statements.
+struct DbParam {
+    enum class Kind { Text, Blob, Null };
+    Kind kind = Kind::Null;
+    std::string text;
+    std::vector<uint8_t> blob;
+
+    static DbParam Text(std::string s) {
+        DbParam p; p.kind = Kind::Text; p.text = std::move(s); return p;
+    }
+    static DbParam Blob(const uint8_t* data, size_t size) {
+        DbParam p; p.kind = Kind::Blob; p.blob.assign(data, data + size); return p;
+    }
+    static DbParam Null() { return {}; }
+};
+
+/// Per-column value in an extended result set (text or blob).
+struct DbExtValue {
+    std::string text;            ///< Populated for text/integer columns
+    std::vector<uint8_t> blob;   ///< Populated for BLOB columns
+    bool isBlobColumn = false;   ///< True if column was stored as BLOB
+};
+
+using DbExtRow = std::vector<std::pair<std::string, DbExtValue>>;
+using DbExtResultSet = std::vector<DbExtRow>;
 
 /**
  * Lightweight RAII wrapper around a SQLite3 database connection.
@@ -66,6 +93,12 @@ public:
     /// Execute a parameterized query with positional text parameters.
     DbResultSet queryParams(const std::string& sql,
                             const std::vector<std::string>& params);
+
+    /// Execute a parameterized statement with mixed text/blob parameters.
+    void executeMixed(const std::string& sql, const std::vector<DbParam>& params);
+
+    /// Execute a parameterized query with mixed text/blob parameters.
+    DbExtResultSet queryMixed(const std::string& sql, const std::vector<DbParam>& params);
 
     void beginTransaction();
     void commit();

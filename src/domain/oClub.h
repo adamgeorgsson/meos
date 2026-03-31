@@ -77,6 +77,11 @@ protected:
   void changedObject();
 
 public:
+  // Public oData accessors for repository persistence
+  const BYTE* getOData() const { return oData; }
+  BYTE* getOData() { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   static void loadNameMap();
 
   void nameChanged() { internalSetName(name); }

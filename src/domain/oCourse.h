@@ -64,6 +64,11 @@ protected:
   void fillInput(int id, vector<pair<wstring, size_t>>& out, size_t& selected) override;
 
 public:
+  // Public oData accessors for repository persistence
+  const BYTE* getOData() const { return oData; }
+  BYTE* getOData() { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   int getIdSum(int nControls);
 
   void getClasses(vector<pClass>& usageClass) const;

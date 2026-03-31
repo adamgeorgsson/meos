@@ -103,4 +103,37 @@ std::vector<Migration> SchemaV1::migrations() {
     };
 }
 
+// ---------------------------------------------------------------------------
+// SchemaV2 — adds controls and courses tables
+// ---------------------------------------------------------------------------
+
+std::vector<Migration> SchemaV2::migrations() {
+    auto v = SchemaV1::migrations();
+    v.push_back({
+        2,
+        "Add controls and courses tables",
+        R"sql(
+            CREATE TABLE IF NOT EXISTS controls (
+                id         INTEGER PRIMARY KEY,
+                name       TEXT    NOT NULL DEFAULT '',
+                numbers    TEXT    NOT NULL DEFAULT '',
+                status     INTEGER NOT NULL DEFAULT 0,
+                odata_blob BLOB
+            );
+
+            CREATE TABLE IF NOT EXISTS courses (
+                id                INTEGER PRIMARY KEY,
+                name              TEXT    NOT NULL DEFAULT '',
+                length            INTEGER NOT NULL DEFAULT 0,
+                control_ids       TEXT    NOT NULL DEFAULT '',
+                leg_lengths       TEXT    NOT NULL DEFAULT '',
+                start_control_id  INTEGER NOT NULL DEFAULT 0,
+                finish_control_id INTEGER NOT NULL DEFAULT 0,
+                odata_blob        BLOB
+            );
+        )sql"
+    });
+    return v;
+}
+
 } // namespace meos_db

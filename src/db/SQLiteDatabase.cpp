@@ -197,6 +197,91 @@ DbResultSet SQLiteDatabase::queryParams(const std::string& sql,
 }
 
 // ---------------------------------------------------------------------------
+// Mixed (text + blob) parameterized variants
+// ---------------------------------------------------------------------------
+
+void SQLiteDatabase::executeMixed(const std::string& sql, const std::vector<DbParam>& params) {
+    checkOpen("executeMixed");
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+        throw DbException(makeErrMsg("executeMixed/prepare", rc, sqlite3_errmsg(db_)));
+
+    for (int i = 0; i < static_cast<int>(params.size()); ++i) {
+        const auto& p = params[i];
+        if (p.kind == DbParam::Kind::Text) {
+            rc = sqlite3_bind_text(stmt, i + 1, p.text.c_str(), -1, SQLITE_TRANSIENT);
+        } else if (p.kind == DbParam::Kind::Blob) {
+            rc = sqlite3_bind_blob(stmt, i + 1, p.blob.data(), static_cast<int>(p.blob.size()), SQLITE_TRANSIENT);
+        } else {
+            rc = sqlite3_bind_null(stmt, i + 1);
+        }
+        if (rc != SQLITE_OK) {
+            sqlite3_finalize(stmt);
+            throw DbException(makeErrMsg("executeMixed/bind", rc, sqlite3_errmsg(db_)));
+        }
+    }
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    if (rc != SQLITE_DONE && rc != SQLITE_ROW)
+        throw DbException(makeErrMsg("executeMixed/step", rc, sqlite3_errmsg(db_)));
+}
+
+DbExtResultSet SQLiteDatabase::queryMixed(const std::string& sql, const std::vector<DbParam>& params) {
+    checkOpen("queryMixed");
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+        throw DbException(makeErrMsg("queryMixed/prepare", rc, sqlite3_errmsg(db_)));
+
+    for (int i = 0; i < static_cast<int>(params.size()); ++i) {
+        const auto& p = params[i];
+        if (p.kind == DbParam::Kind::Text) {
+            rc = sqlite3_bind_text(stmt, i + 1, p.text.c_str(), -1, SQLITE_TRANSIENT);
+        } else if (p.kind == DbParam::Kind::Blob) {
+            rc = sqlite3_bind_blob(stmt, i + 1, p.blob.data(), static_cast<int>(p.blob.size()), SQLITE_TRANSIENT);
+        } else {
+            rc = sqlite3_bind_null(stmt, i + 1);
+        }
+        if (rc != SQLITE_OK) {
+            sqlite3_finalize(stmt);
+            throw DbException(makeErrMsg("queryMixed/bind", rc, sqlite3_errmsg(db_)));
+        }
+    }
+
+    DbExtResultSet result;
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        int colCount = sqlite3_column_count(stmt);
+        DbExtRow row;
+        row.reserve(colCount);
+        for (int i = 0; i < colCount; ++i) {
+            const char* colName = sqlite3_column_name(stmt, i);
+            DbExtValue val;
+            int colType = sqlite3_column_type(stmt, i);
+            if (colType == SQLITE_BLOB) {
+                val.isBlobColumn = true;
+                const void* blobData = sqlite3_column_blob(stmt, i);
+                int blobSize = sqlite3_column_bytes(stmt, i);
+                if (blobData && blobSize > 0) {
+                    val.blob.assign(
+                        static_cast<const uint8_t*>(blobData),
+                        static_cast<const uint8_t*>(blobData) + blobSize);
+                }
+            } else if (colType != SQLITE_NULL) {
+                const char* text = reinterpret_cast<const char*>(sqlite3_column_text(stmt, i));
+                val.text = text ? text : "";
+            }
+            row.emplace_back(colName ? colName : "", std::move(val));
+        }
+        result.push_back(std::move(row));
+    }
+    sqlite3_finalize(stmt);
+    if (rc != SQLITE_DONE)
+        throw DbException(makeErrMsg("queryMixed/step", rc, sqlite3_errmsg(db_)));
+    return result;
+}
+
+// ---------------------------------------------------------------------------
 // Transactions
 // ---------------------------------------------------------------------------
 

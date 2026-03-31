@@ -100,6 +100,11 @@ protected:
   void changedObject();
 
 public:
+  // Public oData accessors for repository persistence
+  const BYTE* getOData() const { return oData; }
+  BYTE* getOData() { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   void clearCache();
 
   static int getControlIdByName(const oEvent& oe, const string& name);

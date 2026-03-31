@@ -52,4 +52,11 @@ struct SchemaV1 {
     static std::vector<Migration> migrations();
 };
 
+/**
+ * Schema V2: adds controls and courses tables.
+ */
+struct SchemaV2 {
+    static std::vector<Migration> migrations();
+};
+
 } // namespace meos_db
