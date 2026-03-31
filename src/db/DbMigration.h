@@ -67,4 +67,11 @@ struct SchemaV3 {
     static std::vector<Migration> migrations();
 };
 
+/**
+ * Schema V4: adds events and teams tables.
+ */
+struct SchemaV4 {
+    static std::vector<Migration> migrations();
+};
+
 } // namespace meos_db

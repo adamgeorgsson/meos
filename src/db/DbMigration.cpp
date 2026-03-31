@@ -180,4 +180,39 @@ std::vector<Migration> SchemaV3::migrations() {
     return v;
 }
 
+// ---------------------------------------------------------------------------
+// SchemaV4 — adds events and teams tables
+// ---------------------------------------------------------------------------
+
+std::vector<Migration> SchemaV4::migrations() {
+    auto v = SchemaV3::migrations();
+    v.push_back({
+        4,
+        "Add events and teams tables",
+        R"sql(
+            CREATE TABLE IF NOT EXISTS events (
+                id              INTEGER PRIMARY KEY,
+                name            TEXT    NOT NULL DEFAULT '',
+                date            TEXT    NOT NULL DEFAULT '',
+                zero_time       INTEGER NOT NULL DEFAULT 0,
+                properties_json TEXT    NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS teams (
+                id          INTEGER PRIMARY KEY,
+                name        TEXT    NOT NULL DEFAULT '',
+                club_id     INTEGER NOT NULL DEFAULT 0,
+                class_id    INTEGER NOT NULL DEFAULT 0,
+                start_no    INTEGER NOT NULL DEFAULT 0,
+                start_time  INTEGER NOT NULL DEFAULT 0,
+                finish_time INTEGER NOT NULL DEFAULT 0,
+                status      INTEGER NOT NULL DEFAULT 0,
+                runner_ids  TEXT    NOT NULL DEFAULT '',
+                odata_blob  BLOB
+            );
+        )sql"
+    });
+    return v;
+}
+
 } // namespace meos_db

@@ -11,6 +11,8 @@ add_library(meos_db STATIC
     RunnerRepository.cpp
     CardRepository.cpp
     FreePunchRepository.cpp
+    TeamRepository.cpp
+    EventRepository.cpp
 )
 
 target_include_directories(meos_db PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

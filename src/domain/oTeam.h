@@ -280,6 +280,13 @@ public:
   void printSplits(gdioutput &, const oListInfo *) const {}
   void printStartInfo(gdioutput &, bool) const {}
 
+  // ── Persistence accessors ─────────────────────────────────────────────────────
+  const BYTE* getOData() const { return oData; }
+  BYTE*       getOData()       { return oData; }
+  static int  getODataBlobSize() { return dataSize; }
+  /// Semicolon-separated runner IDs (matches decodeRunners format).
+  std::string getRunnerIdString() const { return getRunners(); }
+
 private:
   int tDuplicateLeg = 0; // always 0 for teams
 
