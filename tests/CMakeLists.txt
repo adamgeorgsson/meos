@@ -109,3 +109,7 @@ target_link_libraries(results_cards_api_test PRIVATE meos_net meos_db meos_domai
 # IOF 3.0 XML import/export tests (US-014a)
 meos_add_test(iof_xml_test iof_xml_test.cpp)
 target_link_libraries(iof_xml_test PRIVATE meos_io meos_domain meos_util)
+
+# CSV import/export tests (US-014b)
+meos_add_test(csv_io_test csv_io_test.cpp)
+target_link_libraries(csv_io_test PRIVATE meos_io meos_domain meos_util)
