@@ -113,3 +113,7 @@ target_link_libraries(iof_xml_test PRIVATE meos_io meos_domain meos_util)
 # CSV import/export tests (US-014b)
 meos_add_test(csv_io_test csv_io_test.cpp)
 target_link_libraries(csv_io_test PRIVATE meos_io meos_domain meos_util)
+
+# HTML result generation tests (US-014c)
+meos_add_test(html_io_test html_io_test.cpp)
+target_link_libraries(html_io_test PRIVATE meos_io meos_domain meos_util)

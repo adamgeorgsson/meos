@@ -283,6 +283,7 @@ struct oListParam {
       useControlIdResultFrom(0),
       filterMaxPer(0),
       alwaysInclude(nullptr),
+      lockUpdate(false),
       pageBreak(false),
       showHeader(true),
       showInterTimes(false),
@@ -313,10 +314,19 @@ struct oListParam {
   {}
 
   EStdListType listCode;
+  set<int> selection;   // selected class IDs (empty = all classes)
+  bool lockUpdate;      // temporary prevent animation update
   int useControlIdResultTo;
   int useControlIdResultFrom;
   int filterMaxPer;
   const oAbstractRunner *alwaysInclude;
+
+  // Returns true if the runner at position count should be included in the list.
+  bool filterInclude(int count, const oAbstractRunner *r) const {
+    if (filterMaxPer > 0 && count >= filterMaxPer)
+      return alwaysInclude != nullptr && alwaysInclude == r;
+    return true;
+  }
   bool pageBreak;
   bool showHeader;
   bool showInterTimes;
