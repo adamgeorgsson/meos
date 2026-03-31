@@ -257,4 +257,9 @@ On 64-bit Linux, `unsigned long` == `uint64_t`. Avoid redundant overloads for:
 - **Error envelope**: `{"error":{"code":<int>,"message":"..."}}` for errors; `{"data":{...}}` for success.
 - **ApiException** hierarchy: throw from route handlers; ApiRouter::wrap() catches and serializes automatically.
 - **Route handler signature**: `json(const Request&)` — return JSON; throws propagate to wrap().
+- **ApiException factory functions**: `badRequest()`, `notFound()`, `conflict()`, `unprocessable()`, `internalError()` — NEVER construct `ApiException(int, string)` directly; the constructor takes `ApiErrorCode` enum.
+- **Protected member access**: `oAbstractRunner::tmpResult` is protected — use public `getTempResult()` accessor. `oCard::cardNo` is protected — use `setCardNo(int c)`.
+- **Card readout flow**: `oCard newCard(&oe); newCard.setCardNo(n); newCard.addPunch(..., oCard::PunchOrigin::Original); pCard pc = oe.addCard(newCard); runner->addCard(pc, missingPunches);` — evaluateCard runs automatically.
+- **Result computation**: Call `oe.calculateResults(classId)` (0=all) to fill `tmpResult` on runners with place/status/runningTime. Access via `r->getTempResult().getPlace()`.
+- **Test port sequence**: CLUBS=18081, CONTROLS=18082, COURSES=18083, CLASSES=18084, RUNNERS=18085, TEAMS=18086, COMPETITION=18087, RESULTS=18088, CARDS=18089.
 
