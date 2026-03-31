@@ -40,3 +40,37 @@ IOF 3.0 XML import/export. Uses the custom xml parser from `src/util/`.
 ## CMakeLists.txt
 All new `.cpp` files must be added to `add_library(meos_io STATIC ...)`.
 The library links `meos_domain` and `meos_util` (PUBLIC).
+
+### PdfWriter (US-014d)
+Cross-platform PDF generation using libharu.
+
+**vcpkg/CMake integration:**
+- vcpkg package name: `libharu` (in vcpkg.json)
+- CMake find_package: `find_package(unofficial-libharu CONFIG REQUIRED)`
+- CMake target: `unofficial::libharu::hpdf`
+- libharu installs into `build/vcpkg_installed/x64-linux/include/`
+
+**Font usage:**
+- Standard Type 1 fonts (no external font files required):
+  - Normal: `"Helvetica"`, Bold: `"Helvetica-Bold"`, Italic: `"Helvetica-Oblique"`
+- Pass `nullptr` as encoding (these are Latin-1 fonts, NOT UTF-8)
+- Use `narrow()` to convert `wstring` to `std::string` before rendering
+
+**libharu coordinate system:**
+- Origin (0,0) is bottom-left; Y increases upward
+- A4 portrait: width=595pt, height=842pt
+
+**In-memory PDF generation (for testing):**
+```cpp
+HPDF_SaveToStream(doc);
+HPDF_UINT32 size = HPDF_GetStreamSize(doc);
+std::vector<unsigned char> buf(size);
+HPDF_ReadFromStream(doc, buf.data(), &size);
+// buf starts with "%PDF-"
+```
+
+**Text vs. graphics mode:**
+- `HPDF_Page_TextOut` / `HPDF_Page_TextWidth` must be called INSIDE `BeginText`/`EndText`
+- `HPDF_Page_MoveTo` / `LineTo` / `Stroke` (lines) must be called OUTSIDE text mode
+
+**Do NOT forward declare HPDF_Doc/HPDF_Page as void\*** — always `#include <hpdf.h>` directly.

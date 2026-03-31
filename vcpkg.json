@@ -9,6 +9,7 @@
       "name": "cpp-httplib",
       "features": []
     },
-    "nlohmann-json"
+    "nlohmann-json",
+    "libharu"
   ]
 }

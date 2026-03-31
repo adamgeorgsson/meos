@@ -117,3 +117,8 @@ target_link_libraries(csv_io_test PRIVATE meos_io meos_domain meos_util)
 # HTML result generation tests (US-014c)
 meos_add_test(html_io_test html_io_test.cpp)
 target_link_libraries(html_io_test PRIVATE meos_io meos_domain meos_util)
+
+
+# PDF generation tests (US-014d)
+meos_add_test(pdf_io_test pdf_io_test.cpp)
+target_link_libraries(pdf_io_test PRIVATE meos_io meos_domain meos_util)
