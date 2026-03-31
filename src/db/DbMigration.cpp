@@ -136,4 +136,48 @@ std::vector<Migration> SchemaV2::migrations() {
     return v;
 }
 
+// ---------------------------------------------------------------------------
+// SchemaV3 — adds classes, cards, free_punches; extends runners
+// ---------------------------------------------------------------------------
+
+std::vector<Migration> SchemaV3::migrations() {
+    auto v = SchemaV2::migrations();
+    v.push_back({
+        3,
+        "Add classes, cards, free_punches; extend runners",
+        R"sql(
+            CREATE TABLE IF NOT EXISTS classes (
+                id         INTEGER PRIMARY KEY,
+                name       TEXT    NOT NULL DEFAULT '',
+                course_id  INTEGER NOT NULL DEFAULT 0,
+                num_legs   INTEGER NOT NULL DEFAULT 1,
+                odata_blob BLOB
+            );
+
+            CREATE TABLE IF NOT EXISTS cards (
+                id            INTEGER PRIMARY KEY,
+                card_no       INTEGER NOT NULL DEFAULT 0,
+                runner_id     INTEGER REFERENCES runners(id) ON DELETE SET NULL,
+                punch_string  TEXT    NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS free_punches (
+                id         INTEGER PRIMARY KEY,
+                card_no    INTEGER NOT NULL DEFAULT 0,
+                type_code  INTEGER NOT NULL DEFAULT 0,
+                time_int   INTEGER NOT NULL DEFAULT 0,
+                runner_id  INTEGER NOT NULL DEFAULT 0
+            );
+
+            ALTER TABLE runners ADD COLUMN class_id    INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE runners ADD COLUMN course_id   INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE runners ADD COLUMN start_no    INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE runners ADD COLUMN start_time  INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE runners ADD COLUMN finish_time INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE runners ADD COLUMN status      INTEGER NOT NULL DEFAULT 0;
+        )sql"
+    });
+    return v;
+}
+
 } // namespace meos_db

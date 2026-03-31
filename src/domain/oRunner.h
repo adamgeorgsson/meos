@@ -83,6 +83,11 @@ protected:
   void changedObject() override;
 
 public:
+  // Public oData accessors for repository persistence
+  const BYTE* getOData() const { return oData; }
+  BYTE* getOData() { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   // ── Constructors / destructor ─────────────────────────────────────────────
   explicit oRunner(oEvent* poe);
   oRunner(oEvent* poe, int id);

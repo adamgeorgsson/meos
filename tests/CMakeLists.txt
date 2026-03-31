@@ -77,3 +77,7 @@ target_link_libraries(db_test PRIVATE meos_db)
 # Repository tests (US-004b)
 meos_add_test(repo_test repo_test.cpp)
 target_link_libraries(repo_test PRIVATE meos_db meos_domain meos_util)
+
+# Runner/Class/Card/FreePunch repository tests (US-004c)
+meos_add_test(runner_class_repo_test runner_class_repo_test.cpp)
+target_link_libraries(runner_class_repo_test PRIVATE meos_db meos_domain meos_util)

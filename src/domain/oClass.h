@@ -306,6 +306,11 @@ protected:
   void configureInstance(int instance, bool allowCreation) const;
 
 public:
+  // Public oData accessors for repository persistence
+  const BYTE* getOData() const { return oData; }
+  BYTE* getOData() { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   struct RogainingAnalysis {
     int bestTime = -1;
     int lostTime = -1;
@@ -459,6 +464,8 @@ public:
   void setLegRunner(int leg, int runnerNo);
   int getNumMultiRunners(int leg) const;
   int getNumLegNoParallel() const;
+  /// Total number of legs (including parallel).
+  int getNumLegs() const { return (int)legInfo.size(); }
 
   bool splitLegNumberParallel(int leg, int &legNumber, int &legOrder) const;
   int getLegNumberLinear(int legNumber, int legOrder) const;

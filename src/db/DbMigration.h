@@ -59,4 +59,12 @@ struct SchemaV2 {
     static std::vector<Migration> migrations();
 };
 
+/**
+ * Schema V3: adds classes, cards, free_punches tables;
+ * extends runners with class_id, course_id, start_no, start_time, finish_time, status.
+ */
+struct SchemaV3 {
+    static std::vector<Migration> migrations();
+};
+
 } // namespace meos_db
