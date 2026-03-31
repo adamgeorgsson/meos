@@ -19,7 +19,7 @@ typedef oTeam* pTeam;
 typedef const oTeam* cTeam;
 class oSpeakerObject;
 struct SICard;
-class gdioutput;
+
 class oListInfo;
 
 // ── RunnerStatus enum ─────────────────────────────────────────────────────────

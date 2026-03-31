@@ -130,7 +130,7 @@ public:
 
   int getTeamFee() const;
 
-  void removeRunner(gdioutput &gdi, bool askRemoveRunner, int runnerIx);
+  void removeRunner(int runnerIx);
 
   wstring getEntryDate(bool dummy) const;
 
@@ -275,10 +275,6 @@ public:
   RunnerStatus getTotalStatus(bool computed) const override {
     return getStatusComputed(computed);
   }
-
-  // ── GUI/table stubs ───────────────────────────────────────────────────────────
-  void printSplits(gdioutput &, const oListInfo *) const {}
-  void printStartInfo(gdioutput &, bool) const {}
 
   // ── Persistence accessors ─────────────────────────────────────────────────────
   const BYTE* getOData() const { return oData; }

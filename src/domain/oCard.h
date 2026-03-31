@@ -30,7 +30,6 @@
 
 typedef list<oPunch> oPunchList;
 
-class gdioutput;
 class oCard;
 typedef oCard* pCard;
 class xmlparser;
@@ -123,8 +122,6 @@ public:
 
   void deletePunch(pPunch pp);
   void insertPunchAfter(int pos, int type, int time);
-
-  bool fillPunches(gdioutput& gdi, const string& name, oCourse* crs);
 
   /** Get a (candidate) incorrect punch for the specified missing control on the course */
   pair<int, pControl> getWrongPunch(const oCourse& crs, const oControl& ctrl);

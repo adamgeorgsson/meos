@@ -1,9 +1,7 @@
 // oDataContainer.cpp — Data field container implementation.
-// Win32 types replaced; GUI/Table methods are no-op stubs on non-Win32 builds.
 
 #include "oDataContainer.h"
 #include "oEvent.h"
-#include "../util/gdioutput.h"  // gdioutput/InputInfo interface
 #include "../util/Table.h"      // Table stub + TID_* constants
 #include "../util/xmlparser.h"
 #include "../util/meos_util.h"
@@ -516,26 +514,6 @@ void oDataContainer::set(oBase *ob, const xmlobject &xo) {
     }
   }
   allDataStored(ob);
-}
-
-// ── GUI/Table methods (stubs — do nothing on non-Win32 builds) ────────────────
-
-vector<InputInfo *> oDataContainer::buildDataFields(gdioutput & /*gdi*/,
-                                                     int /*maxFieldSize*/) const {
-  return {};
-}
-
-vector<InputInfo *> oDataContainer::buildDataFields(gdioutput & /*gdi*/,
-                                                     const vector<string> & /*fields*/,
-                                                     int /*maxFieldSize*/) const {
-  return {};
-}
-
-void oDataContainer::fillDataFields(const oBase * /*ob*/, gdioutput & /*gdi*/) const {}
-
-bool oDataContainer::saveDataFields(oBase * /*ob*/, gdioutput & /*gdi*/,
-                                     std::set<string> & /*modified*/) {
-  return false;
 }
 
 void oDataContainer::buildTableCol(Table * /*table*/) {}

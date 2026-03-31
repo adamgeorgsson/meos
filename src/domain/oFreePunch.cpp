@@ -19,7 +19,6 @@
 #include "../util/localizer.h"
 #include "../util/xmlparser.h"
 
-#include "../util/gdioutput.h"
 #include "../util/Table.h"
 
 #include <algorithm>

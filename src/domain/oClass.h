@@ -14,7 +14,6 @@ class GeneralResult;
 class oRunner;
 class QualificationFinal;
 class xmlparser;
-class gdioutput;
 
 const int MaxClassId = 1000000;
 
@@ -547,11 +546,6 @@ public:
 
   void Set(const xmlobject *xo);
   bool Write(xmlparser &xml);
-
-  // GUI-coupled methods — stubbed (Table/gdioutput)
-  bool fillStageCourses(gdioutput &gdi, int stage, const string &name) const;
-  static void fillStartTypes(gdioutput &gdi, const string &name, bool firstLeg);
-  static void fillLegTypes(gdioutput &gdi, const string &name);
 
   pCourse getCourse(bool getSampleFromRunner = false) const;
   void getCourses(int leg, vector<pCourse> &courses) const;

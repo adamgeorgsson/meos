@@ -20,7 +20,6 @@
 
 ************************************************************************/
 // Cross-platform generalresult.cpp — stripped Win32/gdioutput dependencies.
-#include "../util/gdioutput.h"
 #include "../util/Table.h"
 #include <algorithm>
 #include <string>

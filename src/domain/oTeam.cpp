@@ -2,7 +2,6 @@
 // Ported from code/oTeam.cpp + code/oTeamEvent.cpp.
 // Cross-platform, no Win32 / GUI dependencies.
 
-#include "../util/gdioutput.h"
 #include "../util/Table.h"
 #include "oEvent.h"
 #include "oTeam.h"
@@ -1661,9 +1660,9 @@ void oTeam::merge(const oBase &input, const oBase *baseIn) {
   synchronize(true);
 }
 
-// ── removeRunner (GUI helper — simplified) ────────────────────────────────────
+// ── removeRunner ──────────────────────────────────────────────────────────────
 
-void oTeam::removeRunner(gdioutput &/*gdi*/, bool /*askRemoveRunner*/, int i) {
+void oTeam::removeRunner(int i) {
   setRunner(i, nullptr, true);
   if (Class) {
     for (unsigned k = i + 1; k < Class->getNumStages(); k++)

@@ -5,7 +5,6 @@
 #define DODECLARETYPESYMBOLS
 #include "oClass.h"
 #include "oEvent.h"
-#include "../util/gdioutput.h"
 #include "../util/Table.h"
 #include "oDataContainer.h"
 #include "../util/meos_util.h"
@@ -2488,17 +2487,6 @@ void oClass::drawSeeded(ClassSeedMethod /*seed*/, int /*leg*/, int /*firstStart*
                          bool /*noClubNb*/, bool /*reverse*/, int /*pairSize*/) {
   // Stub — requires oRunner; deferred to US-003g
 }
-
-// ── GUI-coupled methods (stubbed) ─────────────────────────────────────────────
-
-bool oClass::fillStageCourses(gdioutput &gdi, int stage, const string &name) const {
-  if (unsigned(stage) >= MultiCourse.size())
-    return false;
-  return true;
-}
-
-void oClass::fillStartTypes(gdioutput & /*gdi*/, const string & /*name*/, bool /*firstLeg*/) {}
-void oClass::fillLegTypes(gdioutput & /*gdi*/, const string & /*name*/) {}
 
 void oClass::addTableRow(Table & /*table*/) const {}
 

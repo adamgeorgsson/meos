@@ -1,7 +1,6 @@
 // oRunner.cpp — oRunner and oAbstractRunner implementation (US-003g).
 // Cross-platform, no Win32 / GUI dependencies.
 
-#include "../util/gdioutput.h"  // gdioutput/InputInfo interface
 #include "../util/Table.h"      // Table stub + TID_* constants
 #include "oRunner.h"
 #include "oEvent.h"
@@ -679,18 +678,6 @@ bool oRunner::Write(xmlparser& /*xml*/) {
 
 void oRunner::Set(const xmlobject& /*xo*/) {
   // Stub — full impl in a later US
-}
-
-// ── oRunner::printSplits ──────────────────────────────────────────────────────
-
-void oRunner::printSplits(gdioutput& /*gdi*/, const oListInfo* /*li*/) const {
-  // Stub
-}
-
-// ── oRunner::printStartInfo ───────────────────────────────────────────────────
-
-void oRunner::printStartInfo(gdioutput& /*gdi*/, bool /*addTeam*/) const {
-  // Stub
 }
 
 // ── oRunner::fillSpeakerObject ────────────────────────────────────────────────

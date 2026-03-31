@@ -232,8 +232,6 @@ public:
   void fillInput(int id, vector<pair<wstring, size_t>>& elements, size_t& selected) override;
 
   // ── GUI/output stubs ─────────────────────────────────────────────────────
-  void printSplits(gdioutput& gdi, const oListInfo* li) const;
-  void printStartInfo(gdioutput& gdi, bool addTeam) const;
   void fillSpeakerObject(int leg, int controlCourseId, int expectedFinishTime,
                           bool totalResult, oSpeakerObject& spk) const;
   void addTableRow(Table& table) const;

@@ -9,10 +9,6 @@
 #include "inthashmap.h"
 #include "../util/Table.h"
 
-// Forward declarations for GUI types (defined in src/util/gdioutput.h / gdistructures.h)
-class InputInfo;
-class gdioutput;
-
 constexpr int MaxVarNameLength = 28;
 
 class oDataDefiner {
@@ -194,13 +190,6 @@ public:
 
   int getDataAmountMeasure(const void *data) const;
 
-  // GUI methods — implemented as stubs in non-Win32 builds
-  vector<InputInfo *> buildDataFields(gdioutput &gdi, int maxFieldSize) const;
-  vector<InputInfo *> buildDataFields(gdioutput &gdi, const vector<string> &fields,
-                                       int maxFieldSize) const;
-  void fillDataFields(const oBase *ob, gdioutput &gdi) const;
-  bool saveDataFields(oBase *ob, gdioutput &gdi, std::set<string> &modified);
-
   int fillTableCol(const oBase &owner, Table &table, bool canEdit) const;
   void buildTableCol(Table *table);
   pair<int, bool> inputData(oBase *ob, int id, const wstring &input, int inputId,
@@ -279,18 +268,6 @@ public:
   }
   inline const wstring &getDate(const char *name) const { return oDC->getDate(Data, name); }
   inline int getYear(const char *name) const { return oDC->getYear(Data, name); }
-
-  inline vector<InputInfo *> buildDataFields(gdioutput &gdi, int maxFieldSize) const {
-    return oDC->buildDataFields(gdi, maxFieldSize);
-  }
-  inline vector<InputInfo *> buildDataFields(gdioutput &gdi, const vector<string> &fields,
-                                              int maxFieldSize) const {
-    return oDC->buildDataFields(gdi, fields, maxFieldSize);
-  }
-  inline void fillDataFields(gdioutput &gdi) const { oDC->fillDataFields(oB, gdi); }
-  inline bool saveDataFields(gdioutput &gdi, std::set<string> &modified) {
-    return oDC->saveDataFields(oB, gdi, modified);
-  }
 
   inline string generateSQLDefinition() const {
     return oDC->generateSQLDefinition(std::set<string>());
