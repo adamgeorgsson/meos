@@ -69,3 +69,7 @@ target_link_libraries(event_test PRIVATE meos_domain meos_util)
 # GeneralResult + result engine tests (US-003j)
 meos_add_test(generalresult_test generalresult_test.cpp)
 target_link_libraries(generalresult_test PRIVATE meos_domain meos_util)
+
+# SQLite database + migration tests (US-004a)
+meos_add_test(db_test db_test.cpp)
+target_link_libraries(db_test PRIVATE meos_db)
