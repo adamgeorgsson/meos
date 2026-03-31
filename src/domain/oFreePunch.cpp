@@ -19,8 +19,8 @@
 #include "../util/localizer.h"
 #include "../util/xmlparser.h"
 
-#define MEOS_DOM_STUBS_IMPL
-#include "meos_dom_stubs.h"
+#include "../util/gdioutput.h"
+#include "../util/Table.h"
 
 #include <algorithm>
 #include <cassert>

@@ -20,7 +20,8 @@
 
 ************************************************************************/
 // Cross-platform generalresult.cpp — stripped Win32/gdioutput dependencies.
-#include "meos_dom_stubs.h"
+#include "../util/gdioutput.h"
+#include "../util/Table.h"
 #include <algorithm>
 #include <string>
 #include <set>

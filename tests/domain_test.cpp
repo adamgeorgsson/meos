@@ -246,6 +246,41 @@ TEST_F(DomainTest, ExtId_ZeroReturnsEmpty) {
   EXPECT_EQ(entity->getExtIdentifierString(), L"");
 }
 
+// ── oDataConstInterface (getDCI) — read-only access ───────────────────────────
+
+TEST_F(DomainTest, DataConstInterface_ReadInt) {
+  // Write via mutable interface, read back via const interface
+  entity->getDI().setInt("MyInt", 55);
+  const TestEntity* ce = entity.get();
+  auto dci = ce->getDCI();
+  EXPECT_EQ(dci.getInt("MyInt"), 55);
+}
+
+TEST_F(DomainTest, DataConstInterface_ReadString) {
+  // "Name" field is 32 bytes; on Linux 4-byte wchar_t gives max 7 chars.
+  entity->getDI().setString("Name", L"Alice");
+  const TestEntity* ce = entity.get();
+  auto dci = ce->getDCI();
+  EXPECT_EQ(dci.getString("Name"), L"Alice");
+}
+
+// ── oDataInterface tracks mutations ──────────────────────────────────────────
+
+TEST_F(DomainTest, DataInterface_MutationMarksChanged) {
+  EXPECT_FALSE(entity->isChanged());
+  entity->getDI().setInt("MyInt", 123);
+  EXPECT_TRUE(entity->isChanged());
+}
+
+TEST_F(DomainTest, DataInterface_SameValueNoChange) {
+  entity->getDI().setInt("MyInt", 77);
+  entity->changed = false;  // reset (private, but tests use #define private public)
+  // Setting same value should NOT mark changed
+  bool modified = entity->getDI().setInt("MyInt", 77);
+  EXPECT_FALSE(modified);
+  EXPECT_FALSE(entity->isChanged());
+}
+
 // ── DataRevisionCache ─────────────────────────────────────────────────────────
 
 TEST_F(DomainTest, DataRevisionCache_NeedsUpdateInitially) {

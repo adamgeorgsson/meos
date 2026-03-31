@@ -3,7 +3,8 @@
 
 #include "oDataContainer.h"
 #include "oEvent.h"
-#include "meos_dom_stubs.h"   // Table, gdioutput, InputInfo stubs
+#include "../util/gdioutput.h"  // gdioutput/InputInfo interface
+#include "../util/Table.h"      // Table stub + TID_* constants
 #include "../util/xmlparser.h"
 #include "../util/meos_util.h"
 #include "../util/localizer.h"

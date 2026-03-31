@@ -1,7 +1,8 @@
 // oEventResult.cpp — Result computation (US-003i).
 // Cross-platform, no Win32 dependencies.
 
-#include "meos_dom_stubs.h"
+#include "../util/gdioutput.h"
+#include "../util/Table.h"
 #include "oEvent.h"
 #include "oRunner.h"
 #include "oClass.h"

@@ -1,7 +1,8 @@
 // oRunner.cpp — oRunner and oAbstractRunner implementation (US-003g).
 // Cross-platform, no Win32 / GUI dependencies.
 
-#include "meos_dom_stubs.h"   // gdioutput, Table stubs — MUST be first
+#include "../util/gdioutput.h"  // gdioutput/InputInfo interface
+#include "../util/Table.h"      // Table stub + TID_* constants
 #include "oRunner.h"
 #include "oEvent.h"
 #include "oDataContainer.h"

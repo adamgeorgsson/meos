@@ -1,7 +1,8 @@
 // oEventDraw.cpp — Start list draw and sorting (US-003i).
 // Cross-platform, no Win32 dependencies.
 
-#include "meos_dom_stubs.h"
+#include "../util/gdioutput.h"
+#include "../util/Table.h"
 #include "oBase.h"
 #include "oEvent.h"
 #include "oRunner.h"

@@ -7,12 +7,11 @@
 
 #include "oBase.h"
 #include "inthashmap.h"
-#include "TableType.h"
+#include "../util/Table.h"
 
-// Forward declarations for GUI types (defined in meos_dom_stubs.h / gdistructures.h)
+// Forward declarations for GUI types (defined in src/util/gdioutput.h / gdistructures.h)
 class InputInfo;
 class gdioutput;
-class Table;
 
 constexpr int MaxVarNameLength = 28;
 

@@ -24,7 +24,8 @@
 #include "oClub.h"
 #include "oDataContainer.h"
 #include "oEvent.h"
-#include "meos_dom_stubs.h"
+#include "../util/gdioutput.h"
+#include "../util/Table.h"
 
 #include "../util/meos_util.h"
 #include "../util/xmlparser.h"

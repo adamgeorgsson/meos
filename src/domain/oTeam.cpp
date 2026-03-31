@@ -2,7 +2,8 @@
 // Ported from code/oTeam.cpp + code/oTeamEvent.cpp.
 // Cross-platform, no Win32 / GUI dependencies.
 
-#include "meos_dom_stubs.h"
+#include "../util/gdioutput.h"
+#include "../util/Table.h"
 #include "oEvent.h"
 #include "oTeam.h"
 #include "oDataContainer.h"
