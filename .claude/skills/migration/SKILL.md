@@ -261,5 +261,9 @@ On 64-bit Linux, `unsigned long` == `uint64_t`. Avoid redundant overloads for:
 - **Protected member access**: `oAbstractRunner::tmpResult` is protected — use public `getTempResult()` accessor. `oCard::cardNo` is protected — use `setCardNo(int c)`.
 - **Card readout flow**: `oCard newCard(&oe); newCard.setCardNo(n); newCard.addPunch(..., oCard::PunchOrigin::Original); pCard pc = oe.addCard(newCard); runner->addCard(pc, missingPunches);` — evaluateCard runs automatically.
 - **Result computation**: Call `oe.calculateResults(classId)` (0=all) to fill `tmpResult` on runners with place/status/runningTime. Access via `r->getTempResult().getPlace()`.
-- **Test port sequence**: CLUBS=18081, CONTROLS=18082, COURSES=18083, CLASSES=18084, RUNNERS=18085, TEAMS=18086, COMPETITION=18087, RESULTS=18088, CARDS=18089.
+- **Test port sequence**: CLUBS=18081, CONTROLS=18082, COURSES=18083, CLASSES=18084, RUNNERS=18085, TEAMS=18086, COMPETITION=18087, RESULTS=18088, CARDS=18089, STATIC=18090.
+- **Static file serving**: `server.serveStatic(webRoot)` calls `set_mount_point("/", webRoot)` + installs SPA fallback in error_handler. SPA fallback: if `res.status==404 && method=="GET" && path doesn't contain "/api/"`, serve `webRoot + "/index.html"` with status 200. API 404s bypass the fallback.
+- **Gzip compression**: Add `"features": ["zlib"]` to cpp-httplib entry in vcpkg.json. This links zlib and defines `CPPHTTPLIB_ZLIB_SUPPORT`, enabling automatic gzip compression for clients that send `Accept-Encoding: gzip`.
+- **Frontend build integration**: Use `add_custom_target(meos_web_build COMMAND npm install --prefer-offline COMMAND npm run build -- --outDir "${CMAKE_SOURCE_DIR}/web" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/src/ui/web" VERBATIM)` + `add_dependencies(meos meos_web_build)`. Wrap in `if(NPM_EXECUTABLE)`. Add `web/` to `.gitignore`.
+- **set_mount_point MIME support**: cpp-httplib handles html/js/css/svg/png/woff2 automatically. No manual MIME type registration needed for standard web assets.
 
