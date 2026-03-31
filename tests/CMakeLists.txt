@@ -122,3 +122,7 @@ target_link_libraries(html_io_test PRIVATE meos_io meos_domain meos_util)
 # PDF generation tests (US-014d)
 meos_add_test(pdf_io_test pdf_io_test.cpp)
 target_link_libraries(pdf_io_test PRIVATE meos_io meos_domain meos_util)
+
+# Static file serving tests (US-011)
+meos_add_test(static_file_test static_file_test.cpp)
+target_link_libraries(static_file_test PRIVATE meos_net meos_domain meos_util)

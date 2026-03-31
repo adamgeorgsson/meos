@@ -39,6 +39,23 @@ add_subdirectory(src/app)
 add_executable(meos src/main.cpp)
 target_link_libraries(meos PRIVATE meos_app)
 
+# React frontend build integration (US-011)
+# Runs `npm run build -- --outDir {project_root}/web/` as part of the CMake build.
+# Frontend output lands in {CMAKE_SOURCE_DIR}/web/ where the server can serve it.
+find_program(NPM_EXECUTABLE npm)
+if(NPM_EXECUTABLE)
+  add_custom_target(meos_web_build
+    COMMAND ${NPM_EXECUTABLE} install --prefer-offline
+    COMMAND ${NPM_EXECUTABLE} run build -- --outDir "${CMAKE_SOURCE_DIR}/web"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/src/ui/web"
+    COMMENT "Building React frontend (outDir: ${CMAKE_SOURCE_DIR}/web)"
+    VERBATIM
+  )
+  add_dependencies(meos meos_web_build)
+else()
+  message(STATUS "npm not found — skipping React frontend build")
+endif()
+
 # Testing
 enable_testing()
 add_subdirectory(tests)

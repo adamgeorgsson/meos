@@ -2,6 +2,7 @@
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 #include <atomic>
+#include <fstream>
 #include <functional>
 #include <stdexcept>
 #include <string>
@@ -17,37 +18,22 @@ namespace meos_net {
 class HttpServer {
 public:
     HttpServer() {
-        // Centralized error handler for 404 and unhandled paths.
-        // Only override body when the route handler hasn't already set one.
-        _srv.set_error_handler([](const httplib::Request& /*req*/, httplib::Response& res) {
-            if (!res.body.empty()) return; // route handler already wrote a response
-            nlohmann::json body{{"error", {{"code", res.status}, {"message", httplib::status_message(res.status)}}}};
-            res.set_content(body.dump(), "application/json");
-        });
-
-        // Centralized exception handler — catches anything that escapes a raw handler
-        _srv.set_exception_handler([](const httplib::Request& /*req*/, httplib::Response& res, std::exception_ptr ep) {
-            try {
-                if (ep) std::rethrow_exception(ep);
-                nlohmann::json body{{"error", {{"code", 500}, {"message", "Unknown error"}}}};
-                res.set_content(body.dump(), "application/json");
-                res.status = 500;
-            } catch (const ApiException& ex) {
-                nlohmann::json body{{"error", {{"code", ex.httpStatus()}, {"message", ex.message()}}}};
-                res.set_content(body.dump(), "application/json");
-                res.status = ex.httpStatus();
-            } catch (const std::exception& ex) {
-                nlohmann::json body{{"error", {{"code", 500}, {"message", ex.what()}}}};
-                res.set_content(body.dump(), "application/json");
-                res.status = 500;
-            }
-        });
+        installErrorHandler("");
     }
 
     ~HttpServer() { stop(); }
 
     // Return the router for registering /api/v1/* routes.
     ApiRouter router() { return ApiRouter(_srv); }
+
+    // Serve static files from webRoot directory.
+    // Implements SPA fallback: non-API GET 404s serve index.html.
+    // Must be called before start().
+    void serveStatic(const std::string& webRoot) {
+        _webRoot = webRoot;
+        _srv.set_mount_point("/", webRoot);
+        installErrorHandler(webRoot);
+    }
 
     // Start listening on the given host:port in a background thread.
     // Throws std::runtime_error if the server fails to bind.
@@ -72,9 +58,55 @@ public:
     httplib::Server& raw() { return _srv; }
 
 private:
+    // Install (or replace) the error handler.
+    // When webRoot is non-empty, 404 GET requests that don't match /api/
+    // are redirected to index.html for SPA client-side routing.
+    void installErrorHandler(const std::string& webRoot) {
+        _srv.set_error_handler([webRoot](const httplib::Request& req, httplib::Response& res) {
+            // SPA fallback: serve index.html for unmatched non-API GET requests
+            if (!webRoot.empty() &&
+                res.status == 404 &&
+                req.method == "GET" &&
+                req.path.find("/api/") == std::string::npos)
+            {
+                std::ifstream f(webRoot + "/index.html", std::ios::binary);
+                if (f) {
+                    std::string content((std::istreambuf_iterator<char>(f)),
+                                        std::istreambuf_iterator<char>());
+                    res.set_content(content, "text/html");
+                    res.status = 200;
+                    return;
+                }
+            }
+            if (!res.body.empty()) return;
+            nlohmann::json body{{"error", {{"code", res.status},
+                {"message", httplib::status_message(res.status)}}}};
+            res.set_content(body.dump(), "application/json");
+        });
+
+        // Centralized exception handler
+        _srv.set_exception_handler([](const httplib::Request& /*req*/, httplib::Response& res, std::exception_ptr ep) {
+            try {
+                if (ep) std::rethrow_exception(ep);
+                nlohmann::json body{{"error", {{"code", 500}, {"message", "Unknown error"}}}};
+                res.set_content(body.dump(), "application/json");
+                res.status = 500;
+            } catch (const ApiException& ex) {
+                nlohmann::json body{{"error", {{"code", ex.httpStatus()}, {"message", ex.message()}}}};
+                res.set_content(body.dump(), "application/json");
+                res.status = ex.httpStatus();
+            } catch (const std::exception& ex) {
+                nlohmann::json body{{"error", {{"code", 500}, {"message", ex.what()}}}};
+                res.set_content(body.dump(), "application/json");
+                res.status = 500;
+            }
+        });
+    }
+
     httplib::Server _srv;
     std::thread     _thread;
     std::atomic<bool> _running{false};
+    std::string     _webRoot;
 };
 
 } // namespace meos_net

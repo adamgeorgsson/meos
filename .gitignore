@@ -32,6 +32,9 @@ dist/
 # vcpkg
 vcpkg_installed/
 
+# React frontend build output (served by C++ server)
+web/
+
 # Editor/tool cache
 .cache/
 
