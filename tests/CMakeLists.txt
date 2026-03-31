@@ -105,3 +105,7 @@ target_link_libraries(runners_teams_competition_api_test PRIVATE meos_net meos_d
 # Results + Cards REST API tests (US-006)
 meos_add_test(results_cards_api_test results_cards_api_test.cpp)
 target_link_libraries(results_cards_api_test PRIVATE meos_net meos_db meos_domain meos_util)
+
+# IOF 3.0 XML import/export tests (US-014a)
+meos_add_test(iof_xml_test iof_xml_test.cpp)
+target_link_libraries(iof_xml_test PRIVATE meos_io meos_domain meos_util)
