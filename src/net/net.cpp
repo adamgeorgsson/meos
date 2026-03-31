@@ -1,1 +1,1 @@
-// meos_net placeholder — implementations will be added in US-005*
+// meos_net — REST API framework (US-005a)

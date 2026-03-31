@@ -245,4 +245,16 @@ On 64-bit Linux, `unsigned long` == `uint64_t`. Avoid redundant overloads for:
 4. **Localization** uses `#` as separator for substitutions. Placeholders `X, Y, Z, W` must be in both key and translation.
 5. **Static members and globals** (like `lang`) need careful handling in modular builds.
 6. **oEvent.cpp** is massive — don't try full migration in one step. Use a minimal skeleton initially.
+7. **cpp-httplib `set_error_handler`** is called even when a route handler explicitly sets a 4xx/5xx status — it will overwrite the handler's JSON body. Guard with `if (!res.body.empty()) return;` at the top of the error handler to preserve route-handler-set bodies.
+8. **cpp-httplib integration tests**: After `server.start()`, sleep ~50ms before sending client requests to ensure `listen_after_bind()` thread is ready.
+
+### 16. REST API Layer (src/net/)
+
+- **cpp-httplib CMake**: `find_package(httplib CONFIG REQUIRED)` + `target_link_libraries(... httplib::httplib)`.
+- **nlohmann-json CMake**: `find_package(nlohmann_json CONFIG REQUIRED)` + `target_link_libraries(... nlohmann_json::nlohmann_json)`.
+- **Non-blocking server**: `srv.bind_to_port(host, port)` then `srv.listen_after_bind()` in a `std::thread`.
+- **API versioning**: All routes use `/api/v1/` prefix — ApiRouter::prefix() adds it automatically.
+- **Error envelope**: `{"error":{"code":<int>,"message":"..."}}` for errors; `{"data":{...}}` for success.
+- **ApiException** hierarchy: throw from route handlers; ApiRouter::wrap() catches and serializes automatically.
+- **Route handler signature**: `json(const Request&)` — return JSON; throws propagate to wrap().
 

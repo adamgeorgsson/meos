@@ -85,3 +85,7 @@ target_link_libraries(runner_class_repo_test PRIVATE meos_db meos_domain meos_ut
 # Event and Team repository tests (US-004d)
 meos_add_test(event_team_repo_test event_team_repo_test.cpp)
 target_link_libraries(event_team_repo_test PRIVATE meos_db meos_domain meos_util)
+
+# REST API framework tests (US-005a)
+meos_add_test(api_test api_test.cpp)
+target_link_libraries(api_test PRIVATE meos_net meos_domain meos_util)
