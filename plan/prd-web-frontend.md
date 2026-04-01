@@ -33,12 +33,24 @@ These patterns were discovered during previous Ralph runs and should be followed
 - Use `import type` for all TypeScript interfaces/types
 - Backend: XML API at `/meos`, Frontend: JSON REST API at `/api/v1`
 - Use `NavLink` for active route highlighting
-- Tailwind 4 for styling (CSS-first approach)
+- Tailwind v4: `@tailwindcss/vite` plugin + `@import "tailwindcss"` in CSS (no tailwind.config.js)
+- react-router-dom v6+ has built-in types; `@types/react-router-dom` is not needed
+- Vitest: `setupFiles: ["./src/test-setup.ts"]` with `import "@testing-library/jest-dom"` for testing-library matchers
 - Use generic `DataTable` component for entity lists with sorting, filtering, and pagination.
+- `DataTable` supports row selection with `enableSelection` prop.
+- CRUD pages: use `renderRowActions` on DataTable for per-row Edit/Delete buttons with `opacity-0 group-hover:opacity-100 transition-opacity`
+- CRUD pages: close form/confirm dialogs optimistically (before mutation completes); `onSuccess` invalidation refreshes the list
 - Use `zod` for form validation and `react-hook-form` for form management.
 - Reuse standard form components (`FormField`, `FormInput`, `FormSelect`, `SearchableSelect`) for consistent styling and validation.
 - Use `size` property on `FormDialog` ('sm', 'md', 'lg', 'xl') to handle complex forms with varying width requirements.
-- `DataTable` supports row selection with `enableSelection` prop.
+- Number form fields: `register("field", { valueAsNumber: true })` + `z.number()`; reset with `NaN` for blank state; zod rejects NaN
+- React Query v5: `useMutation` takes options as only argument; `useUpdateEntity` uses `{ id, data }` pattern; `useCreateEntity` uses `Omit<T, "id">`
+- Mock `globalThis.fetch` with `vi.spyOn(globalThis, "fetch")` for API client unit tests (no MSW needed)
+- MSW v2: `http.get/post/put/delete` + `HttpResponse.json()` (not `rest.*`); `msw/browser` for dev, `msw/node` for tests
+- Auto-refresh: optional `refetchInterval` param in hooks; use `isLoading` for loading UI (not `isFetching`) to avoid flicker during background polls
+- For expandable table rows, use plain `<table>` with `<Fragment key={...}>` (DataTable doesn't support expandable rows)
+- `URL.createObjectURL`/`revokeObjectURL` need `Object.defineProperty` stubs in test-setup.ts (jsdom doesn't implement them)
+- Client-side CSV: `Papa.unparse` + Blob + temporary `<a>` click pattern; IOF XML: backend endpoint + same Blob download pattern
 
 ## User Stories
 
@@ -58,6 +70,19 @@ These patterns were discovered during previous Ralph runs and should be followed
 - API client should be generated from or match the API contract types
 - Vite proxy config for development: `proxy: { '/api': 'http://localhost:<port>' }`
 - Consider a mock API layer (MSW or similar) for frontend-only development
+
+**Learnings from Previous Runs:**
+- `navLinkClass` function pattern `({ isActive }) => ...` works well with NavLink's className prop for active state styling.
+- Tailwind responsive `md:static` and `md:translate-x-0` override mobile `fixed -translate-x-full` sidebar. Overlay div toggles with `sidebarOpen` state.
+- `fetch` response with status 204 (No Content) must short-circuit before `.json()` to avoid parse errors.
+- `void queryClient.invalidateQueries(...)` suppresses floating-promise lint warnings in `onSuccess` callbacks.
+- MSW: `onUnhandledRequest: "warn"` is safer than `"error"` when mixing MSW-based tests with fetch-spy tests.
+- MSW: `main.tsx` must be async (`bootstrap()`) to `await worker.start()` before rendering.
+- Zod v4: `z.number({ invalid_type_error })` is removed; use `zodResolver(schema as any)` or `as never` for type inference edge cases.
+- FormInput/FormSelect use `forwardRef` for react-hook-form `register()` compatibility; SearchableSelect is controlled (use `Controller`).
+- `handleSubmit(onSubmit)()` double-call: `handleSubmit` returns a function, so `onSave={() => handleSubmit(onSubmit)()}` is required.
+- DataTable sorting: track `sortKey` + `sortDir` separately with three-click cycle (null→asc→desc→null).
+- DataTable pagination: use `Math.min(page, pageCount - 1)` to avoid stale page index when filter reduces results.
 
 ### US-008: Web GUI — Competition Management
 
@@ -88,6 +113,14 @@ These patterns were discovered during previous Ralph runs and should be followed
 - The DataTable and FormDialog components are highly reusable for standard CRUD entities — follow the established pattern.
 - Standardized the `useUpdateEntity` hook pattern: use `{ id, data }` object for update mutations.
 - Optional string fields in zod should use `.optional().or(z.literal(''))` if the form might return an empty string.
+- Competition is a singleton endpoint (GET/PUT `/api/v1/competitions`): use `useQuery`/`useMutation` directly, not the generic CRUD hooks.
+- `zodResolver(schema) as never` cleanly suppresses zod v4 type inference issues with complex schemas.
+- Always call `reset({ ...entity })` before opening edit dialog to ensure form is pre-filled with current values.
+- Optional number fields: use string type in zod (`z.string().optional().or(z.literal(""))`) and convert to number in `onSubmit` (avoids NaN rejection with `z.number().optional()`).
+- `ControlSequenceBuilder` is managed as separate `useState<number[]>` outside react-hook-form, then merged into mutation data in `onSubmit`.
+- FormSelect FK pre-fill: use `String(entity.fkId)` for reset value (empty string for undefined).
+- Column accessor can close over parent scope data: `accessor: (c) => courses.find(...)?.name ?? ""` (columns defined inside component).
+- `fireEvent.change(input, { target: { value: "200", valueAsNumber: 200 } })` for number inputs in tests with `valueAsNumber: true`.
 
 ### US-009: Web GUI — Runner & Team Management
 
@@ -116,6 +149,11 @@ These patterns were discovered during previous Ralph runs and should be followed
 - `FormDialog` and `ConfirmDialog` use `open` instead of `isOpen`, and `FormDialog` uses `onSave` instead of `onSubmit`.
 - `handleSubmit` from `react-hook-form` returns a function that expects an optional event; when used in a custom `onSave` handler, it must be called explicitly as `() => handleSubmit(onSubmit)()`.
 - Used `as any` for `zodResolver` to bypass complex type inference issues between Zod's coerced types and the expected form values — pragmatic for rapid development but should be investigated for a cleaner fix.
+- Use `<Controller>` to wrap SearchableSelect with react-hook-form: `render={({ field }) => <SearchableSelect value={field.value ?? ""} onChange={field.onChange} ... />}`.
+- `getAllByText(...)` for FK-resolved values that appear in multiple rows (e.g., multiple runners in same club).
+- Member management mirrors ControlSequenceBuilder pattern: separate `useState<number[]>` merged into mutation data in `onSubmit`.
+- Filter SearchableSelect options to exclude already-selected items: `items.filter(r => !selectedIds.includes(r.id))`.
+- `waitFor` needed before clicking SearchableSelect button when options data loads asynchronously.
 
 #### US-009b: Import Runners
 
@@ -137,6 +175,12 @@ These patterns were discovered during previous Ralph runs and should be followed
 - CSV header mapping should be flexible (e.g., supporting "Name", "name", "Full Name").
 - Using a multi-step dialog (Upload -> Preview -> Import) provides a much better UX than immediate import.
 - MSW handlers for bulk operations and file uploads were essential for testing this feature without a real backend.
+- `vi.mock` factory cannot reference top-level `const` variables initialized with `vi.fn()` (hoisting issue). Use `vi.fn()` directly inside the factory.
+- Papa.parse is callback-based; `complete`/`error` fire synchronously when mocked, so no `waitFor` needed in tests.
+- IOF XML 3.0: `getElementsByTagName(localName)` matches regardless of XML namespace — more reliable than `querySelector`.
+- `DOMParser.parseFromString` works in jsdom; detect invalid XML via `getElementsByTagName("parsererror")`.
+- Export pure parsing functions (e.g., `parseIofXml`) for direct unit testing without DOM/file setup.
+- Tabbed dialog: switching tabs must reset step/rows/error state to avoid stale data from previous tab's upload.
 
 #### US-009c: Bulk Operations
 
@@ -155,6 +199,11 @@ These patterns were discovered during previous Ralph runs and should be followed
 **Learnings from Previous Runs:**
 - `DataTable` needs a stable `getItemId` prop (defaulting to `id`) to track selection correctly across filtering and sorting.
 - Using a dedicated selection state (`selectedItems`) in `DataTable` makes it easy to implement bulk actions in the parent page.
+- `onSelectionChange` does NOT fire on `clearSelectionTrigger`; call both `setSelectedIds(new Set())` and `setClearTrigger(n => n + 1)` to sync parent and DataTable state.
+- Bulk operations: use `apiUpdate` + `Promise.all` directly (cleaner than mutation hooks); call `queryClient.invalidateQueries` manually after.
+- Dialog-as-confirmation: FormDialog with descriptive title ("Assign Class to 3 Runners") satisfies confirmation requirement without separate two-step flow.
+- `parseHMS`/`formatHMS` helpers for sequential start time assignment; pre-compute all times before `Promise.all` for deterministic order.
+- FormSelect placeholder is `<option value="" disabled>`; guard with `if (!value) return` before executing bulk action.
 
 ### US-010: Web GUI — Results & Live View
 
@@ -176,6 +225,15 @@ These patterns were discovered during previous Ralph runs and should be followed
 - Print styles via CSS `@media print`
 - Consider a dedicated print layout component
 
+**Learnings from Previous Runs:**
+- Custom `<table>` with `<Fragment key={...}>` for expandable rows (DataTable doesn't support this).
+- Wrap split time text in `<span>` for testing-library testability (bare text nodes aren't addressable by `getByText`).
+- Results sorting: ok results by position (ascending), then dns/dnf alphabetically by name. Compute leader times via Map keyed by classId.
+- `formatTime`/`formatTimeBehind` exported for unit testing; time behind leader returns "" (not "+0:00") per orienteering convention.
+- `no-print` utility class + `@media print { .no-print { display: none !important } }` for hiding non-printable elements.
+- `window.print()` test: `vi.spyOn(window, "print").mockImplementation(() => {})`.
+- `getAllByText` for class names appearing in both selector options and table cells.
+
 #### US-010b: Live Results
 
 **Description:** Auto-updating results for live competition monitoring.
@@ -194,6 +252,11 @@ These patterns were discovered during previous Ralph runs and should be followed
 - Silent refresh (not setting `isLoading`) is crucial for live updates to avoid flickering the entire UI.
 - Tracking previous state with `Map` and `useEffect` is an effective way to detect changes in a list.
 - Using CSS transitions (`transition-colors duration-1000`) makes the highlight fade-out smooth.
+- `useEntities` extension: minimal `{ refetchInterval?: number | false }` optional param; spread into `useQuery` options.
+- `isFetching` transition detection: `useRef<boolean>` to compare previous vs current value in `useEffect([isFetching])`.
+- Highlight cleanup: functional state update `setHighlightedIds(prev => ...)` to remove only expired IDs, preserving concurrent highlights.
+- Testing highlights: `qc.setQueryData` + extra tick (`await act(async () => await new Promise(r => setTimeout(r, 0)))`) for `prevResultsRef` to populate.
+- `getByRole("combobox", { name: "Class:" })` disambiguates the class selector from the interval selector.
 
 #### US-010c: Results Export
 
@@ -213,6 +276,11 @@ These patterns were discovered during previous Ralph runs and should be followed
 - `Papa.unparse` is a reliable way to generate CSV from objects.
 - Blobs and temporary `<a>` elements are the standard way to trigger client-side downloads.
 - Reusing the API client for export URLs keeps the endpoint logic centralized.
+- `vi.spyOn(URL, "createObjectURL")` needs `Object.defineProperty` stub in test-setup.ts first (jsdom doesn't define it).
+- `vi.spyOn(HTMLAnchorElement.prototype, "click")` captures clicks on programmatically created anchor elements not in DOM.
+- IOF XML export MSW handler: `new HttpResponse(xmlString, { headers: { "Content-Type": "application/xml" } })`.
+- CSV export is synchronous (no `waitFor` needed); IOF XML export is async (needs `waitFor`).
+- `void exportAsync()` in `onClick` suppresses floating-promise lint warnings.
 
 ## Functional Requirements
 

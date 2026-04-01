@@ -17,63 +17,76 @@ target_link_libraries(your_target PRIVATE unofficial::sqlite3::sqlite3)
 
 Migrations should be versioned and applied sequentially. The `_migrations` table tracks the highest version applied.
 
+Each `SchemaVN` struct extends SchemaV(N-1) by appending a new migration:
+
 ```cpp
-bool SQLiteDatabase::applyMigration(int version) {
-    if (version == 1) {
-        const std::string sql1 = "CREATE TABLE IF NOT EXISTS ...";
-        const std::string sql2 = "INSERT INTO _migrations (version) VALUES (1);";
-        
-        if (!execute("BEGIN TRANSACTION;")) return false;
-        if (!execute(sql1)) { execute("ROLLBACK;"); return false; }
-        if (!execute(sql2)) { execute("ROLLBACK;"); return false; }
-        if (!execute("COMMIT;")) return false;
-        return true;
-    }
-    return false;
+std::vector<Migration> SchemaV3::migrations() {
+    auto v = SchemaV2::migrations();
+    v.push_back({ 3, "Description", R"sql(
+        CREATE TABLE IF NOT EXISTS new_table (...);
+        ALTER TABLE existing ADD COLUMN new_col INTEGER NOT NULL DEFAULT 0;
+    )sql" });
+    return v;
 }
 ```
 
 ## Best Practices
 
 - **Idempotency:** Always use `CREATE TABLE IF NOT EXISTS` or `ALTER TABLE ... ADD COLUMN ...` with appropriate checks.
-- **Transactions:** Wrap each migration (multiple SQL statements) in a transaction to ensure database consistency.
-- **SQLite Types:**
-  - `INTEGER`: Use for IDs, Booleans, and timestamps.
-  - `TEXT`: Use for strings (including wide strings after narrowing).
-  - `REAL`: Use for floating point values.
-  - `BLOB`: Use for raw binary data, specifically the `oData` buffer from MeOS domain entities.
+- **Transactions:** Wrap each migration in a transaction.
+- **SQLite Types:** `INTEGER` for IDs/ints/bools, `TEXT` for strings, `BLOB` for oData buffers.
+- **Multi-statement migrations:** SQLite's `sqlite3_exec` handles multiple semicolon-separated statements in one call.
 
-## Repository Pattern (DAOs)
+## NULL vs 0 for FK Columns
 
-MeOS uses the Repository pattern to map domain objects to SQLite tables. This keeps persistence logic separate from domain logic.
-
-- **Mapping Core Fields:** Map important domain properties (name, ID, status) to explicit SQL columns for efficient querying and REST API access.
-- **Full State Persistence:** Store the raw `oData` buffer (from `oDataContainer`) as a `BLOB` column. This ensures all configuration and extra fields are persisted without needing a complex schema.
-- **Narrow/Widen:** Use `MeOSUtil::narrow` when saving strings and `MeOSUtil::widen` when loading to ensure UTF-8 compatibility in the database.
-- **Protected Member Access:** If the `oData` buffer or `dataSize` are `protected` in the domain class, add public getters (`getData()`, `getDataSize()`) to allow the repository to access them without complex friend declarations.
-
-### Example Repository Implementation
+When domain uses 0 to mean "no reference" and the table has a FK constraint:
+- Insert `DbParam::Null()` (not `0`) for FK columns with no reference — SQLite enforces FK on INSERT even with `ON DELETE SET NULL`.
+- On read, SQLite returns NULL columns as empty string; use `parseIntOrZero(s)` helper to handle.
 
 ```cpp
-bool Repository::save(const oEntity& entity) {
-    const char* sql = "INSERT OR REPLACE INTO entities (id, name, data) VALUES (?, ?, ?);";
-    sqlite3_stmt* stmt;
-    // ... prepare and bind id, name ...
-    sqlite3_bind_blob(stmt, 3, entity.getData(), entity.getDataSize(), SQLITE_TRANSIENT);
-    // ... step and finalize ...
-}
-
-pEntity Repository::get(int id, oEvent* oe) {
-    // ... select ...
-    const void* blob = sqlite3_column_blob(stmt, 1);
-    int blobSize = sqlite3_column_bytes(stmt, 1);
-    if (blob && blobSize == oEntity::getDataSize()) {
-        memcpy(entity->getData(), blob, oEntity::getDataSize());
-        memcpy(entity->getDataOld(), blob, oEntity::getDataSize());
-    }
+static int parseIntOrZero(const std::string& s) {
+    return s.empty() ? 0 : std::stoi(s);
 }
 ```
 
-## V2 Schema Expansion
-- Use `ALTER TABLE ... ADD COLUMN ...` to add columns to existing tables in new migration versions.
-- Keep the `_migrations` table updated with the current version.
+## Repository Pattern (DAOs)
+
+MeOS uses the Repository pattern. Existing pattern uses `DbParam` / `executeMixed` / `queryMixed`:
+
+```cpp
+// Insert with FK that allows NULL
+int clubId = runner.getClubId();
+std::vector<DbParam> params{
+    DbParam::Text(std::to_string(runner.getId())),
+    clubId > 0 ? DbParam::Text(std::to_string(clubId)) : DbParam::Null(),
+    DbParam::Blob(reinterpret_cast<const uint8_t*>(runner.getOData()), oRunner::getODataBlobSize())
+};
+db_.executeMixed("INSERT OR REPLACE INTO runners (id, club_id, odata_blob) VALUES (?, ?, ?)", params);
+```
+
+## Entity-Specific Persistence
+
+- **oClub, oControl, oCourse, oClass, oRunner:** Use `getOData()` + `getODataBlobSize()` for blob persistence. Add public accessors if missing from protected section.
+- **oCard:** Uses punch_string serialization — call `getPunchString()` / `importPunches()`. `getDISize()` returns -1; never use blob-based persistence for oCard.
+- **oFreePunch:** Simple fields only (card_no, type_code, time_int, runner_id) — no oData blob.
+
+## Public Accessor Pattern
+
+When `oData` is in a `protected:` section, add public getters to the `public:` section:
+
+```cpp
+// In oClass.h public section:
+const BYTE* getOData() const { return oData; }
+BYTE* getOData() { return oData; }
+static int getODataBlobSize() { return dataSize; }
+int getNumLegs() const { return (int)legInfo.size(); }
+```
+
+**CRITICAL:** Ensure these are placed after a `public:` keyword, not within `protected:` block.
+
+## Test Patterns
+
+- FK tests: Always persist referenced entities to DB before inserting the referencing entity.
+- Use SchemaVN::migrations() in `openWithSchema()` helper per test suite.
+- `oe.addClub()` only adds to in-memory oEvent — you must also call `clubRepo.insert(*club)` for SQLite FK satisfaction.
+
