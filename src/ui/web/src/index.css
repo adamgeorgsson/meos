@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@media print {
+  nav[aria-label="Main navigation"],
+  header {
+    display: none !important;
+  }
+  main {
+    overflow: visible !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
