@@ -40,32 +40,59 @@ Use `inplaceDecodeXML` to decode standard entities in a raw buffer.
 - `&#13;` -> `\r`
 - `&apos;` -> `'`
 
-## CSV Parser Patterns
+## CSV Parser Patterns (OE Format)
 
-### Multi-line Support
-Standard CSV allows newlines inside quoted fields. A simple `getline` approach is insufficient.
-**Pattern:** Use a state machine or stream-based parser that tracks `inQuotes` state.
-
-```cpp
-if (inQuotes) {
-  if (c == L'"') {
-    if (stream.peek() == L'"') {
-      stream.get(); // skip escaped quote
-      field += L'"';
-    } else {
-      inQuotes = false;
-    }
-  } else {
-    field += c;
-  }
-}
+### OE CSV Format
+OE CSV is semicolon-delimited with one header row followed by data rows. The key column indices are:
+```
+OEstno=0, OEcard=1, OEid=2, OEsurname=3, OEfirstname=4, OEbirth=5, OEsex=6,
+OEstart=9, OEfinish=10, OEtime=11, OEstatus=12,
+OEclubno=13, OEclub=14, OEclubcity=15, OEnat=16, OEclassno=17,
+OEclassshortname=18, OEclassname=19, OEbib=23,
+OErent=35, OEfee=36, OEpaid=37, OEcourseno=38, OEcourse=39, OElength=40, OEpl=43
 ```
 
-### Encoding Detection
-MeOS files can be UTF-8 (with or without BOM) or ANSI.
-**Pattern:** Check for BOM first, then attempt to decode as UTF-8. If decoding fails or results in invalid characters, fallback to ANSI (widen from raw bytes).
+### Import: Header Skip + Column Heuristic
+Always skip the FIRST line (header) unconditionally. Then apply `fields.size() > 10` to skip partial/empty rows:
+```cpp
+bool firstLine = true;
+for (const auto& fields : allLines) {
+  if (firstLine) { firstLine = false; continue; }  // skip header
+  if (fields.size() <= 10) continue;                // column heuristic
+  // ... process data row
+}
+```
+Do NOT rely solely on the column heuristic — the header row also has > 10 columns in OE format.
+
+### Format Detection
+Detect OE vs OS from first line column[1]:
+```cpp
+if (col1 == "Descr" || col1 == "Namn" || col1 == "Descr." || col1 == "Navn")
+  return CsvFormat::OS;
+else
+  return CsvFormat::OE;
+```
+
+### File Parsing
+Read as binary, strip UTF-8 BOM (EF BB BF), convert via `fromUTF8()`, split on `\n` (skip `\r`):
+```cpp
+// Strip BOM
+if (raw[0]==0xEF && raw[1]==0xBB && raw[2]==0xBF) start = 3;
+wstring wcontent = fromUTF8(raw.substr(start));
+```
+
+### Time Formatting
+- Export: `formatTimeHMS(int_time)` → "HH:MM:SS"
+- Import: `convertAbsoluteTimeHMS(wstring, oe.getZeroTimeNum())` → internal time units
+
+### Status Conversion
+OE status: 0=OK, 1=DNS, 2=DNF, 3=MP, 4=DQ, 5=MAX
+
+### Export Row Size
+Allocate `vector<string> row(46)` — highest column index is 45 (OEfinishpunch).
 
 ## Decoupling
 Always separate core parsing logic (in `util`) from domain-specific data mapping (in `io`).
 - `src/util/xmlparser.h`: Generic structure parsing.
-- `src/io/iof30interface.h`: Mapping XML structures to `oEvent`, `oRunner`, etc.
+- `src/io/IofXml.h`: Mapping XML structures to `oEvent`, `oRunner`, etc.
+- `src/io/CsvIo.h`: CSV import/export (OE/OS formats).
