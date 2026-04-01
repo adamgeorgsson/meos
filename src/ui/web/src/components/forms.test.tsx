@@ -313,7 +313,7 @@ describe("Form integration with zod", () => {
       handleSubmit,
       formState: { errors },
     } = useForm<FormData>({
-      resolver: zodResolver(schema as any),
+      resolver: zodResolver(schema) as never,
     });
 
     return (
