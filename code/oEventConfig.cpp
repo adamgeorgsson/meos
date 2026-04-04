@@ -137,7 +137,7 @@ const string &oEvent::getPropertyString(const char *name, const string &def)
 string oEvent::getPropertyStringDecrypt(const char *name, const string &def)
 {
   wchar_t bf[MAX_COMPUTERNAME_LENGTH + 1];
-  uint32_t len = MAX_COMPUTERNAME_LENGTH + 1;
+  DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(bf, &len);
   string prop = getPropertyString(name, def);
   string prop2;
@@ -160,7 +160,7 @@ string oEvent::getPropertyStringDecrypt(const char *name, const string &def)
 
 void oEvent::setPropertyEncrypt(const char *name, const string &prop) {
   wchar_t bf[MAX_COMPUTERNAME_LENGTH + 1];
-  uint32_t len = MAX_COMPUTERNAME_LENGTH + 1;
+  DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(bf, &len);
   string prop2;
   int code = 0;

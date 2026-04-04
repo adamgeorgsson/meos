@@ -43,9 +43,6 @@ using namespace std;
 const int externalSourceId = 17000017;
 extern gdioutput *gdi_main;
 
-static int wtoi(const wstring &sp) {
-  return wtoi(sp.c_str());
-}
 csvparser::csvparser() {
   LineNumber=0;
 }

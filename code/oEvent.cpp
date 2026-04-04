@@ -119,7 +119,7 @@ oEvent::oEvent(gdioutput &gdi) : oBase(nullptr), gdibase(gdi) {
   openFileLock = new MeOSFileLock();
 
   wchar_t cp[MAX_COMPUTERNAME_LENGTH + 1];
-  uint32_t size = MAX_COMPUTERNAME_LENGTH + 1;
+  DWORD size = MAX_COMPUTERNAME_LENGTH + 1;
   GetComputerName(cp, &size);
   clientName = cp;
 

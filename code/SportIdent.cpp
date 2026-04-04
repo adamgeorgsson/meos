@@ -2360,7 +2360,7 @@ void SportIdent::getInfoString(const wstring &com, vector<pair<bool, wstring>> &
     return;
   }
 
-  if (!(si!=0 && si->hComm && si->ThreadHandle)) {
+  if (!(si!=0 && si->hComm && si->ThreadHandle.joinable())) {
     infov.emplace_back(false, com+L": "+lang.tl(L"ej aktiv."));
     return;
   }

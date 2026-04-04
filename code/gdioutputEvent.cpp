@@ -1149,6 +1149,14 @@ bool gdioutput::getData(const string &id, DWORD &data) const
   return false;
 }
 
+bool gdioutput::getData(const string &id, uint32_t &data) const
+{
+  DWORD tmp = 0;
+  bool result = getData(id, tmp);
+  data = static_cast<uint32_t>(tmp);
+  return result;
+}
+
 void gdioutput::setData(const string &id, const string &data) {
   for (auto &it : DataInfo) {
     if (it.id == id) {
