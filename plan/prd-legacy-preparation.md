@@ -86,6 +86,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - The backward-compat strategy (keep static methods, delegate to free functions) means ALL existing call sites compile without changes
 - `widen()` hardcodes CP 1252, while `recodeToWide()` uses `defaultCodePage` — these are intentionally different functions
 - `meos_util.cpp` already had `extern int defaultCodePage;` but `widen()` doesn't use it (always CP 1252)
+- **BUG (LNK2005):** `toUTF8()` was defined in BOTH `localizer.cpp` and `meos_util.cpp` after the move, causing a multiply-defined-symbol linker error. The original definition in `localizer.cpp` MUST be removed when adding the new one to `meos_util.cpp`. The `meos_util.cpp` version uses a safer buffer size (`length * 4 + 32`) vs the old localizer.cpp version (`length * 2`). Always verify no duplicate free-function definitions exist after moving functions.
 
 ### US-P0c: Replace Win32-Specific String Functions in Domain Code
 
@@ -114,6 +115,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - `wtoi` implementation: use `wcstol` not `stoi` to match `_wtoi` behavior (returns 0 on invalid input, no throw)
 - Script skips `Tab*.cpp/h` and `gdioutput*.cpp/h` (UI files) — remaining calls in those files are intentionally not replaced
 - Commented-out `sprintf_s` lines in `oFreeImport.cpp`, `oListInfo.cpp`, `Table.cpp` are left as-is (harmless comments)
+- **BUG (C2375/C2264):** `csvparser.cpp` had a local `static int wtoi(const wstring&)` that conflicts with the new `inline int wtoi(const wstring&)` in `meos_util.h`. After adding `wtoi` to `meos_util.h`, the local definition in `csvparser.cpp` MUST be removed. Always grep for existing local `wtoi` definitions before adding the global one.
 
 ### US-P0d: Replace Win32 Types with Standard Types in Domain Code
 
@@ -136,6 +138,11 @@ These patterns were discovered during previous Ralph runs and should be followed
 - Only 66 replacements found (not ~184 as noted in script docs) — count depends on codebase state at time of run
 - The script excludes `SportIdent.cpp/h` and `download.cpp/h` because they call Win32 APIs with `LPDWORD` parameters — those files remain unchanged
 - `toolbar.cpp` was NOT excluded even though it handles UI — it only had trivial replacements (one `DWORD`, one `TRUE`); these are safe
+- **BUG (C2664):** Variables passed to Win32 APIs MUST remain Win32 types. The script replaced `DWORD` → `uint32_t` and `BOOL` → `bool` in variables that are then passed to Win32 API functions, causing type mismatches:
+  - `GetComputerName(buf, &len)` requires `LPDWORD` (not `uint32_t*`) — affected: `oEvent.cpp:122`, `oEventConfig.cpp:140,163`
+  - `WideCharToMultiByte(..., &untranslated)` requires `LPBOOL` (not `bool*`) — affected: `xmlparser.cpp:997`
+  - **Rule:** When a local variable is passed by pointer/reference to a Win32 API, it must keep its Win32 type (`DWORD`, `BOOL`). Only replace types for variables used exclusively in domain logic.
+- **BUG (C2665):** `gdioutput::getData(const string&, DWORD&)` is a UI-side function that was NOT updated by the type-replacement script (UI files are excluded). But domain callers were changed from `DWORD` to `uint32_t`, causing overload resolution failure. Fix: add a `getData(const string&, uint32_t&)` overload to `gdioutput.h/cpp` that forwards to the `DWORD` version. Affected callers: `autotask.cpp`, `oEventAdmin.cpp`, `oEventSpeaker.cpp`.
 
 ### US-P0e: Normalize Path Separators in Domain Code
 
@@ -278,6 +285,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - After the script, remaining FILETIME hits in `oEvent.cpp`/`meos_util.cpp`/`TimeStamp.cpp` are just comments — verify each manually
 - `zip.cpp` FILETIME patterns deferred to a separate story (US-017). tm_unz uses full year (e.g. 2024); subtract 1900 when copying to `std::tm.tm_year`
 - `progress.cpp` is intentionally excluded by the script
+- **BUG (C2664):** Domain functions like `convertSystemDate(const tm&)`, `convertDateYMD(wstring, tm&, bool)`, `SystemTimeToInt64TenthSecond(const tm&)` had their signatures changed from `SYSTEMTIME` to `tm`, but UI callers (e.g. `TabCompetition.cpp`) still used `SYSTEMTIME` + `GetLocalTime()`. Since UI files are "out of scope", these callers were missed. Fix: update UI callers to use `std::tm` + `localtime_s()` and adjust field names (`wYear` → `tm_year`, etc.). Alternatively, add `SYSTEMTIME`-accepting overloads. Affected: `TabCompetition.cpp:1308-1326` (GetLocalTime block) and `TabCompetition.cpp:2975-2978` (date conversion block).
 
 ### US-P0i: Replace Win32 File APIs with std::filesystem
 
@@ -348,6 +356,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - `code/mysql/thr_mutex.h` has `CRITICAL_SECTION` — vendored MySQL header, do NOT modify
 - `socket.cpp`'s `_beginthread` is fire-and-forget (no stored handle) — replace with `std::thread(...).detach()`
 - `SportIdent.cpp/h` may already be partially converted — check for stale `ThreadHandle=0` assignments
+- **BUG (C2679):** `std::thread` cannot be used in boolean expressions with `&&` (unlike Win32 `HANDLE` which is implicitly convertible to bool). Replace `si->ThreadHandle` in boolean context with `si->ThreadHandle.joinable()`. Affected: `SportIdent.cpp:2363`. Similarly, any `if (ThreadHandle)` or `ThreadHandle != 0` patterns must become `ThreadHandle.joinable()`.
 
 ### US-P0k: Replace Sleep() with std::this_thread::sleep_for()
 
