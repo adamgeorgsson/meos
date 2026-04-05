@@ -749,6 +749,26 @@ These patterns were discovered during previous Ralph runs and should be followed
 - The `oDataContainer` forward-declared both `class InputInfo;` and `class gdioutput;` in its header. Removing both simultaneously and all 4 GUI methods (buildDataFields x2, fillDataFields, saveDataFields) was clean since none were called from outside the class.
 - Pattern for US-012 type cleanup: grep for `gdioutput` in src/, categorize each hit as (a) include → remove, (b) forward declaration → remove, (c) method declaration → remove from header + cpp, (d) dead code → remove.
 
+### US-016: Application Bootstrap
+
+**Description:** As a user, I want the application to start an HTTP server, initialize the database, and serve the React frontend so that running the binary gives me a working application.
+
+**Acceptance Criteria:**
+- [ ] `src/app/app.h` defines `MeosApp` class that owns all runtime state
+- [ ] `src/app/app.cpp` implements `MeosApp::run()` that orchestrates startup
+- [ ] SQLite database opened and migrations applied on startup (default: `meos.sqlite`)
+- [ ] All 9 API route groups registered (clubs, controls, courses, classes, runners, teams, competition, cards, results)
+- [ ] Static file serving enabled for React frontend (default: `web/` directory)
+- [ ] HTTP server starts on configurable port (default: 8080)
+- [ ] CLI args supported: `--port`, `--db`, `--web-root`
+- [ ] `src/main.cpp` delegates to `MeosApp::run(argc, argv)`
+- [ ] Startup message printed with URL
+- [ ] Clean shutdown on Enter keypress
+- [ ] Application serves React SPA at `http://localhost:<port>/`
+- [ ] API endpoints respond at `http://localhost:<port>/api/v1/*`
+
+**Dependencies:** US-002, US-004a, US-005a, US-011
+
 ### US-013: Utility Migration
 
 **Description:** As a developer, I want shared utilities migrated to `src/util/` so they are available to all modules.
