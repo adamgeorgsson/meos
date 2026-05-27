@@ -167,6 +167,8 @@ public:
 
   oDataConstInterface getDCI() const;
 
+  virtual const BYTE* getOData() const { return nullptr; }
+
   // Remove object from the competition
   virtual void remove() = 0;
 

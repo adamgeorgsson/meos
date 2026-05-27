@@ -77,8 +77,8 @@
         "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added virtual const BYTE* getOData() const { return nullptr; } to oBase.h. All other criteria were already satisfied: oPunch fields public, oClass::getNumLegs() present, oAbstractRunner::tStartTime public, tLeg/tInTeam public in oRunner, getTempResult() const present, oTeam::getRunnerIdString() present, oCard::setCardNo() present, all entity headers have getOData() and getODataBlobSize()."
     },
     {
       "id": "US-006",
