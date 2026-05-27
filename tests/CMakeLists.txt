@@ -46,3 +46,7 @@ target_link_libraries(competitions_api_test PRIVATE meos_net nlohmann_json::nloh
 # Results API integration test
 meos_add_test(results_api_test results_api_test.cpp)
 target_link_libraries(results_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
+# Start list API integration test
+meos_add_test(startlist_api_test startlist_api_test.cpp)
+target_link_libraries(startlist_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)

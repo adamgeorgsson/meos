@@ -254,8 +254,8 @@
         "Typecheck passes"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "registerStartListRoutes in src/net/api.h/.cpp. GET /api/v1/startlist returns plain JSON array; GET /api/v1/startlist/{id} returns single object or 404. Optional bib field omitted when absent. Integration tests via httplib::Client on port 18015 — 4 tests passing."
     },
     {
       "id": "US-016",

@@ -30,4 +30,7 @@ void registerCompetitionsRoutes(httplib::Server& svr, meos::db::Database& db);
 // Registers GET /api/v1/results and GET /api/v1/results/{id} on svr.
 void registerResultsRoutes(httplib::Server& svr, meos::db::Database& db);
 
+// Registers GET /api/v1/startlist and GET /api/v1/startlist/{id} on svr.
+void registerStartListRoutes(httplib::Server& svr, meos::db::Database& db);
+
 }  // namespace meos::net

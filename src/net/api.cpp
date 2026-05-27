@@ -295,4 +295,42 @@ void registerResultsRoutes(httplib::Server& svr, meos::db::Database& db) {
             });
 }
 
+namespace {
+
+json startListEntryToJson(const meos::domain::StartListEntry& e) {
+    json j;
+    j["id"] = e.id;
+    j["runnerId"] = e.runnerId;
+    j["classId"] = e.classId;
+    j["startTime"] = e.startTime;
+    if (e.bib) j["bib"] = *e.bib;
+    return j;
+}
+
+}  // namespace
+
+void registerStartListRoutes(httplib::Server& svr, meos::db::Database& db) {
+    svr.Get("/api/v1/startlist",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                auto entries = db.getAllStartList();
+                json arr = json::array();
+                for (const auto& e : entries) arr.push_back(startListEntryToJson(e));
+                res.set_content(arr.dump(), "application/json");
+            });
+
+    svr.Get(R"(/api/v1/startlist/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                int id = std::stoi(req.matches[1]);
+                auto entry = db.getStartListEntryById(id);
+                if (!entry) {
+                    res.status = 404;
+                    res.set_content(makeError(404, "Not found").dump(),
+                                    "application/json");
+                } else {
+                    res.set_content(startListEntryToJson(*entry).dump(),
+                                    "application/json");
+                }
+            });
+}
+
 }  // namespace meos::net
