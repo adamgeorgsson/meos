@@ -229,4 +229,26 @@ void registerTeamsRoutes(httplib::Server& svr, meos::db::Database& db) {
             });
 }
 
+void registerCompetitionsRoutes(httplib::Server& svr, meos::db::Database& db) {
+    svr.Get("/api/v1/competitions",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                auto comps = db.getAllCompetitions();
+                if (comps.empty()) {
+                    res.status = 404;
+                    res.set_content(makeError(404, "Not found").dump(),
+                                    "application/json");
+                    return;
+                }
+                const auto& c = comps[0];
+                json j;
+                j["id"] = c.id;
+                j["name"] = c.name;
+                j["date"] = c.date;
+                j["organizer"] = c.organizer;
+                j["location"] = c.location;
+                if (c.description) j["description"] = *c.description;
+                res.set_content(j.dump(), "application/json");
+            });
+}
+
 }  // namespace meos::net

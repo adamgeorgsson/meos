@@ -38,3 +38,7 @@ target_link_libraries(runners_api_test PRIVATE meos_net nlohmann_json::nlohmann_
 # Teams API integration test
 meos_add_test(teams_api_test teams_api_test.cpp)
 target_link_libraries(teams_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
+# Competitions API integration test
+meos_add_test(competitions_api_test competitions_api_test.cpp)
+target_link_libraries(competitions_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)

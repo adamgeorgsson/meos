@@ -222,8 +222,8 @@
         "Typecheck passes"
       ],
       "priority": 13,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "registerCompetitionsRoutes in src/net/api.h/.cpp. GET /api/v1/competitions returns singleton competition object (not array) — takes first result from getAllCompetitions(). All required fields (id, name, date, organizer, location) always included; optional description omitted when absent. Returns 404 if no competition in DB. Integration tests via httplib::Client on port 18013 — 3 tests passing."
     },
     {
       "id": "US-014",

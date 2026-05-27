@@ -24,4 +24,7 @@ void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db);
 // Registers GET /api/v1/teams and GET /api/v1/teams/{id} on svr.
 void registerTeamsRoutes(httplib::Server& svr, meos::db::Database& db);
 
+// Registers GET /api/v1/competitions on svr (returns singleton competition object).
+void registerCompetitionsRoutes(httplib::Server& svr, meos::db::Database& db);
+
 }  // namespace meos::net
