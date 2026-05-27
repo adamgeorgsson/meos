@@ -134,8 +134,8 @@
         "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All acceptance criteria were already satisfied from a prior run (commit US-027). oAbstractRunner.h exists with the full oAbstractRunner class definition and only uses oEvent via the forward declaration in oBase.h (class oEvent; at line 35). oRunner.h includes oAbstractRunner.h (no oEvent.h in its include closure). oTeam.h includes oAbstractRunner.h directly. oEvent.h includes oRunner.h for vector<oRunner> storage, but does not require it for oAbstractRunner pointers. DynamicValue::isOld/update/get/reset are implemented in oRunner.cpp (not inline in the header). No circular include remains: oRunner.h → oAbstractRunner.h chain has no path back to oEvent.h. No code changes needed."
     }
   ]
 }
