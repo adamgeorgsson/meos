@@ -4,6 +4,7 @@
   "builtin-baseline": "67f167b2f7c170f83688919c90edcd896239330e",
   "dependencies": [
     "gtest",
-    "sqlite3"
+    "sqlite3",
+    "cpp-httplib"
   ]
 }
