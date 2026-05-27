@@ -1,141 +1,714 @@
 {
   "project": "MeOS",
-  "description": "Legacy Code Preparation for Migration - non-functional refactorings in code/ that eliminate recurring friction points in the iterative domain migration. Every story must preserve existing Windows/MSBuild behavior.",
+  "description": "Platform Modernization - migrate the legacy Win32/MySQL/GDI MeOS codebase into a modular, cross-platform stack: domain library, SQLite persistence, JSON REST API, React frontend, and bundled C++ executable. Each story is a single-iteration migration step; generated code is disposable between Ralph runs.",
   "userStories": [
     {
-      "id": "US-001",
-      "title": "Replace std::exception(\"msg\") with std::runtime_error(\"msg\") in domain code",
-      "description": "As a migration engineer, I want all message-bearing exception throws to use a standard, portable type so that domain code compiles on non-MSVC toolchains.",
+      "id": "US-002",
+      "title": "Modular Source Layout",
+      "description": "As a developer, I want source code organized in logical modules so that the codebase is navigable and each layer has clear boundaries.",
       "acceptanceCriteria": [
-        "No `throw std::exception(\"...\")` remains in domain files in `code/` (verify by grep)",
-        "`meosException` (and any similar message-carrying exception class) inherits from `std::runtime_error` instead of `std::exception`",
-        "All existing `catch (const std::exception&)` blocks still catch these exceptions (std::runtime_error derives from std::exception)",
-        "Legacy MSBuild build of `code/` passes with no new warnings/errors"
+        "`src/` directory contains subdirectories: app/, domain/, net/, db/, util/, io/",
+        "CMake targets defined per module (static libraries + main executable)",
+        "Module dependencies are explicit in CMake with no circular dependencies",
+        "Header include paths configured so bare `#include \"oBase.h\"` resolves within modules",
+        "`VCPKG_ROOT=... cmake --preset default` configures and `cmake --build build` succeeds",
+        "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "meosException already inherited std::runtime_error. Added <stdexcept> to StdAfx.h and replaced all throw std::exception(...) with throw std::runtime_error(...) across 11 files."
+      "notes": "src/io/ stub module added; all 12 tests pass."
     },
     {
-      "id": "US-002",
-      "title": "Make StringCache and Localizer thread-safe via thread_local",
-      "description": "As a developer, I want shared per-thread caches to use `thread_local` storage so they are both thread-safe and portable (no `GetCurrentThreadId()` + global map).",
+      "id": "US-003a",
+      "title": "Domain Foundation — oBase, oDataContainer, domain_header",
+      "description": "As a developer, I want the foundational base classes (oBase, oDataContainer) and shared domain_header migrated to src/domain/ so that all other entities can build on a portable foundation.",
       "acceptanceCriteria": [
-        "`StringCache::getInstance()` returns a `thread_local static StringCache` instance directly; the `GetCurrentThreadId()` lookup and global map are removed",
-        "`translate()` in `localizer.cpp` uses `thread_local` for its rotating-buffer state instead of plain `static`",
-        "No `<windows.h>`-only API remains in either implementation for thread identification",
-        "Legacy MSBuild build of `code/` passes"
+        "`oBase.h/cpp`, `oDataContainer.h/cpp`, `datadefiners.h` exist in `src/domain/`",
+        "`domain_header.h` defines common enums, forward declarations, and Win32 shims (`__int64`, `wcsncpy_s`, `_i64toa_s`)",
+        "Stub `oEvent.h` exists with the minimal interface required by oDataContainer",
+        "Domain library compiles with dependency on `util` only (no `db`, `net`, `io`)",
+        "Unit tests for oBase basics pass",
+        "Typecheck passes"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "Both changes were already in place: StringCache::getInstance() uses thread_local static StringCache instance (meos_util.cpp:49), and LocalizerImpl::translate() uses thread_local for int i and wstring value[] (localizer.cpp:145-147). No GetCurrentThreadId() in either. No code changes needed."
+      "passes": false,
+      "notes": ""
     },
     {
-      "id": "US-003",
-      "title": "Header hygiene: remove StdAfx from .hpp, add explicit includes, fix opaque enum fwd decls",
-      "description": "As a non-PCH build, I want each header to be self-contained so it can be consumed without depending on precompiled-header injection or transitive includes.",
+      "id": "US-003b1",
+      "title": "Domain — oControl Migration",
+      "description": "As a developer, I want oControl migrated to src/domain/ with stubs for its downstream dependents so that control entities work in the new layout.",
       "acceptanceCriteria": [
-        "`#include \"StdAfx.h\"` is removed from `.hpp` files (e.g., `intkeymap.hpp`) and from any other standalone header where it appears; required standard headers are added explicitly",
-        "Opaque `enum KeyCommandCode;` (and any similar fwd decls) is replaced with an explicit underlying type (e.g., `enum KeyCommandCode : int;`) or the full include",
-        "`oTeam.h` includes `<set>` directly",
-        "Domain `.cpp` files that use `oDataContainer` include `oDataContainer.h` directly instead of relying on transitive inclusion through `oBase.h`",
-        "`oClass.cpp` includes `xmlparser.h` and `timeconstants.hpp` directly",
-        "Include-what-you-use pass over domain headers: missing includes (that previously resolved only via PCH) are added",
-        "Legacy MSBuild build of `code/` passes"
+        "`oControl.h/cpp` exists in `src/domain/` with full implementation",
+        "`SpecialPunch` enum is available from `oControl.h`",
+        "Win32 string functions replaced with `meos_util` equivalents",
+        "Stubs exist for `oCourse`, `oClass`, `oRunner`, `oCard`, `oFreePunch`",
+        "Unit tests for oControl pass",
+        "Typecheck passes"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "Removed #include StdAfx.h from oBase.h, toolbar.h, qualification_final.h. Added <string>/<utility> to oBase.h, <string> to qualification_final.h. Added #include oDataContainer.h directly to oBase.cpp, oCard.cpp, oClub.cpp, oControl.cpp, oCourse.cpp, oTeam.cpp, oPunch.cpp, oRunnerData.cpp, MeosSQL.cpp. Verified all other criteria already satisfied."
+      "passes": false,
+      "notes": ""
     },
     {
-      "id": "US-004",
-      "title": "Make oData buffers portable across sizeof(wchar_t)",
-      "description": "As a Linux build engineer, I want `oData` blob buffers to align correctly for wide-character access and to size themselves based on the platform's `wchar_t` so the same blob layout serializes on both platforms.",
+      "id": "US-003b2",
+      "title": "Domain — oPunch Migration",
+      "description": "As a developer, I want oPunch migrated to src/domain/ so that punch time handling and control matching are available to other entities.",
       "acceptanceCriteria": [
-        "`BYTE oData[dataSize]` declarations in `oClass`, `oClub`, `oCourse`, `oControl`, `oRunner`, and `oTeam` are decorated with `alignas(sizeof(wchar_t))`",
-        "`dataSize` constants for these entities are expressed in terms of `sizeof(wchar_t)` (e.g., `N * static_cast<int>(sizeof(wchar_t)) + K`) and evaluate to the same integer value on Windows as today",
-        "On Windows the compiled struct layout and `sizeof` for each entity are unchanged",
-        "Legacy MSBuild build of `code/` passes"
+        "`oPunch.h/cpp` exists in `src/domain/` with full implementation",
+        "Punch time handling and control matching preserved",
+        "Unit tests for oPunch pass",
+        "Typecheck passes"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "All 6 entity headers (oClass, oClub, oCourse, oControl, oRunner, oTeam) already had alignas(sizeof(wchar_t)) on oData/oDataOld and dataSize expressed via sizeof(wchar_t). No code changes needed."
+      "passes": false,
+      "notes": ""
     },
     {
-      "id": "US-005",
-      "title": "Add public accessors required by migration",
-      "description": "As a repository / REST / test author, I want public read access (and where needed, write access) to domain state without using `friend` or layout assumptions. Purely additive — existing call sites unaffected.",
+      "id": "US-003c",
+      "title": "Domain — oClub Migration",
+      "description": "As a developer, I want oClub migrated to src/domain/ with shared enums centralized so that club entities are available for downstream stories.",
       "acceptanceCriteria": [
-        "`oPunch::isUsed`, `oPunch::tIndex`, `oPunch::tMatchControlId` are public (or exposed via public accessors)",
-        "`oClass` exposes `int getNumLegs() const { return (int)legInfo.size(); }`",
-        "`oAbstractRunner::tInTeam`, `tLeg`, `tStartTime` are public (or exposed via public accessors)",
-        "`oAbstractRunner` exposes `const TempResult& getTempResult() const`",
-        "`oTeam` exposes a public `wstring getRunnerIdString() const` wrapper",
-        "`oCard` exposes `void setCardNo(int c)` if not already present",
-        "`oBase` (and each entity that owns an `oData` blob) exposes `const BYTE* getOData() const` and `static int getODataBlobSize()`",
-        "All additions are purely additive — no existing code is broken",
-        "Legacy MSBuild build of `code/` passes"
+        "`oClub.h/cpp` exists in `src/domain/` with full implementation",
+        "Common enums centralized in `src/util/common_enums.h`",
+        "`oClub` data fields initialized correctly in stub oEvent ctor",
+        "Compact-name algorithm, ShortName override, and assignInvoiceNumber work as in legacy",
+        "Unit tests for oClub pass",
+        "Typecheck passes"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": "Added virtual const BYTE* getOData() const { return nullptr; } to oBase.h. All other criteria were already satisfied: oPunch fields public, oClass::getNumLegs() present, oAbstractRunner::tStartTime public, tLeg/tInTeam public in oRunner, getTempResult() const present, oTeam::getRunnerIdString() present, oCard::setCardNo() present, all entity headers have getOData() and getODataBlobSize()."
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003d",
+      "title": "Domain — oCourse Migration",
+      "description": "As a developer, I want oCourse migrated to src/domain/ so that classes can reference courses with the correct control sequence.",
+      "acceptanceCriteria": [
+        "`oCourse.h/cpp` exists in `src/domain/` (full implementation, not stub)",
+        "Course-control relationship works (add/remove/reorder)",
+        "Length, climb, and course properties preserved",
+        "oEvent stub exposes `getControl(id, create, includeVirtual)` for course operations",
+        "Unit tests for oCourse operations pass",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003e1",
+      "title": "Domain — oClass Core Migration",
+      "description": "As a developer, I want oClass core (entity, course assignment, oData alignment) migrated to src/domain/ so that classes are available for runners and teams.",
+      "acceptanceCriteria": [
+        "`oClass.h/cpp` exists in `src/domain/` (full implementation, not stub)",
+        "Class-course assignment works",
+        "`oData` buffer correctly aligned for 4-byte wchar_t on Linux",
+        "`oLegInfo` default constructor matches legacy (startMethod = STTime)",
+        "Domain library compiles",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003e2",
+      "title": "Domain — Class Configuration + Qualifications",
+      "description": "As a developer, I want classconfiginfo, qualifications, and start method logic migrated so that class start formats (individual, mass, pursuit) work.",
+      "acceptanceCriteria": [
+        "`classconfiginfo.h/cpp` migrated to `src/domain/`",
+        "`qualifications.h/cpp` migrated to `src/domain/`",
+        "Start methods (individual, mass, pursuit, etc.) preserved",
+        "`getPreceedingLeg` correctly handles non-parallel legs",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003e3",
+      "title": "Domain — oClass Unit Tests",
+      "description": "As a developer, I want comprehensive unit tests for oClass operations so that class behavior is locked down.",
+      "acceptanceCriteria": [
+        "Unit tests for class-course assignment pass",
+        "Unit tests for start methods and leg info pass",
+        "Unit tests for fee calculation and configuration pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003f1",
+      "title": "Domain — oCard Migration",
+      "description": "As a developer, I want oCard migrated to src/domain/ so that card readout entities are available for runner result evaluation.",
+      "acceptanceCriteria": [
+        "`oCard.h/cpp` exists in `src/domain/` (full implementation)",
+        "`SICard.h` available in `src/util/` or `src/domain/`",
+        "Card-punch matching logic preserved via punchString serialization round-trip",
+        "`oCard::merge` (originally in legacy `oevent_transfer.cpp`) migrated",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003f2",
+      "title": "Domain — oFreePunch Migration + Card Tests",
+      "description": "As a developer, I want oFreePunch migrated and unit tests for card operations so that free punch handling works end-to-end.",
+      "acceptanceCriteria": [
+        "`oFreePunch.h/cpp` exists in `src/domain/` (full implementation)",
+        "`changedObject` sets `oe->sqlPunches.changed` correctly",
+        "`unexpectedOrder` and `rehashPunches` behavior preserved",
+        "Unit tests for oCard and oFreePunch operations pass",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003g1",
+      "title": "Domain — oRunner Core Migration",
+      "description": "As a developer, I want oRunner and oAbstractRunner migrated to src/domain/ so that runner entities and shared runner/team logic are available.",
+      "acceptanceCriteria": [
+        "`oRunner.h/cpp` exists in `src/domain/` (full implementation replacing stub)",
+        "`oAbstractRunner` extracted to own header with shared logic for oTeam",
+        "Runner-class, runner-club, runner-card relationships work",
+        "`oRunnerData` fields initialized in oEvent ctor before any oRunner is created",
+        "`getClubCreate`, `allocateCard`, `bibStartNoToRunnerTeam`, `classIdToRunnerHash` stubs available on oEvent",
+        "Domain library compiles",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003g2",
+      "title": "Domain — Runner Status + Split Times + Tests",
+      "description": "As a developer, I want runner status computation (evaluateCard) and split times implemented with tests so that runner results can be computed.",
+      "acceptanceCriteria": [
+        "Status computation (OK, DNS, DNF, DSQ, MP) works via evaluateCard",
+        "Split time computation works",
+        "Unit tests for runner status, splits, and result computation pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003h1",
+      "title": "Domain — oTeam Core Migration",
+      "description": "As a developer, I want oTeam migrated to src/domain/ so that relay/team entities and runner membership work.",
+      "acceptanceCriteria": [
+        "`oTeam.h/cpp` exists in `src/domain/` (full implementation)",
+        "Team-runner membership works",
+        "`oAbstractRunner` provides `getFinishTimeS`, `compareBib`, `compareClubs`, `getBuiltinAdjustment`",
+        "`using oAbstractRunner::getTotalStatus;` resolves name hiding in oTeam",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003h2",
+      "title": "Domain — Relay Leg Computation + Tests",
+      "description": "As a developer, I want relay leg computation and team status propagation working with tests so that relay scoring is correct.",
+      "acceptanceCriteria": [
+        "Relay leg computation works",
+        "Team status propagation through legs works (no incorrect StatusUnknown when leg has tStatus set)",
+        "Unit tests for team operations pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003i1",
+      "title": "Domain — oEvent Core: Collections + Lifecycle",
+      "description": "As a developer, I want oEvent.cpp core migrated so that entity collections, competition lifecycle, and lookup methods replace the skeleton stub.",
+      "acceptanceCriteria": [
+        "`oEvent.cpp` full implementation replaces the skeleton stub",
+        "oEvent owns and manages all entity collections (Controls, Courses, Classes, Runners, Teams, Cards, Clubs, punches)",
+        "Competition create/open/save lifecycle works (`newCompetition` clears all collections)",
+        "`getControlByNumber`, `getRunnerByCardNo` work",
+        "`getZeroTimeNum()` returns the `ZeroTime` member (not hardcoded 0)",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003i2",
+      "title": "Domain — oEventDraw + oEventResult + Integration Tests",
+      "description": "As a developer, I want drawing, result orchestration, and integration tests migrated so that oEvent is functionally complete.",
+      "acceptanceCriteria": [
+        "`oEventDraw.cpp` — class drawing and start list generation works",
+        "`oEventResult.cpp` — result computation orchestration works",
+        "Integration tests covering entity relationships through oEvent pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003j1",
+      "title": "Domain — GeneralResult Scoring Engine",
+      "description": "As a developer, I want generalresult.h/cpp migrated with the strategy pattern for pluggable scoring algorithms so that custom result calculations work.",
+      "acceptanceCriteria": [
+        "`generalresult.h/cpp` migrated (full implementation)",
+        "Strategy pattern for scoring algorithms preserved",
+        "`RunnerStatusOrderMap` initialized at definition time",
+        "`TempResult` extended with `startTime`, `timeAfter`, `internalScore`, `outputTimes`, `outputNumbers`",
+        "`DynamicResult` compiles with required oRunner/oTeam stubs (`getSplitAnalysis`, `getLegTimeAfter`, `getBirthAge`, etc.)",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003j2",
+      "title": "Domain — MetaList + oListInfo + Result Tests",
+      "description": "As a developer, I want metalist output formatting and oListInfo migrated with comprehensive result tests so that result formatting works for individual and relay formats.",
+      "acceptanceCriteria": [
+        "`metalist.h/cpp` migrated for output formatting",
+        "`oListInfo` migrated",
+        "Result computation produces correct results for individual and relay formats",
+        "Unit tests for result computation with known test data pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003k",
+      "title": "Domain Cleanup — Remove Stubs + Verify",
+      "description": "As a developer, I want all temporary stubs removed and the domain layer verified to compile cleanly with no Win32 dependencies so that the migration is complete.",
+      "acceptanceCriteria": [
+        "All temporary stubs (gdioutput stub, oSpeaker stub, Table stub, MeOSFeatures stub) removed or replaced with proper interfaces",
+        "No `#ifdef _WIN32` guards in domain code (except `win_types.h` shims)",
+        "No direct Win32/GDI includes in domain code",
+        "Domain library compiles on Linux (and remains compilable on Windows)",
+        "Full domain test suite passes",
+        "`oDataContainer`/`oDataInterface` pattern verified working",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004a",
+      "title": "DB — SQLite Abstraction + Connection + Migrations",
+      "description": "As a developer, I want a SQLite-backed persistence layer with connection management and a migration system so that schema evolves cleanly.",
+      "acceptanceCriteria": [
+        "`src/db/` contains `SQLiteDatabase` with connection management",
+        "Migration system uses a `_migrations` table and supports atomic apply with transactions",
+        "Initial schema (V1) for runners and clubs",
+        "`PRAGMA foreign_keys=ON` re-applied on each open",
+        "Failed migration rolls back and leaves `_migrations` at the last good version",
+        "Unit tests for database operations and migrations pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004b",
+      "title": "DB — Schema for Simple Entities (Clubs, Controls, Courses)",
+      "description": "As a developer, I want schema and CRUD repositories for clubs, controls, and courses so that simple entities are persisted.",
+      "acceptanceCriteria": [
+        "Schema migration adds tables for clubs, controls, courses (V2)",
+        "Repository/DAO pattern for each entity with insert/get/update/delete",
+        "`oData` BLOB persistence used for entities that have it",
+        "Semicolon-separated string used for course control sequence (matches legacy)",
+        "Unit tests for each entity's CRUD operations pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004c",
+      "title": "DB — Schema for Complex Entities (Runners, Classes, Cards, Punches)",
+      "description": "As a developer, I want schema and CRUD for runners, classes, cards, punches, and free punches with FK relationships so that complex entities are persisted correctly.",
+      "acceptanceCriteria": [
+        "Schema migration adds tables for runners, classes, cards, punches, free punches (V3)",
+        "Foreign key relationships enforced (club, class, course references)",
+        "Null/0 FK values handled (use `DbParam::Null()` when domain value is 0)",
+        "Card persistence uses `getPunchString()`/`importPunches()` (NOT `oData` blob)",
+        "Relationship loading respects dependency order (independent entities first)",
+        "Unit tests for complex entity operations pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004d",
+      "title": "DB — Schema for Events + Teams",
+      "description": "As a developer, I want event and team persistence so that competition metadata and relay teams round-trip through the database.",
+      "acceptanceCriteria": [
+        "Schema migration adds tables for events and teams (V4)",
+        "Team-runner membership persisted (semicolon-separated runner IDs OK)",
+        "Event metadata (name, date, zeroTime, properties) persisted with single-row `INSERT OR REPLACE` upsert",
+        "Full integration test: create event → add entities → close → reopen → query back",
+        "SQLite database stored as a single file in the working directory",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 24,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005a",
+      "title": "API — Framework + Error Handling",
+      "description": "As a frontend developer, I want an HTTP server, routing, JSON serialization, and consistent error handling so that subsequent endpoint stories have a foundation to build on.",
+      "acceptanceCriteria": [
+        "HTTP server (cpp-httplib) integrated and starts in a background thread",
+        "Route registration pattern established (path params via regex captures)",
+        "JSON request parsing and response serialization via nlohmann-json",
+        "Consistent error response envelope with error codes",
+        "Input validation framework with meaningful error messages",
+        "API versioning under `/api/v1/...`",
+        "Error handler does not overwrite handler-set bodies",
+        "Unit tests for routing and error handling pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 25,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005b",
+      "title": "API — Club + Control Endpoints",
+      "description": "As a frontend developer, I want CRUD endpoints for clubs and controls so that the GUI can manage these simple entities.",
+      "acceptanceCriteria": [
+        "`GET/POST/PUT/DELETE /api/v1/clubs` and `/api/v1/clubs/{id}` work",
+        "`GET/POST/PUT/DELETE /api/v1/controls` and `/api/v1/controls/{id}` work",
+        "List endpoints support basic filtering",
+        "Created entities are persisted via repository (auto-assigned IDs returned)",
+        "Integration tests for each endpoint pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 26,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005c",
+      "title": "API — Course + Class Endpoints",
+      "description": "As a frontend developer, I want CRUD endpoints for courses and classes including their relationships so that competition structure can be managed.",
+      "acceptanceCriteria": [
+        "`GET/POST/PUT/DELETE /api/v1/courses` and `/api/v1/courses/{id}` work",
+        "`GET/POST/PUT/DELETE /api/v1/classes` and `/api/v1/classes/{id}` work",
+        "Course-control sequence (controlIds array) in responses",
+        "Class-course assignment in requests/responses (courseId: 0 clears the link)",
+        "`oCourse::getControls()` (semicolons) used for control IDs — not `getControlNumbers()`",
+        "Integration tests pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 27,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005d",
+      "title": "API — Runner + Team + Competition Endpoints",
+      "description": "As a frontend developer, I want CRUD endpoints for runners and teams with filtering and pagination, plus competition metadata endpoints, so that the GUI can manage the full participant model.",
+      "acceptanceCriteria": [
+        "`GET/POST/PUT/DELETE /api/v1/runners` and `/api/v1/runners/{id}` work",
+        "`GET/POST/PUT/DELETE /api/v1/teams` and `/api/v1/teams/{id}` work",
+        "Filtering by name, club, and class on list endpoints",
+        "Pagination via `?page=` (1-based) and `?pageSize=` with `{data,total,page,pageSize}` envelope",
+        "`GET/PUT /api/v1/competitions` for event metadata",
+        "Integration tests pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 28,
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-006",
-      "title": "Replace Win32 CompareString with standard wstring comparison",
-      "description": "As a Linux build engineer, I want sort comparisons in domain code to use portable `std::wstring` comparison so domain code does not depend on Win32 NLS APIs.",
+      "title": "API — Competition Operations (Results, Start Lists, Card Readout)",
+      "description": "As a frontend developer, I want API endpoints for competition-specific operations so that the GUI supports the full competition workflow.",
       "acceptanceCriteria": [
-        "`CompareString` calls in `GeneralResultInfo::compareResult` and `oAbstractRunner::compareClubs` are replaced with plain `wstring` comparison (`<` / `compare`)",
-        "No `CompareString`/`CompareStringEx` calls remain in domain files in `code/` (verify by grep)",
-        "ASCII sort order is preserved (minor differences in non-ASCII collation acceptable)",
-        "Legacy MSBuild build of `code/` passes"
+        "`GET /api/v1/results` returns computed results (per class and overall)",
+        "`GET /api/v1/startlist` returns start lists sorted by classId, then startTime",
+        "`POST /api/v1/cards` handles card readout (constructs oCard, adds punches, links to runner, triggers evaluateCard)",
+        "`POST /api/v1/runners/{id}/status` allows manual status changes (DNS, DNF, DSQ)",
+        "Result computation uses existing `GeneralResult` logic via `oe.calculateResults`",
+        "Endpoints support both preliminary and final results",
+        "Server threads are joined cleanly on shutdown",
+        "Integration tests pass",
+        "Typecheck passes",
+        "Tests pass"
       ],
-      "priority": 6,
-      "passes": true,
-      "notes": "GeneralResultInfo::compareResult and oAbstractRunner::compareClubs already used standard wstring comparison. Replaced the only remaining CompareString call in TabSI.cpp (a sort lambda) with a->getName() < b->getName()."
+      "priority": 29,
+      "passes": false,
+      "notes": ""
     },
     {
-      "id": "US-007",
-      "title": "Misc portability: SQL_quote uses toUTF8, oListParam additive members, permute via std::shuffle",
-      "description": "As a migration engineer, I want a small set of remaining portability and completeness fixes so the legacy code stops repeatedly tripping the same migration patches.",
+      "id": "US-011",
+      "title": "Static File Serving from C++ Server",
+      "description": "As a user, I want the C++ executable to serve the React frontend so that no separate web server is needed.",
       "acceptanceCriteria": [
-        "`SQL_quote()` uses `toUTF8(wstring)` from `meos_util.h` instead of calling `WideCharToMultiByte` directly",
-        "`oListParam` exposes `set<int> selection`, `bool lockUpdate`, and a working `filterInclude()` implementation, with sane defaults so existing call sites are unaffected",
-        "`permute()` is implemented using `std::shuffle` with `std::mt19937` seeded from `std::random_device`; any Win32-specific RNG paths are removed",
-        "Legacy MSBuild build of `code/` passes"
+        "C++ HTTP server serves static files from a bundled `web/` directory via `set_mount_point`",
+        "`index.html` served at `/` with SPA fallback (non-API 404s for GET serve `index.html` with status 200)",
+        "API 404s under `/api/` bypass the SPA fallback",
+        "Gzip compression enabled (cpp-httplib `zlib` feature in vcpkg.json)",
+        "React production build integrated into CMake (`add_custom_target` + `add_dependencies`) and skipped gracefully if npm is missing",
+        "Typecheck passes",
+        "Tests pass"
       ],
-      "priority": 7,
-      "passes": true,
-      "notes": "All three criteria already in place. SQL_quote (oDataContainer.cpp:929) already calls toUTF8(in) — no WideCharToMultiByte. oListParam already has set<int> selection, bool lockUpdate=false, and filterInclude() implemented in oListInfo.cpp:122. permute() (random.cpp:86-91) already uses std::shuffle with static std::mt19937 seeded from std::random_device. No code changes needed."
+      "priority": 30,
+      "passes": false,
+      "notes": ""
     },
     {
-      "id": "US-008",
-      "title": "Move shared enums (SpecialPunch, RunnerStatus, DynamicRunnerStatus, SortOrder) out of oEvent.h",
-      "description": "As a developer, I want to include just an enum without dragging in the entire `oEvent` header so domain headers stay loosely coupled. Re-export from `oEvent.h` for backward compatibility.",
+      "id": "US-012",
+      "title": "Remove Win32 GUI Code from Migrated Modules",
+      "description": "As a developer, I want Win32-specific GUI code removed from the new src/ modules so that the codebase is fully platform-independent.",
       "acceptanceCriteria": [
-        "`SpecialPunch` is defined in `oControl.h` (or a dedicated enum header) and `oEvent.h` re-exports it (e.g., `using SpecialPunch = ::SpecialPunch;`)",
-        "`RunnerStatus`, `DynamicRunnerStatus`, and `SortOrder` are defined in `oAbstractRunner.h` (or a shared enum header) and `oEvent.h` re-exports them",
-        "All existing code that includes `oEvent.h` still compiles unchanged",
-        "Legacy MSBuild build of `code/` passes"
+        "No `Tab*.cpp/h`, `gdioutput.cpp/h`, or other GDI files in `src/`",
+        "No Win32-specific APIs (`CreateWindow`, `SendMessage`, `RECT`, etc.) in `src/` core code",
+        "No Windows-only headers (`windows.h`, `commctrl.h`) in domain, db, net, or io code",
+        "`gdioutput` includes, forward declarations, and method declarations purged from src/ domain files",
+        "Application compiles and runs on Linux with no Win32 dependencies",
+        "Typecheck passes"
       ],
-      "priority": 8,
-      "passes": true,
-      "notes": "All criteria already satisfied. RunnerStatus, DynamicRunnerStatus, SortOrder are defined at global scope in oAbstractRunner.h. SpecialPunch is in oPunch class with global alias in oControl.h (using SpecialPunch = oPunch::SpecialPunch). oEvent.h includes oRunner.h→oAbstractRunner.h and oControl.h directly, so all enums are re-exported transitively. No code changes needed."
+      "priority": 31,
+      "passes": false,
+      "notes": ""
     },
     {
-      "id": "US-009",
-      "title": "Extract oAbstractRunner to its own header to break oRunner/oEvent circular include",
-      "description": "As a migration engineer, I want the `oRunner` / `oEvent` circular include resolved at the source so each migration run doesn't have to re-do the same extraction.",
+      "id": "US-016",
+      "title": "Application Bootstrap (MeosApp)",
+      "description": "As a user, I want a single binary that starts an HTTP server, opens the SQLite DB, applies migrations, and serves the React frontend so that running the executable gives a working application.",
       "acceptanceCriteria": [
-        "New header `oAbstractRunner.h` contains the full `oAbstractRunner` definition and only forward-declares `oEvent`",
-        "`oRunner.h` and `oTeam.h` include `oAbstractRunner.h` and no longer define `oAbstractRunner` themselves",
-        "`oEvent.h` no longer depends on the full definition of `oRunner` to use `oAbstractRunner` pointers/references",
-        "Methods that need the full `oEvent` definition (e.g., `DynamicValue` methods touching `oEvent::dataRevision`) live in `.cpp` files, not in the new header",
-        "Legacy MSBuild build of `code/` passes"
+        "`src/app/app.h` defines `MeosApp` class that owns all runtime state",
+        "`src/app/app.cpp` implements `MeosApp::run(argc, argv)` orchestrating startup",
+        "SQLite database opened and migrations applied on startup (default: `meos.sqlite`)",
+        "All API route groups registered (clubs, controls, courses, classes, runners, teams, competitions, cards, results, startlist)",
+        "Static file serving enabled (default: `web/` directory)",
+        "HTTP server starts on configurable port (default: 8080)",
+        "CLI args supported: `--port`, `--db`, `--web-root`",
+        "`src/main.cpp` delegates to `MeosApp::run(argc, argv)`",
+        "Startup message printed with URL; clean shutdown on Enter keypress",
+        "Application serves React SPA at `http://localhost:<port>/` and API at `/api/v1/*`",
+        "Typecheck passes"
       ],
-      "priority": 9,
-      "passes": true,
-      "notes": "All acceptance criteria were already satisfied from a prior run (commit US-027). oAbstractRunner.h exists with the full oAbstractRunner class definition and only uses oEvent via the forward declaration in oBase.h (class oEvent; at line 35). oRunner.h includes oAbstractRunner.h (no oEvent.h in its include closure). oTeam.h includes oAbstractRunner.h directly. oEvent.h includes oRunner.h for vector<oRunner> storage, but does not require it for oAbstractRunner pointers. DynamicValue::isOld/update/get/reset are implemented in oRunner.cpp (not inline in the header). No circular include remains: oRunner.h → oAbstractRunner.h chain has no path back to oEvent.h. No code changes needed."
+      "priority": 32,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013a1",
+      "title": "Util — String Conversions + Exceptions",
+      "description": "As a developer, I want meos_util core string functions and meosexception migrated to src/util/ so that other modules can rely on portable string handling.",
+      "acceptanceCriteria": [
+        "`meos_util.h/cpp` core string functions migrated to `src/util/` (cross-platform)",
+        "`meosexception.h` migrated and inherits `std::runtime_error`",
+        "Wide/narrow conversion: `string2Wide`, `wide2String`, `narrow`, `widen`, `toUTF8`, `fromUTF8`",
+        "Win32 function replacements: `_itow_s` → `to_wstring`, `sprintf_s` → `snprintf`",
+        "Manual UTF-8 codec (no deprecated `std::codecvt_utf8`)",
+        "CP-1252 decoding table for 0x80-0x9F range",
+        "Unit tests for string conversion pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 33,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013a2",
+      "title": "Util — File Operations + HLS + Version Functions",
+      "description": "As a developer, I want filesystem helpers, the HLS color class, and version functions migrated to src/util/ so that legacy Win32 dependencies are gone.",
+      "acceptanceCriteria": [
+        "`std::filesystem` used for file operations",
+        "`HLS` class migrated with Win32 macros (`WORD`, `BYTE`, `RGB`) replaced by `uint16_t`/`uint8_t` + inline helpers",
+        "Version functions (`getMeosBuild`, `getMeosDate`, `getMeosFullVersion`, etc.) migrated",
+        "`_memicmp` replaced with `strncasecmp` (guarded by `#ifdef _WIN32`)",
+        "Unit tests for time formatting and file operations pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 34,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013b",
+      "title": "Util — XML + CSV Parsers",
+      "description": "As a developer, I want xmlparser and csvparser migrated to src/util/ without gdioutput coupling so that I/O modules can use them.",
+      "acceptanceCriteria": [
+        "`xmlparser.h/cpp` migrated to `src/util/` without `gdioutput *utfConverter` (uses `toUTF8`/`fromUTF8`/`widen`)",
+        "`checkUTF` handles XML fragments without a declaration",
+        "`inplaceDecodeXML` implemented as a static helper in `xmlparser.cpp`",
+        "`csvparser.h/cpp` core migrated to `src/util/` (domain-specific imports deferred to io/)",
+        "Unit tests for xmlparser and csvparser pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 35,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013c",
+      "title": "Util — Time Handling (TimeStamp + timeconstants)",
+      "description": "As a developer, I want TimeStamp and timeconstants migrated to src/util/ so that time formatting is cross-platform.",
+      "acceptanceCriteria": [
+        "`TimeStamp.h/cpp` migrated to `src/util/` (no `StdAfx.h`, no `using namespace std;`)",
+        "`timeconstants.hpp` migrated to `src/util/`",
+        "`getStamp` clamps year to `[2009, getThisYear()]`",
+        "`getStamp(sql)` resizes to actual digits written (no trailing garbage)",
+        "Unit tests for TimeStamp pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 36,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013d",
+      "title": "Util — Localization (i18n)",
+      "description": "As a developer, I want the localizer migrated to src/util/ with std::ifstream-based resource loading so that translations work cross-platform.",
+      "acceptanceCriteria": [
+        "`localizer.h/cpp` migrated to `src/util/` (fully cross-platform)",
+        "Win32 resource loading (`FindResource`, `LoadResource`, `LockResource`) replaced with `std::ifstream`",
+        "`addLangResource` takes a file path (wstring) instead of a Win32 resource ID",
+        "`translate()` static buffer uses `thread_local`",
+        "`oWordList` stubbed (lookup always returns false) until domain dependency is resolved",
+        "`.lng` files copied to `resources/lang/`",
+        "Unit tests for localizer pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 37,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014a",
+      "title": "I/O — IOF 3.0 XML Import/Export",
+      "description": "As a developer, I want IOF 3.0 XML import/export reimplemented in src/io/ without gdioutput coupling so that competitions can exchange data with other systems.",
+      "acceptanceCriteria": [
+        "`src/io/` contains clean IofXml implementation (NOT a direct port of legacy `iof30interface`)",
+        "IOF 3.0 XML import works for runners, classes, clubs, courses",
+        "IOF 3.0 XML export works for results and start lists",
+        "All time values converted using `timeConstSecond`/`timeConstMinute`/`timeConstHour` from `timeconstants.hpp`",
+        "IOF status strings (`OK`, `DidNotFinish`, `MissingPunch`, `Disqualified`, etc.) mapped correctly",
+        "ISO 8601 timezone stripping handled",
+        "Platform-independent (no Win32 XML APIs)",
+        "Unit tests with sample IOF XML files pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 38,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014b1",
+      "title": "I/O — CSV Import (OE/OS format detection)",
+      "description": "As a developer, I want CSV import for runners with OE/OS format detection migrated to src/io/ so that runners can be imported from CSV files.",
+      "acceptanceCriteria": [
+        "CSV import for runners migrated to `src/io/`",
+        "OE-CSV and OS-CSV format detection via `iscsv()` heuristic on col[1] (`Descr`/`Namn`/`Descr.`/`Navn` → OS)",
+        "Header row always skipped before applying column-count heuristic",
+        "UTF-8 BOM stripped; CRLF handled",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 39,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014b2",
+      "title": "I/O — CSV Export + Round-Trip Tests",
+      "description": "As a developer, I want CSV export for results/start lists with round-trip tests so that CSV is verified end-to-end.",
+      "acceptanceCriteria": [
+        "CSV export for results/start lists migrated to `src/io/`",
+        "Export row vector sized to highest OE column index (≥46)",
+        "Times exported via `formatTimeHMS`; parsed back via `convertAbsoluteTimeHMS(str, getZeroTimeNum())`",
+        "Unit tests for CSV round-trip (import → export → re-import) pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 40,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014c",
+      "title": "I/O — HTML Result Generation",
+      "description": "As a developer, I want HTML output for results/lists reimplemented in src/io/ without gdioutput coupling so that HTML exports work cross-platform.",
+      "acceptanceCriteria": [
+        "Clean HTML template engine in `src/io/` (NOT a direct port of `HTMLWriter`)",
+        "`.template` parser handles `@MEOS EXPORT TEMPLATE` header, `@HEAD`/`@OUTERPAGE`/`@INNERPAGE`/`@SEPARATOR`/`@END`, `%` comments, `@USETABLE`",
+        "Placeholder replacement single-pass, longest-match-first",
+        "`HtmlTemplate::read(std::istream&)` testable without filesystem I/O",
+        "Output file written via UTF-8 path (`toUTF8(filename)`) for Linux `std::ofstream`",
+        "Unit tests for HTML output pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 41,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014d",
+      "title": "I/O — PDF Generation (libharu)",
+      "description": "As a developer, I want PDF output via libharu migrated to src/io/ so that PDF results work on Linux and Windows.",
+      "acceptanceCriteria": [
+        "`src/io/` contains PDF writer using libharu (via vcpkg `unofficial-libharu` / `unofficial::libharu::hpdf`)",
+        "`hpdf.h` included directly in the header (no `void*` forward declarations)",
+        "Standard Type 1 fonts used (Helvetica, Helvetica-Bold, Helvetica-Oblique) with `nullptr` encoding; text passed through `narrow()`",
+        "In-memory PDF supported via `HPDF_SaveToStream` + `HPDF_GetStreamSize` + `HPDF_ReadFromStream`",
+        "Multi-page support: new page created when `y - lineHeight < kMargin`",
+        "Column-width distribution preserves explicit `cell.width`, splits remaining among zero-width columns",
+        "Unit tests for PDF generation pass",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 42,
+      "passes": false,
+      "notes": ""
     }
   ]
 }

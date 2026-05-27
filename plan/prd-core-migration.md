@@ -85,7 +85,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - Competition lifecycle fields in oEvent: `tName` (wstring), `tDate` (wstring), `ZeroTime` (int, seconds). `newCompetition(name)` clears ALL collections.
 - Property store in oEvent: `map<string, wstring> eventProperties` — `getPropertyInt/getPropertyString/setProperty` are map-backed, not filesystem-backed in the migrated version.
 - `formatTimeHMS(int seconds)` and `convertAbsoluteTimeHMS(const wstring&, int)` (in meos_util.h) are the correct pair for formatting/parsing HH:MM:SS absolute times for ZeroTime.
-- Public accessors (`getOData()`, `getODataBlobSize()`, `getNumLegs()`, `getTempResult()`, etc.) are added by `prd-legacy-preparation.md` (US-P0r).
+- Public accessors (`getOData()`, `getODataBlobSize()`, `getNumLegs()`, `getTempResult()`, etc.) are available on domain entities (added by the legacy preparation work).
 - For SQLite FK columns that allow no-relationship (0 as "none"), use `DbParam::Null()` on insert and `parseIntOrZero()` on read — `stoi("")` throws when SQLite returns NULL as empty string.
 - When inserting a domain entity with FK references (e.g. runner with club_id), you must first persist the referenced entities to the DB, otherwise SQLite FK constraint fails even if you use `oe.addClub()` (which only adds to memory).
 - `oEventDraw.cpp` and `oEventResult.cpp` are new cross-platform files in src/domain/; must be listed in `src/domain/CMakeLists.txt` under meos_domain sources.
@@ -109,9 +109,9 @@ These patterns were discovered during previous Ralph runs and should be followed
 - Test files that include meos_util.h must explicitly `using std::string; using std::wstring;` — the header does NOT inject `using namespace std`.
 - Cross-platform UTF-8 encoding: write manual UTF-8 codec (append_utf8 / utf8_to_wstring / wstring_to_utf8) to avoid deprecated `std::codecvt_utf8`. On Linux wchar_t is 4 bytes (UTF-32); on Windows 2 bytes (UTF-16) requiring surrogate pair handling.
 - CP-1252 decoding on Linux: bytes 0x80-0x9F map to specific Unicode codepoints via a lookup table; 0xA0-0xFF map directly (Latin-1 compatible).
-- `meosException` inherits `std::runtime_error` (fixed by US-P0l in `prd-legacy-preparation.md`).
+- `meosException` inherits `std::runtime_error`.
 - `HLS` color class: Replace Win32 `WORD/BYTE/GetRValue/RGB` macros with `uint16_t/uint8_t` equivalents and inline helper functions guarded by `#ifndef _WIN32`.
-- `StringCache::getInstance()` uses `thread_local` static (fixed by US-P0o in `prd-legacy-preparation.md`).
+- `StringCache::getInstance()` uses `thread_local` static.
 - `getNameSplitPoint` depends on `lang.get().getGivenNames()` (Localizer). Provide simplified version splitting at last space until Localizer is migrated (US-013d).
 - Entity methods named `set()` shadow `std::set` in member function bodies — use `std::set<int>` (fully qualified) inside entity .cpp files that have a member function named `set`.
 - Domain .cpp files that use getDI()/getDCI() must include `oDataContainer.h` directly (oBase.h only forward-declares those types).
@@ -124,10 +124,6 @@ These patterns were discovered during previous Ralph runs and should be followed
 - WAL mode (`PRAGMA journal_mode=WAL`) enables concurrent readers; enable by default after open for production use.
 
 ## User Stories
-
-### US-P0: Legacy Code Preparation
-
-> **Extracted to separate PRD:** See [`plan/prd-legacy-preparation.md`](prd-legacy-preparation.md) for the full US-P0 breakdown (US-P0a through US-P0v). This work operates on the legacy `code/` directory under MSBuild and can run **in parallel** with the migration work below.
 
 ### US-002: Modular Source Layout
 
@@ -167,14 +163,14 @@ These patterns were discovered during previous Ralph runs and should be followed
 - [ ] Unit tests for oBase basics
 
 **Learnings from Previous Runs:**
-- `enum KeyCommandCode;` (forward-declared opaque enum) is fixed by US-P0t in `prd-legacy-preparation.md`.
+- `enum KeyCommandCode;` (forward-declared opaque enum) requires an explicit underlying type (`enum KeyCommandCode : int;`) for portability.
 - `convertDynamicBase(wstring, int64_t&)` signature in meos_util.h uses `long long &` not `int64_t &`; on Linux LP64 these are different types. Declare a `long long val` intermediary and assign to int64_t afterward.
-- intkeymapimpl.hpp `StdAfx.h` include removed by US-P0t in `prd-legacy-preparation.md`. After removal it is fully self-contained.
+- `intkeymapimpl.hpp` no longer includes `StdAfx.h` (removed by the legacy preparation work) and is fully self-contained.
 - intkeymap.hpp `operator[]` const variant calls `lookup(key,tmp)` where `tmp` is mutable — need `const_cast<T&>(tmp)` since tmp is declared `T tmp` (non-const member). On MSVC this compiled silently; GCC rejects it.
 - `__int64` shim: define as `typedef int64_t __int64` in domain_header.h (guarded by `#ifndef _WIN32`). All usage in oDataContainer.cpp compiles cleanly.
 - `wcsncpy_s` shim: must null-terminate at `dst[n]` where `n = min(count, dstsz-1)`. MSVC semantics match POSIX `wcsncpy` + explicit null byte.
 - `_i64toa_s` replacement: `snprintf(buf, bufsz, "%lld", (long long)val)` — use explicit `(long long)` cast since `int64_t` is `long` on LP64.
-- `SQL_quote` uses `toUTF8(wstring)` from meos_util.h (fixed by US-P0v in `prd-legacy-preparation.md`).
+- `SQL_quote` uses `toUTF8(wstring)` from meos_util.h.
 - `DataRevisionCache<T>` method bodies belong in a .cpp file, not the header, because they need the full `oEvent` type. Put implementations in oBase.cpp and use `template class DataRevisionCache<T>` explicit instantiations for the types needed (wstring, int, etc.).
 - Stub oEvent.h requires `gdiBase()` and `askOkCancel()` methods for the oIS64 inputData branch in oDataContainer; include them in the stub even if they return no-ops.
 
@@ -184,7 +180,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 
 **Acceptance Criteria:**
 - [ ] `oControl.h/cpp` migrated to `src/domain/`
-- [ ] `SpecialPunch` enum available from `oControl.h` (moved by US-P0q in `prd-legacy-preparation.md`)
+- [ ] `SpecialPunch` enum available from `oControl.h`
 - [ ] Win32 string functions replaced with `meos_util` equivalents
 - [ ] Stubs for `oCourse`, `oClass`, `oRunner`, `oCard`, `oFreePunch`
 - [ ] Unit tests for oControl
@@ -257,7 +253,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - [ ] Domain library compiles
 
 **Learnings from Previous Runs:**
-- `oData`/`oDataOld` buffer alignment and `dataSize` scaling handled by US-P0s in `prd-legacy-preparation.md`.
+- `oData`/`oDataOld` buffer alignment and `dataSize` scaling are handled in the legacy code (`alignas(sizeof(wchar_t))` + `dataSize` expressed in terms of `sizeof(wchar_t)`).
 - `oEventData` in the stub only needs the minimal set of fields actually accessed by `oClass` fee-calculation methods: EliteFee, EntryFee, YouthFee (Currency), OrdinaryEntry, SecondEntryDate (Date), LateEntryFactor, SecondEntryFactor (6-char string). Using the full legacy oEvent field set would overflow even a 1024-byte buffer on Linux.
 - `oLegInfo()` default constructor initializes `startMethod = STTime` (value 0), NOT `STDrawn` (value 2). Test expectations must use `STTime` for the default start type.
 - `oClass.cpp` requires three additional includes beyond oClass.h: `xmlparser.h` (for Write/Set XML methods), `../util/timeconstants.hpp` (for `timeConstSecond`), and `using std::swap` (for the merge() method).
@@ -328,7 +324,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - [ ] Domain library compiles
 
 **Learnings from Previous Runs:**
-- Circular dependency oEvent.h ↔ oRunner.h: solved by extracting oAbstractRunner to its own header (done by US-P0p in `prd-legacy-preparation.md`). DynamicValue methods that access oEvent::dataRevision must live in oRunner.cpp (not inline in header) since they need the full oEvent definition.
+- Circular dependency oEvent.h ↔ oRunner.h: solved by extracting oAbstractRunner to its own header. DynamicValue methods that access oEvent::dataRevision must live in oRunner.cpp (not inline in header) since they need the full oEvent definition.
 - oRunnerData must be initialized in oEvent constructor BEFORE any oRunner is created — getDI().initData() will segfault otherwise. Initialize with all DI fields (Fee, CardFee, Paid, PayMode, BirthYear, Bib, Rank, EntryDate, EntryTime, Sex, Nationality, Country, ExtId, ExtId2, Priority, Phone, RaceId, TimeAdjust, PointAdjust, Heat, Reference, InputResult, TransferFlags, StartGroup, Analysis, RankScore).
 - `getClubCreate(int id, const wstring& name)` stub needed in oEvent.h for Set() XML deserialization: looks up club by id, creates if missing.
 - `allocateCard(oRunner*)` stub needed in oEvent.h for Set() XML deserialization: push_back to Cards, set tOwner.
@@ -345,7 +341,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - [ ] Typecheck passes
 
 **Learnings from Previous Runs:**
-- oPunch::tIndex, tMatchControlId, and isUsed are public (fixed by US-P0r in `prd-legacy-preparation.md`).
+- oPunch::tIndex, tMatchControlId, and isUsed are public.
 - evaluateCard simplified from ~400 legacy lines to ~80 lines: sequential control matching only, skipping rogaining/multi-runner/loop-course logic. Status rules: keep DNS/CANCEL; no finish→DNF; missing controls→MP; else OK.
 
 #### US-003h1: oTeam Core Migration
@@ -358,12 +354,12 @@ These patterns were discovered during previous Ralph runs and should be followed
 - [ ] `oAbstractRunner` base class fixes applied (getFinishTimeS, compareBib, compareClubs, getBuiltinAdjustment)
 
 **Learnings from Previous Runs:**
-- oTeam.h has `#include <set>` (fixed by US-P0t in `prd-legacy-preparation.md`).
+- oTeam.h has `#include <set>`.
 - `using oAbstractRunner::getTotalStatus;` is required in oTeam to unhide the no-arg base overload — C++ name hiding applies when a derived class overrides one overload of an overloaded function.
 - `ChangeType` is `oBase::ChangeType` (a scoped enum). In oTeam.cpp, the oEvent methods are not members of oBase, so `ChangeType` is not in scope without `using ChangeType = oBase::ChangeType;` at the top of the .cpp file.
 - `oAbstractRunner::getFinishTimeS`, `compareBib`, and `compareClubs` must be implemented in oRunner.cpp — they are declared in oAbstractRunner.h but the implementation never existed. These are called by oTeam.cpp.
 - `getBuiltinAdjustment()` must be added as `virtual int getBuiltinAdjustment() const { return 0; }` to oAbstractRunner.h — legacy code has it but the migration stub omitted it.
-- `compareClubs` uses standard `wstring <` comparison (fixed by US-P0u in `prd-legacy-preparation.md`).
+- `compareClubs` uses standard `wstring <` comparison.
 
 #### US-003h2: Relay Leg Computation + Tests
 
@@ -376,7 +372,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - [ ] Typecheck passes
 
 **Learnings from Previous Runs:**
-- Fields `tInTeam`, `tLeg`, `tStartTime` are public (fixed by US-P0r in `prd-legacy-preparation.md`).
+- Fields `tInTeam`, `tLeg`, `tStartTime` are public.
 - `getLegStatus(leg, false, false)` with no runners and `Runners.empty()` returns `StatusUnknown` via early return; fix by propagating `tStatus != StatusUnknown` in that branch.
 
 #### US-003i1: oEvent Core — Collections + Lifecycle
@@ -430,7 +426,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - `::sort` without `using std::sort` fails with GCC; always add the using declaration or fully qualify.
 - Template member functions defined in .cpp work fine if only called within that same .cpp.
 - `GeneralResultCtr::isDynamic()` checks `fileSource.empty()`, not `ptr->isDynamic()` — must use the file-constructor to get isDynamic()==true.
-- Win32 `CompareString` in `GeneralResultInfo::compareResult` replaced with plain `wstring <` comparison (fixed by US-P0u in `prd-legacy-preparation.md`).
+- Win32 `CompareString` in `GeneralResultInfo::compareResult` replaced with plain `wstring <` comparison.
 - `DynamicResult::prepareCalculations` for oRunner requires many stubs: getSplitAnalysis, getLegTimeAfter, getLegPlaces, getBirthYear, getBirthAge, getCheckTime, updateComputedResultFromTemp, getLegNumber, getTempStatus, getTempTime.
 
 #### US-003j2: MetaList + oListInfo + Result Tests
@@ -500,7 +496,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - [ ] Unit tests for each entity's CRUD operations
 
 **Learnings from Previous Runs:**
-- Public getters for protected domain buffers (`oData`) added by US-P0r in `prd-legacy-preparation.md`.
+- Public getters for protected domain buffers (`oData`) are available on entities.
 - Storing the `oData` buffer as a `BLOB` in SQLite allows for 100% state persistence without exhaustive schema mapping of all `oDataContainer` fields.
 - Semicolon-separated strings are used for mapping domain collections (like control IDs in a course) to single SQL columns, matching legacy serialization patterns.
 - Repository pattern effectively decouples domain entities from persistence logic, allowing for easy schema evolution.
@@ -528,11 +524,11 @@ These patterns were discovered during previous Ralph runs and should be followed
 - `oCard` and `oPunch` do not use `oDataContainer` buffers; their state is persisted via specialized serialization (punch strings) and dedicated tables.
 - Foreign key relationships in SQLite are best established during table creation; adding them via `ALTER TABLE` is limited.
 - Relationship loading requires a specific order of operations: load independent entities (Clubs, Courses) before dependent ones (Runners, Classes).
-- `getOData()`/`getODataBlobSize()` accessors are added by US-P0r in `prd-legacy-preparation.md`.
+- `getOData()`/`getODataBlobSize()` accessors are available on each entity owning an `oData` blob.
 - SQLite FK constraints: `REFERENCES clubs(id) ON DELETE SET NULL` enforces FK on INSERT too. When `foreign_keys=ON`, inserting a runner with `club_id=7` fails if no club with id=7 exists in `clubs`. Use `DbParam::Null()` for FK columns when the domain value is 0 (no reference), and `parseIntOrZero()` on read (SQLite returns NULL as empty string, `stoi("")` throws).
 - When testing runner FK relationships (club/class), you must first persist the referenced entities to the DB via their repositories — `oe.addClub()` only adds to the in-memory oEvent, not to SQLite.
 - oCard uses punch_string serialization (via `getPunchString()` / `importPunches()`), NOT oDataContainer blobs. The `getDISize()` returns -1 for oCard — never attempt blob-based persistence for cards.
-- `oClass::getNumLegs()` accessor available (added by US-P0r in `prd-legacy-preparation.md`). Distinct from `getNumLegNoParallel()` (which skips parallel legs).
+- `oClass::getNumLegs()` accessor available. Distinct from `getNumLegNoParallel()` (which skips parallel legs).
 - SchemaV3 extends SchemaV2 by appending v3 migration — the same "chain" pattern as SchemaV2 extends SchemaV1.
 - `ALTER TABLE runners ADD COLUMN` works in SQLite within a multi-statement migration; multiple ALTER TABLE statements in one migration string execute correctly.
 
@@ -553,8 +549,8 @@ These patterns were discovered during previous Ralph runs and should be followed
 - `oEvent` acts as the central registry for ID-to-entity lookups during repository loading; repositories must be passed the `oEvent` instance to correctly wire up relationships.
 - Semicolon-separated strings are an effective way to store simple lists (like runners in a team) when a full join table might be overkill for the current domain model.
 - Always verify the aggregate root (`oEvent`) metadata is persisted, as it contains essential competition-wide settings like ZeroTime.
-- `oTeam::getRunnerIdString()` public accessor available (added by US-P0r in `prd-legacy-preparation.md`).
-- `oTeam::oData` has public accessor methods (added by US-P0r in `prd-legacy-preparation.md`).
+- `oTeam::getRunnerIdString()` public accessor available.
+- `oTeam::oData` has public accessor methods.
 - `DbExtValue` uses `isBlobColumn` bool flag (not a `Type` enum) to distinguish blobs from text — use `row[i].second.isBlobColumn` to check for blob columns.
 - For event properties, a simple `\x01`/`\x02`-delimited encoding works well without any JSON library; keys contain only ASCII identifiers so no escaping is needed.
 - The events table uses `INSERT OR REPLACE` (upsert) with id=1 for the single-competition model — no need for UPDATE path.
@@ -689,8 +685,8 @@ These patterns were discovered during previous Ralph runs and should be followed
 - **UTF-8 Stability:** `std::wstring_convert` is deprecated and can be unstable; manual conversion is safer for a cross-platform core.
 - **Test Port Isolation:** Assigning unique ports to each test suite prevents flaky tests due to "port already in use" or interference from shutting down servers.
 - **Joining Server Threads:** Always `join()` the server thread instead of `detach()` to ensure a clean shutdown and avoid accessing destroyed objects from the background thread.
-- `oAbstractRunner::tmpResult` — use `getTempResult()` accessor (added by US-P0r in `prd-legacy-preparation.md`).
-- `oCard::cardNo` — use `oCard::setCardNo(int c)` accessor (added by US-P0r in `prd-legacy-preparation.md`).
+- `oAbstractRunner::tmpResult` — use `getTempResult()` accessor.
+- `oCard::cardNo` — use `oCard::setCardNo(int c)` accessor.
 - `ApiException` constructor takes `ApiErrorCode` enum, not int. Use factory helpers: `internalError()`, `badRequest()`, `notFound()`, `conflict()`, `unprocessable()`.
 - `oCard::PunchOrigin` is a nested enum class inside `oCard` — use `oCard::PunchOrigin::Original`, not bare `PunchOrigin::Original`.
 - For card readout: construct `oCard newCard(&oe)`, call `newCard.setCardNo(cardNo)`, add punches with `newCard.addPunch(type, time, 0, 0, oCard::PunchOrigin::Original)`, then `oe.addCard(newCard)` returns `pCard`. Associate via `runner->addCard(pc, missingPunches)` which calls `evaluateCard` automatically.
@@ -791,8 +787,8 @@ These patterns were discovered during previous Ralph runs and should be followed
 - Test files must add `using std::string; using std::wstring;` — meos_util.h does not inject `using namespace std`.
 - Use manual UTF-8 codec (not deprecated `std::codecvt_utf8`) for fromUTF8/toUTF8; on Linux wchar_t is UTF-32 (4 bytes), no surrogates needed.
 - CP-1252 decoding on Linux requires a lookup table for the 0x80-0x9F range; 0xA0-0xFF are Latin-1 compatible.
-- `meosException` inherits `std::runtime_error` (fixed by US-P0l in `prd-legacy-preparation.md`).
-- `StringCache::getInstance()` uses `thread_local` static (fixed by US-P0o in `prd-legacy-preparation.md`).
+- `meosException` inherits `std::runtime_error`.
+- `StringCache::getInstance()` uses `thread_local` static.
 - `getNameSplitPoint` references `lang.get().getGivenNames()` (the Localizer). Replace with simplified split-at-last-space heuristic until US-013d.
 - `getNumberSuffix` scans right-to-left skipping trailing digits+spaces (not just digits), so "H21" → 21, "H21 Start 1" → 1, "H21 Start" → 0.
 
@@ -867,10 +863,10 @@ These patterns were discovered during previous Ralph runs and should be followed
 
 **Learnings from Previous Runs:**
 - Win32 resource loading (`FindResource`, `LoadResource`, `LockResource`) replaced with `std::ifstream`. The `addLangResource` API now accepts a file path (wstring) instead of a Win32 resource ID integer — legacy code passed integer IDs embedded in wstrings, new code always uses file paths.
-- `std::exception("msg")` constructors already replaced with `std::runtime_error("msg")` (by US-P0l in `prd-legacy-preparation.md`).
-- `translate()` static buffer already made `thread_local` (by US-P0o in `prd-legacy-preparation.md`).
+- `std::exception("msg")` constructors already replaced with `std::runtime_error("msg")`.
+- `translate()` static buffer already made `thread_local`.
 - `oWordList` depends on `oFreeImport.h` → `oEvent.h` (full domain chain). Stub it in the util layer with `lookup()` always returning false. The `getGivenNames()` method is preserved in the API for domain code to call, but returns the stub until US-003 migrates the domain.
-- `permute()` already replaced with `std::shuffle` (by US-P0v in `prd-legacy-preparation.md`).
+- `permute()` already replaced with `std::shuffle`.
 - `fromUTF` (local Win32 function in legacy localizer.cpp) → `fromUTF8` from meos_util.h. `toUTF8(wstring)` (local Win32 function) → `toUTF8` from meos_util.h. No local overrides needed.
 - The `× ` character (multiplication sign, U+00D7) used in the translate prefix-skip logic must be written as `L'\u00d7'` — the literal `L'×'` may cause encoding issues depending on source file encoding.
 - `#include <filesystem>` is needed in localizer.cpp for `std::filesystem::path(wstring)` used to open .lng files with wide paths cross-platform.
@@ -956,7 +952,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 - [ ] Unit tests for HTML output
 
 **Learnings from Previous Runs:**
-- **oListParam members:** `selection`, `lockUpdate`, and `filterInclude()` are added by US-P0v in `prd-legacy-preparation.md`.
+- **oListParam members:** `selection`, `lockUpdate`, and `filterInclude()` are available on `oListParam`.
 - The legacy `HTMLWriter` is deeply tied to `gdioutput` (Win32 GUI object); it cannot be ported directly. The correct approach is to re-implement the template system cleanly without `gdioutput` dependency.
 - The MeOS `.template` format: first line must be exactly `@MEOS EXPORT TEMPLATE`, second non-comment line is `tag@HumanName`, then `@HEAD/@OUTERPAGE/@INNERPAGE/@SEPARATOR/@END` sections. Lines starting with `%` are comments. `@USETABLE` switches to table layout.
 - Placeholder replacement MUST be single-pass left-to-right picking longest match at each `@` to avoid `@T` corrupting `@TITLE`, `@N` corrupting `@NUMPAGE`, etc.
@@ -1029,7 +1025,7 @@ These patterns were discovered during previous Ralph runs and should be followed
 
 ### Migration Strategy
 
-The migration follows an incremental approach. Both `code/` (legacy) and `src/` (new) coexist during the transition. Phase 0 (legacy prep) and Phase 1 (foundation) are complete — see `plan/archive/`. Remaining phases:
+The migration follows an incremental approach. Both `code/` (legacy) and `src/` (new) coexist during the transition. Phase 1 (foundation) is complete — see `plan/archive/`. Legacy code preparation is tracked separately in `plan/prd-legacy-preparation.md` and may run in parallel. Remaining phases:
 
 2. **Utilities & Domain:** Migrate `src/util/` and `src/domain/` (no GUI, no DB), add tests
 3. **Database:** Implement SQLite layer in `src/db/`, wire to domain
