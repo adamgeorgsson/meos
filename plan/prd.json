@@ -61,8 +61,8 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "oPunch.h/cpp migrated to src/domain/ with DataMap pattern. time constants, formatTime, convertAbsoluteTimeHMS, _EmptyWString added to domain_header.h. oEvent stub extended with getAbsTime, getUnitAdjustment, getRelativeTime, getZeroTimeNum. oCourse stub extended with getStartPunchType, getFinishPunchType, getControl. domain_stubs.cpp cleaned of oPunch stub. 25 unit tests pass."
     },
     {
       "id": "US-003c",

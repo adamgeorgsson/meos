@@ -1,26 +1,11 @@
 // Stub implementations for domain entity placeholders.
 // Full implementations come in later migration stories.
 
-#include "oPunch.h"
 #include "oCourse.h"
 #include "oClass.h"
 #include "oRunner.h"
 #include "oCard.h"
 #include "oDataContainer.h"
-
-// oPunch stub DataContainer
-static oDataContainer& oPunchContainer() {
-  static oDataContainer dc(8);
-  return dc;
-}
-
-oDataContainer& oPunch::getDataBuffers(pvoid& data, pvoid& olddata,
-                                        pvectorstr& strData) const {
-  data = &dataMap_;
-  olddata = &oldDataMap_;
-  strData = nullptr;
-  return oPunchContainer();
-}
 
 // oCourse stub DataContainer
 static oDataContainer& oCourseContainer() {

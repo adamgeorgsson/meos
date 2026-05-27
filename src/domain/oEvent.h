@@ -1,11 +1,13 @@
 #pragma once
 
 #include <string>
+#include "domain_header.h"
 
 class oBase;
 
-// Minimal stub oEvent — provides just enough interface for oBase and oDataContainer.
-// Full competition management logic lives in the legacy code/oEvent.h.
+// Minimal stub oEvent — provides just enough interface for oBase, oDataContainer,
+// oPunch, and oControl. Full competition management logic lives in the legacy
+// code/oEvent.h.
 class oEvent {
 public:
   int dataRevision = 0;
@@ -33,4 +35,30 @@ public:
 
   // Punch-code index (cleared when control numbers change). Stub.
   struct PunchIndex { void clear() {} } punchIndex;
+
+  // -----------------------------------------------------------------------
+  // oPunch stubs
+  // -----------------------------------------------------------------------
+
+  // Format absolute time (tenths-of-sec from midnight) as "HH:MM:SS".
+  std::wstring getAbsTime(int t, SubSecond /*mode*/) const {
+    if (t <= 0) return L"-";
+    int sec  = t / timeConstSecond;
+    int hour = sec / 3600; sec %= 3600;
+    int min  = sec / 60;   sec %= 60;
+    wchar_t buf[16];
+    swprintf(buf, 16, L"%d:%02d:%02d", hour, min, sec);
+    return buf;
+  }
+
+  // Adjustment for a given punch unit (stub: 0).
+  int getUnitAdjustment(int /*specialPunchType*/, int /*unit*/) const { return 0; }
+
+  // Parse an absolute time string to tenths-of-sec units (stub: simple parse).
+  int getRelativeTime(const std::wstring& t) const {
+    return convertAbsoluteTimeHMS(t, -1);
+  }
+
+  // Zero-time number in tenths-of-sec units (stub: 0).
+  int getZeroTimeNum() const { return 0; }
 };

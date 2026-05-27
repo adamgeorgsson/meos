@@ -83,3 +83,43 @@ inline int convertAbsoluteTimeMS(const wstring& s) {
 
 // Return a dash placeholder (replaces legacy makeDash)
 inline wstring makeDash(const wstring& s) { return s; }
+
+// -----------------------------------------------------------------------
+// Time constants (1/10-second units, matching legacy timeconstants.hpp)
+// -----------------------------------------------------------------------
+constexpr int timeUnitsPerSecond = 10;
+constexpr int timeConstSecond    = timeUnitsPerSecond;          // 10
+constexpr int timeConstMinute    = 60  * timeUnitsPerSecond;    // 600
+constexpr int timeConstHour      = 3600 * timeUnitsPerSecond;   // 36000
+
+// Format elapsed time in tenths-of-a-second units as "M:SS[.t]"
+inline wstring formatTime(int rt, SubSecond mode = SubSecond::Auto) {
+  if (rt <= 0) return makeDash(L"-");
+  int tenths = rt % timeConstSecond;
+  int sec    = rt / timeConstSecond;
+  int min    = sec / 60;
+  sec       %= 60;
+  wchar_t buf[32];
+  if (mode != SubSecond::Off && tenths > 0)
+    swprintf(buf, 32, L"%d:%02d.%d", min, sec, tenths);
+  else
+    swprintf(buf, 32, L"%d:%02d", min, sec);
+  return buf;
+}
+
+// Parse "H:MM:SS" or "MM:SS" into tenths-of-a-second units (stub: ignores daysZeroTime)
+inline int convertAbsoluteTimeHMS(const wstring& m, int /*daysZeroTime*/) {
+  if (m.empty()) return -1;
+  int a = 0, b = 0, c = -1;
+  if (swscanf(m.c_str(), L"%d:%d:%d", &a, &b, &c) >= 2) {
+    int h  = (c >= 0) ? a : 0;
+    int mn = (c >= 0) ? b : a;
+    int s  = (c >= 0) ? c : b;
+    return (h * 3600 + mn * 60 + s) * timeConstSecond;
+  }
+  return -1;
+}
+
+// Empty wstring sentinel (mirrors legacy _EmptyWString)
+inline const wstring& _emptyWStringRef() { static const wstring s; return s; }
+#define _EmptyWString _emptyWStringRef()

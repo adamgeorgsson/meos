@@ -2,6 +2,8 @@
 #include "oBase.h"
 #include "oDataContainer.h"
 
+class oControl;
+
 // Stub for oCourse — full migration in a later story.
 class oCourse : public oBase {
 public:
@@ -14,6 +16,14 @@ public:
   void merge(const oBase&, const oBase*) override {}
   oDataContainer& getDataBuffers(pvoid& d, pvoid& o, pvectorstr& s) const override;
   int getDISize() const override { return 0; }
+
+  // Stub accessors used by oPunch::getType
+  int getStartPunchType() const { return 0; }
+  int getFinishPunchType() const { return 0; }
+
+  // Stub: return control at index (always nullptr in stub)
+  const oControl* getControl(int /*index*/) const { return nullptr; }
+
 private:
   mutable DataMap dataMap_;
   mutable DataMap oldDataMap_;
