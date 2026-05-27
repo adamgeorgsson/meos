@@ -33,12 +33,16 @@ class oCourse;
 class oControl;
 
 class oPunch : public oBase {
+public:
+  bool isUsed = false; //Is used in the course...
+  int tIndex; // Control match index in course
+  int tMatchControlId;
+
 protected:
   int type = 0;
   int punchTime = 0;
   int punchUnit = 0;
   int origin = 0;
-  bool isUsed = false; //Is used in the course...
 
   // Index into course (-1 if unused)
   int tRogainingIndex;
@@ -53,8 +57,6 @@ protected:
   pair<int, int> tTimeAdjust;
 
   int tCardIndex = -1; // Index into card
-  int tIndex; // Control match index in course
-  int tMatchControlId;
   bool hasBeenPlayed;
 
   /** Get internal data buffers for DI */

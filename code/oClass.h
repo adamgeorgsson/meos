@@ -394,6 +394,11 @@ protected:
   void configureInstance(int instance, bool allowCreation) const;
 public:
 
+  int getNumLegs() const { return (int)legInfo.size(); }
+
+  const BYTE* getOData() const { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   struct RogainingAnalysis {
     int bestTime = -1;
     int lostTime = -1;

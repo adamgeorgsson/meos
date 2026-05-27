@@ -164,6 +164,10 @@ string oTeam::getRunners() const
   return str;
 }
 
+wstring oTeam::getRunnerIdString() const {
+  return widen(getRunners());
+}
+
 void oTeam::decodeRunners(const string &rns, vector<int> &rid)
 {
   const char *str=rns.c_str();

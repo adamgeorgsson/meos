@@ -96,6 +96,9 @@ protected:
 
 public:
 
+  const BYTE* getOData() const { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   static const shared_ptr<Table> &getTable(oEvent *oe);
   // Get an identity sum based on controls
   int getIdSum(int nControls);

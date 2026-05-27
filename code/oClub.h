@@ -139,6 +139,9 @@ protected:
 
 public:
 
+  const BYTE* getOData() const { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   static void loadNameMap();
 
   void nameChanged() {

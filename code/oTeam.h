@@ -145,6 +145,12 @@ public:
 
   bool matchAbstractRunner(const oAbstractRunner* target) const override;
 
+  const BYTE* getOData() const { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
+  /** Return team's runner IDs as a semicolon-separated wide string. */
+  wstring getRunnerIdString() const;
+
   /** Deduce from computed runner times.*/
   RunnerStatus deduceComputedStatus() const;
   int deduceComputedRunningTime() const;

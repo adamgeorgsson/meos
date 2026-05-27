@@ -124,6 +124,9 @@ protected:
   void changedObject();
 
 public:
+  const BYTE* getOData() const { return oData; }
+  static int getODataBlobSize() { return dataSize; }
+
   void clearCache();
   static const shared_ptr<Table> &getTable(oEvent *oe);
 

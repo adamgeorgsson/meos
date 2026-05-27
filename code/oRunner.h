@@ -125,13 +125,15 @@ struct SICard;
 
 
 class oAbstractRunner : public oBase {
+public:
+  int tStartTime;
+
 protected:
   wstring sName;
   pClub Club;
   pClass Class;
 
   int startTime;
-  int tStartTime;
 
   int FinishTime;
   bool finishTimeWasSet = false;
@@ -309,6 +311,7 @@ public:
   /** Return results for a specific result module. */
   const TempResult &getTempResult(int tempResultIndex) const;
   TempResult &getTempResult();
+  const TempResult &getTempResult() const { return tmpResult; }
  
   void setTempResultZero(const TempResult &tr);
 
@@ -628,9 +631,7 @@ protected:
   mutable DynamicValue tCoursePlace;
   mutable DynamicValue tCourseClassPlace;
   mutable DynamicValue tTotalPlace;
-  mutable int tLeg;
   mutable int tLegEquClass;
-  mutable pTeam tInTeam;
   mutable pRunner tParentRunner;
   mutable bool tNeedNoCard;
   mutable bool tUseStartPunch;
@@ -787,6 +788,12 @@ protected:
   int getBuiltinAdjustment() const override;
 
 public:
+
+  mutable int tLeg;
+  mutable pTeam tInTeam;
+
+  const BYTE* getOData() const { return oData; }
+  static int getODataBlobSize() { return dataSize; }
 
   /** Return best time in class and expected time on leg for this runner */
   oClass::RogainingAnalysis getRogainingAnalysis(int from, int to) const;
