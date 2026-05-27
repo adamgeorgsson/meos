@@ -191,4 +191,42 @@ void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db) {
             });
 }
 
+namespace {
+
+json teamToJson(const meos::domain::Team& t) {
+    json j;
+    j["id"] = t.id;
+    j["name"] = t.name;
+    if (t.clubId) j["clubId"] = *t.clubId;
+    if (t.classId) j["classId"] = *t.classId;
+    j["members"] = t.members;
+    return j;
+}
+
+}  // namespace
+
+void registerTeamsRoutes(httplib::Server& svr, meos::db::Database& db) {
+    svr.Get("/api/v1/teams",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                auto teams = db.getAllTeams();
+                json arr = json::array();
+                for (const auto& t : teams) arr.push_back(teamToJson(t));
+                res.set_content(arr.dump(), "application/json");
+            });
+
+    svr.Get(R"(/api/v1/teams/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                int id = std::stoi(req.matches[1]);
+                auto team = db.getTeamById(id);
+                if (!team) {
+                    res.status = 404;
+                    res.set_content(makeError(404, "Not found").dump(),
+                                    "application/json");
+                } else {
+                    res.set_content(teamToJson(*team).dump(),
+                                    "application/json");
+                }
+            });
+}
+
 }  // namespace meos::net

@@ -1,0 +1,329 @@
+{
+  "project": "MeOS",
+  "description": "JSON REST API Backend (Read-Only) — C++ HTTP server in src/ serving JSON at /api/v1/* on port 2009, backed by SQLite, also serving the React SPA",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Modular source layout",
+      "description": "As a developer, I need the src/ directory organized into modules so that code is maintainable and each layer has clear responsibilities.",
+      "acceptanceCriteria": [
+        "Directory structure exists: src/util/, src/domain/, src/db/, src/net/, src/app/",
+        "Each module has its own CMakeLists.txt producing a static library (except app which produces the executable)",
+        "Top-level CMakeLists.txt includes all modules via add_subdirectory",
+        "Dependency graph is acyclic: util <- domain <- db <- net <- app",
+        "cmake --preset default && cmake --build build succeeds",
+        "ctest --test-dir build passes",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Modules wired: util/domain/db/db/net/app each have CMakeLists.txt producing static libs (app = executable). Acyclic chain. Root CMakeLists uses add_subdirectory."
+    },
+    {
+      "id": "US-002",
+      "title": "Utility module (string and time)",
+      "description": "As a developer, I need string and time utilities so that the backend can convert between internal representations and JSON-friendly formats.",
+      "acceptanceCriteria": [
+        "src/util/string_util.h/.cpp provides toUTF8(wstring) -> string and fromUTF8(string) -> wstring",
+        "src/util/time_util.h/.cpp provides formatTimeHMS(int seconds) -> string returning \"HH:MM:SS\" and parseTimeHMS(string) -> int parsing \"HH:MM:SS\" to seconds",
+        "Unit tests verify round-trip conversion for strings with Swedish characters (e.g., \"IF Berget\", \"Bjornparken, Stockholm\")",
+        "Unit tests verify formatTimeHMS(36000) == \"10:00:00\" and parseTimeHMS(\"10:02:00\") == 36120",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Implemented string_util (toUTF8/fromUTF8 hand-rolled UTF-8 codec, no platform deps) and time_util (formatTimeHMS/parseTimeHMS). Unit tests in tests/util_test.cpp cover Swedish characters, round-trip, and invalid input."
+    },
+    {
+      "id": "US-003",
+      "title": "Domain entities",
+      "description": "As a developer, I need C++ structs matching the frontend's TypeScript types so that serialization is straightforward.",
+      "acceptanceCriteria": [
+        "src/domain/entities.h defines structs: Competition, Club, Control, Course, Class, Runner, Team, SplitTime, Result, StartListEntry",
+        "Field names and types match src/ui/web/src/types/index.ts exactly (std::string for strings, int for numbers, std::vector<int> for arrays, std::optional for optional fields)",
+        "src/domain/entities.h is usable from all other modules",
+        "Build passes",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Created src/domain/entities.h with structs Competition, Club, Control, Course, Class, Runner, Team, SplitTime, Result, StartListEntry matching TypeScript types exactly. std::optional for optional fields, std::vector<int> for arrays of IDs."
+    },
+    {
+      "id": "US-004",
+      "title": "SQLite database layer",
+      "description": "As a developer, I need a database abstraction that creates tables, seeds test data, and provides read access for all entities.",
+      "acceptanceCriteria": [
+        "src/db/database.h/.cpp provides a Database class that opens/creates a SQLite file",
+        "Database::createTables() creates tables for all entities (competitions, clubs, controls, courses, course_controls, classes, runners, teams, team_members, results, splits, start_list)",
+        "PRAGMA foreign_keys=ON and PRAGMA journal_mode=WAL are set on connection",
+        "Read methods exist: getAllClubs() -> vector<Club>, getClubById(int) -> optional<Club>, and equivalent for all entities",
+        "getAllCourses() joins course_controls to populate the controls vector",
+        "getAllTeams() joins team_members to populate the members vector",
+        "getAllResults() joins splits to populate the splits vector",
+        "sqlite3 is added to vcpkg.json and linked in CMake",
+        "Unit tests verify CRUD operations against an in-memory SQLite database (:memory:)",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Database class with SQLite3 (vcpkg), createTables for all entities, read methods with JOIN for courses/teams/results. Tests use :memory: DB."
+    },
+    {
+      "id": "US-005",
+      "title": "Database seed data",
+      "description": "As a user, I want the server to start with test data so that the frontend shows real content immediately.",
+      "acceptanceCriteria": [
+        "src/db/seed.h/.cpp provides a seedIfEmpty(Database&) function",
+        "When competitions table is empty, seed inserts data matching src/ui/web/src/mocks/db.ts exactly: 1 competition, 5 clubs, 7 controls, 5 courses (with course_controls), 5 classes, 6 runners, 5 teams (with team_members), 6 results (with splits), 6 start list entries",
+        "When the database already has data, seeding is skipped",
+        "Entity IDs in seed data match the mock IDs (e.g., club \"IF Berget\" has id=1)",
+        "Build passes",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Implemented seedIfEmpty(Database&) in src/db/seed.h/.cpp. Seeds all entities matching db.ts mock data exactly (1 competition, 5 clubs, 7 controls, 5 courses with course_controls, 5 classes, 6 runners, 5 teams with team_members, 6 results with splits, 6 start list entries). Skips when data exists. Wrapped in transaction for atomicity."
+    },
+    {
+      "id": "US-006",
+      "title": "HTTP server with CORS",
+      "description": "As a developer, I need an HTTP server that handles CORS and serves as the foundation for the API and SPA.",
+      "acceptanceCriteria": [
+        "src/net/http_server.h/.cpp wraps httplib::Server",
+        "All responses include Access-Control-Allow-Origin: * header",
+        "OPTIONS requests on /api/* return 204 with CORS headers (Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS and Access-Control-Allow-Headers: Content-Type)",
+        "cpp-httplib is added to vcpkg.json and linked in CMake",
+        "Server port is configurable (default 2009)",
+        "Build passes",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "HttpServer in src/net/http_server.h/.cpp wraps cpp-httplib 0.39.0. CORS via set_pre_routing_handler: all responses get Access-Control-Allow-Origin: *; OPTIONS /api/* returns 204 with Allow-Methods and Allow-Headers. Port configurable (default 2009). cpp-httplib added to vcpkg.json, linked as httplib::httplib."
+    },
+    {
+      "id": "US-007",
+      "title": "JSON API — Clubs endpoint",
+      "description": "As a frontend user, I want to see real club data on the Clubs page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/clubs returns JSON array of all clubs e.g. [{\"id\":1,\"name\":\"IF Berget\",\"country\":\"SE\"}, ...]",
+        "GET /api/v1/clubs/{id} returns single club object or 404",
+        "Response Content-Type is application/json",
+        "Response body is a plain array/object (no {\"data\":...} envelope) — matching the MSW mock format",
+        "404 body matches ApiError shape: {\"message\":\"Not found\",\"status\":404}",
+        "nlohmann-json is added to vcpkg.json and linked in CMake",
+        "Integration test starts server on a test port, performs HTTP GET, and verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Implemented registerClubsRoutes in src/net/api.h/.cpp using nlohmann-json 3.12.0. GET /api/v1/clubs returns plain JSON array; GET /api/v1/clubs/{id} returns single object or 404 with {message,status} shape. Optional country field omitted when absent. Integration tests via httplib::Client against server on port 18007 — 4 tests passing."
+    },
+    {
+      "id": "US-008",
+      "title": "JSON API — Controls endpoint",
+      "description": "As a frontend user, I want to see real control data on the Controls page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/controls returns JSON array e.g. [{\"id\":1,\"code\":101,\"description\":\"Fork junction\",\"type\":\"normal\"}, ...]",
+        "GET /api/v1/controls/{id} returns single control or 404",
+        "Response Content-Type is application/json with no envelope wrapper",
+        "Integration test verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "registerControlsRoutes in src/net/api.h/.cpp. GET /api/v1/controls returns plain JSON array; GET /api/v1/controls/{id} returns single object or 404. Optional description/type fields omitted when absent. Integration tests via httplib::Client on port 18008 — 4 tests passing."
+    },
+    {
+      "id": "US-009",
+      "title": "JSON API — Courses endpoint",
+      "description": "As a frontend user, I want to see real course data on the Courses page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/courses returns JSON array e.g. [{\"id\":1,\"name\":\"Long\",\"length\":12500,\"controls\":[6,1,2,3,4,5,7]}, ...]",
+        "GET /api/v1/courses/{id} returns single course with controls array, or 404",
+        "controls field is an ordered array of control IDs matching the course's control sequence",
+        "Integration test verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "registerCoursesRoutes in src/net/api.h/.cpp. GET /api/v1/courses returns plain JSON array; GET /api/v1/courses/{id} returns single course with controls array or 404. Optional length field omitted when absent. nlohmann-json serializes vector<int> controls directly. Integration tests via httplib::Client on port 18009 — 4 tests passing."
+    },
+    {
+      "id": "US-010",
+      "title": "JSON API — Classes endpoint",
+      "description": "As a frontend user, I want to see real class data on the Classes page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/classes returns JSON array e.g. [{\"id\":1,\"name\":\"H21E\",\"courseId\":1,\"startMethod\":\"individual\"}, ...]",
+        "GET /api/v1/classes/{id} returns single class or 404",
+        "Integration test verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "registerClassesRoutes in src/net/api.h/.cpp. GET /api/v1/classes returns plain JSON array; GET /api/v1/classes/{id} returns single object or 404. Optional courseId/startMethod fields omitted when absent. Integration tests via httplib::Client on port 18010 — 4 tests passing."
+    },
+    {
+      "id": "US-011",
+      "title": "JSON API — Runners endpoint",
+      "description": "As a frontend user, I want to see real runner data on the Runners page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/runners returns JSON array e.g. [{\"id\":1,\"name\":\"Anna Lindstrom\",\"clubId\":1,\"classId\":2,\"startTime\":\"10:00:00\",\"cardNumber\":2001234,\"status\":\"ok\"}, ...]",
+        "GET /api/v1/runners/{id} returns single runner or 404",
+        "Optional fields (clubId, classId, startTime, cardNumber, status) are included only when present (not serialized as null)",
+        "Integration test verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "registerRunnersRoutes in src/net/api.h/.cpp. GET /api/v1/runners returns plain JSON array; GET /api/v1/runners/{id} returns single object or 404. All optional fields (clubId, classId, startTime, cardNumber, status) omitted when absent. runnerToJson helper avoids duplication. Integration tests via httplib::Client on port 18011 — 4 tests passing."
+    },
+    {
+      "id": "US-012",
+      "title": "JSON API — Teams endpoint",
+      "description": "As a frontend user, I want to see real team data on the Teams page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/teams returns JSON array e.g. [{\"id\":1,\"name\":\"Berget Red\",\"clubId\":1,\"classId\":1,\"members\":[2]}, ...]",
+        "GET /api/v1/teams/{id} returns single team with members array, or 404",
+        "Integration test verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "registerTeamsRoutes in src/net/api.h/.cpp. GET /api/v1/teams returns plain JSON array; GET /api/v1/teams/{id} returns single team with members array or 404. Optional clubId/classId fields omitted when absent. members (vector<int>) serializes directly to JSON array. Integration tests via httplib::Client on port 18012 — 4 tests passing."
+    },
+    {
+      "id": "US-013",
+      "title": "JSON API — Competition endpoint",
+      "description": "As a frontend user, I want to see real competition info on the Competition page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/competitions returns the competition object e.g. {\"id\":1,\"name\":\"Spring Cup 2026\",\"date\":\"2026-05-15\",\"organizer\":\"IF Berget\",\"location\":\"Bjornparken, Stockholm\",\"description\":\"Annual spring orienteering competition\"}",
+        "Endpoint returns a singleton object, not an array",
+        "Integration test verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "JSON API — Results endpoint",
+      "description": "As a frontend user, I want to see real results on the Results page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/results returns JSON array e.g. [{\"id\":1,\"runnerId\":1,\"classId\":2,\"position\":1,\"totalTime\":4512,\"status\":\"ok\",\"splits\":[{\"controlId\":1,\"time\":1234},{\"controlId\":2,\"time\":2456}]}, ...]",
+        "Results with no position/totalTime (e.g., DNS/DNF) omit those fields or set them to null",
+        "splits is an array of {controlId, time} objects",
+        "Integration test verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "JSON API — Start list endpoint",
+      "description": "As a frontend user, I want to see real start list data on the Start List page.",
+      "acceptanceCriteria": [
+        "GET /api/v1/startlist returns JSON array e.g. [{\"id\":1,\"runnerId\":1,\"classId\":2,\"startTime\":\"10:00:00\",\"bib\":1}, ...]",
+        "Integration test verifies JSON structure",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "XML export endpoints (IOF 3.0)",
+      "description": "As a frontend user, I want to export results and start lists as IOF XML.",
+      "acceptanceCriteria": [
+        "GET /api/v1/results/export/xml returns IOF 3.0 ResultList XML with Content-Type: application/xml",
+        "GET /api/v1/startlist/export/xml returns IOF 3.0 StartList XML with Content-Type: application/xml",
+        "XML includes the IOF 3.0 namespace: http://www.orienteering.org/datastandard/3.0",
+        "Integration test verifies Content-Type and namespace presence",
+        "Build passes",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "SPA static file serving with fallback",
+      "description": "As a user, I want to open http://localhost:2009 in my browser and see the full React application.",
+      "acceptanceCriteria": [
+        "The server serves static files from a configurable directory (default: src/ui/web/dist/)",
+        "GET / serves index.html",
+        "GET /assets/foo.js serves the corresponding file with the correct Content-Type",
+        "Any GET request that does not match /api/* and does not match a static file returns index.html (SPA fallback)",
+        "Build passes",
+        "Typecheck passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Application entry point",
+      "description": "As a user, I want to run a single binary that starts the server with a seeded database.",
+      "acceptanceCriteria": [
+        "src/app/main.cpp replaces the stub src/main.cpp",
+        "On startup: opens/creates meos.sqlite, runs createTables(), runs seedIfEmpty(), registers all API routes, starts HTTP server on port 2009",
+        "Server logs startup message to stdout: 'MeOS server listening on http://localhost:2009'",
+        "Ctrl+C gracefully stops the server",
+        "cmake --preset default && cmake --build build produces a working meos binary",
+        "Running ./build/meos starts the server and curl http://localhost:2009/api/v1/clubs returns valid JSON",
+        "Build passes",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Frontend backend toggle (VITE_USE_BACKEND)",
+      "description": "As a developer, I want to easily switch between MSW mocks and the real backend during development.",
+      "acceptanceCriteria": [
+        "src/ui/web/src/main.tsx checks for VITE_USE_BACKEND env variable",
+        "When VITE_USE_BACKEND is set (any truthy value), MSW worker is NOT started — requests go to the real backend via the Vite proxy",
+        "When VITE_USE_BACKEND is not set (default), MSW starts as before — no behavior change for frontend-only development",
+        "npm test still passes (tests always use MSW regardless of env var)",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "Typecheck passes"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
