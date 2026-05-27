@@ -12,7 +12,7 @@ class oClub;
 class oCourse;
 
 // Minimal stub oEvent — provides just enough interface for oBase, oDataContainer,
-// oPunch, oControl, and oClub. Full competition management logic lives in the legacy
+// oPunch, oControl, oClub, oCourse, and oClass. Full competition management logic lives in the legacy
 // code/oEvent.h.
 class oEvent {
 public:
@@ -30,11 +30,15 @@ public:
   mutable std::map<int, oControl*> controlIndex_;
   mutable int qFreeCourseId_ = 0;
 
-  // Dirty flags set by changedObject() of course/control entities.
+  // Class store — backing storage for getFreeClassId().
+  mutable int qFreeClassId = 0;
+
+  // Dirty flags set by changedObject() of course/control/class entities.
   bool globalModification = false;
   int tCalcNumMapsDataRevision = -1;
   struct SqlState { bool changed = false; };
   SqlState sqlCourses;
+  SqlState sqlClasses;
 
   bool isClient() const { return false; }
   bool hasDBConnection() const { return false; }
@@ -126,4 +130,14 @@ public:
 
   // Allocate a fresh course ID (stub: auto-increment from 1).
   int getFreeCourseId() const { return ++qFreeCourseId_; }
+
+  // -----------------------------------------------------------------------
+  // oClass stubs
+  // -----------------------------------------------------------------------
+
+  // Course store for oClass::importCourses (stub: no course list, returns nullptr).
+  oCourse* getCourse(int /*id*/) const { return nullptr; }
+
+  // Allocate a fresh class ID (stub: auto-increment from 1).
+  int getFreeClassId() const { return ++qFreeClassId; }
 };

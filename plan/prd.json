@@ -109,8 +109,8 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "oClass.h/cpp migrated to src/domain/ with DataMap pattern. Enums (StartTypes, LegTypes, BibMode, AutoBibType, ClassType), oLegInfo (default ctor startMethod=STTime), full class-course assignment (single and multi-stage), DataContainer with 40 fields, codeLegMethod/importLegMethod/parseCourses. oEvent stub extended with qFreeClassId, sqlClasses, getFreeClassId(), getCourse(int). 17 tests pass."
     },
     {
       "id": "US-003e2",
