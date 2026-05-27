@@ -311,6 +311,7 @@
     <ClInclude Include="onlineinput.h" />
     <ClInclude Include="onlineresults.h" />
     <ClInclude Include="oPunch.h" />
+    <ClInclude Include="oAbstractRunner.h" />
     <ClInclude Include="oRunner.h" />
     <ClInclude Include="ospeaker.h" />
     <ClInclude Include="oTeam.h" />

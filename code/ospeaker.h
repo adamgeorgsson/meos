@@ -22,6 +22,7 @@
 
 ************************************************************************/
 class oRunner;
+#include "oAbstractRunner.h"
 #include "gdifonts.h"
 #include "gdioutput.h"
 

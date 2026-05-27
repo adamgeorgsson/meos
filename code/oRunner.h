@@ -29,89 +29,11 @@
 #include "oClass.h"
 #include "oCard.h"
 #include "oDataContainer.h"
-
-enum RunnerStatus {
-  StatusOK = 1, StatusDNS = 20, StatusCANCEL = 21, StatusOutOfCompetition = 15, StatusMP = 3,
-  StatusDNF = 4, StatusDQ = 5, StatusMAX = 6, StatusNoTiming = 2,
-  StatusUnknown = 0, StatusNotCompeting = 99
-};
-
-enum class DynamicRunnerStatus {
-  StatusInactive,
-  StatusActive,
-  StatusFinished
-};
-
-/** Returns true for a status that might or might not indicate a result. */
-template<int dummy=0>
-bool isPossibleResultStatus(RunnerStatus st) {
-  return st == StatusNoTiming || st == StatusOutOfCompetition;
-}
-
-template<int dummy=0>
-vector<RunnerStatus> getAllRunnerStatus() {
-  return { StatusOK, StatusDNS, StatusCANCEL, StatusOutOfCompetition, StatusMP,
-           StatusDNF, StatusDQ, StatusMAX,
-           StatusUnknown, StatusNotCompeting , StatusNoTiming};
-}
-
-
-template<int dummy = 0>
-bool showResultTime(RunnerStatus st, int time) {
-  return st == StatusOK || (st == StatusOutOfCompetition && time > 0);
-}
-
+#include "oAbstractRunner.h"
 
 #include "ospeaker.h"
 
 extern char RunnerStatusOrderMap[100];
-
-enum SortOrder {
-  ClassStartTime,
-  ClassTeamLeg,
-  ClassResult,
-  ClassDefaultResult,
-  ClassCourseResult,
-  ClassTotalResult,
-  ClassTeamLegResult,
-  ClassFinishTime,
-  ClassStartTimeClub,
-  ClassPoints,
-  ClassLiveResult,
-  ClassKnockoutTotalResult,
-  SortByName,
-  SortByLastName,
-  SortByFinishTime,
-  SortByFinishTimeReverse,
-  SortByStartTime,
-  SortByStartTimeClass,
-  CourseResult,
-  CourseStartTime,
-  SortByEntryTime,
-  ClubClassStartTime,
-  SortByBib,
-  Custom,
-  SortEnumLastItem
-};
-
-static bool orderByClass(SortOrder so) {
-  switch (so) {
-  case ClassStartTime:
-  case ClassTeamLeg:
-  case ClassResult:
-  case ClassDefaultResult:
-  case ClassCourseResult:
-  case ClassTotalResult:
-  case ClassTeamLegResult:
-  case ClassFinishTime:
-  case ClassStartTimeClub:
-  case ClassPoints:
-  case ClassLiveResult:
-  case ClassKnockoutTotalResult:
-    return true;
-  }
-  return false;
-}
 
 class oRunner;
 typedef oRunner* pRunner;

@@ -32,6 +32,8 @@
 #include "oBase.h"
 #include "oPunch.h"
 
+using SpecialPunch = oPunch::SpecialPunch;
+
 class oControl;
 class xmlparser;
 class xmlobject;
