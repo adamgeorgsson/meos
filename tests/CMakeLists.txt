@@ -18,3 +18,7 @@ target_link_libraries(seed_test PRIVATE meos_db)
 # Clubs API integration test
 meos_add_test(clubs_api_test clubs_api_test.cpp)
 target_link_libraries(clubs_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
+# Controls API integration test
+meos_add_test(controls_api_test controls_api_test.cpp)
+target_link_libraries(controls_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
