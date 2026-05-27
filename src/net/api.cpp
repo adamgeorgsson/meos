@@ -151,4 +151,44 @@ void registerClassesRoutes(httplib::Server& svr, meos::db::Database& db) {
             });
 }
 
+namespace {
+
+json runnerToJson(const meos::domain::Runner& r) {
+    json j;
+    j["id"] = r.id;
+    j["name"] = r.name;
+    if (r.clubId) j["clubId"] = *r.clubId;
+    if (r.classId) j["classId"] = *r.classId;
+    if (r.startTime) j["startTime"] = *r.startTime;
+    if (r.cardNumber) j["cardNumber"] = *r.cardNumber;
+    if (r.status) j["status"] = *r.status;
+    return j;
+}
+
+}  // namespace
+
+void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db) {
+    svr.Get("/api/v1/runners",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                auto runners = db.getAllRunners();
+                json arr = json::array();
+                for (const auto& r : runners) arr.push_back(runnerToJson(r));
+                res.set_content(arr.dump(), "application/json");
+            });
+
+    svr.Get(R"(/api/v1/runners/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                int id = std::stoi(req.matches[1]);
+                auto runner = db.getRunnerById(id);
+                if (!runner) {
+                    res.status = 404;
+                    res.set_content(makeError(404, "Not found").dump(),
+                                    "application/json");
+                } else {
+                    res.set_content(runnerToJson(*runner).dump(),
+                                    "application/json");
+                }
+            });
+}
+
 }  // namespace meos::net

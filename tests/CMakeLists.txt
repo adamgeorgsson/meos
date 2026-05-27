@@ -30,3 +30,7 @@ target_link_libraries(courses_api_test PRIVATE meos_net nlohmann_json::nlohmann_
 # Classes API integration test
 meos_add_test(classes_api_test classes_api_test.cpp)
 target_link_libraries(classes_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
+# Runners API integration test
+meos_add_test(runners_api_test runners_api_test.cpp)
+target_link_libraries(runners_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)

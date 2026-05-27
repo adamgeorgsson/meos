@@ -18,4 +18,7 @@ void registerCoursesRoutes(httplib::Server& svr, meos::db::Database& db);
 // Registers GET /api/v1/classes and GET /api/v1/classes/{id} on svr.
 void registerClassesRoutes(httplib::Server& svr, meos::db::Database& db);
 
+// Registers GET /api/v1/runners and GET /api/v1/runners/{id} on svr.
+void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db);
+
 }  // namespace meos::net
