@@ -197,6 +197,7 @@
     <ClCompile Include="oBase.cpp" />
     <ClCompile Include="oCard.cpp" />
     <ClCompile Include="oClass.cpp" />
+    <ClCompile Include="oClassConfig.cpp" />
     <ClCompile Include="oClub.cpp" />
     <ClCompile Include="oControl.cpp" />
     <ClCompile Include="oCourse.cpp" />
@@ -303,6 +304,7 @@
     <ClInclude Include="oBase.h" />
     <ClInclude Include="oCard.h" />
     <ClInclude Include="oClass.h" />
+    <ClInclude Include="oClassInternal.h" />
     <ClInclude Include="oClub.h" />
     <ClInclude Include="oControl.h" />
     <ClInclude Include="oCourse.h" />
