@@ -206,6 +206,21 @@ public:
   std::string getResultModuleTag() const { return ""; }
   bool isTeamClass() const;
 
+  // Stubs required by oAbstractRunner/oRunner (US-003g1)
+  oClass* getVirtualClass(int /*instance*/) const { return const_cast<oClass*>(this); }
+  void clearCache(bool /*deep*/) {}
+
+  // Stub result-info store (cleared by setClubId, filled by result computation)
+  struct ResultInfoItem {};
+  mutable std::vector<ResultInfoItem> tResultInfo;
+
+  // Rogaining analysis stub (result computed in US-003g2)
+  struct RogainingAnalysis {
+    int totalPoints = 0;
+    int missingControls = 0;
+    int overtime = 0;
+  };
+
   // leg-method coding/importing (used in XML serialization)
   std::string codeLegMethod() const;
   void importLegMethod(const std::string& legMethods);

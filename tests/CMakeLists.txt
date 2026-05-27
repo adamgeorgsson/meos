@@ -90,3 +90,7 @@ target_link_libraries(domain_ocard_test PRIVATE meos_domain meos_util)
 # Domain oFreePunch unit test
 meos_add_test(domain_ofreepunch_test domain_ofreepunch_test.cpp)
 target_link_libraries(domain_ofreepunch_test PRIVATE meos_domain)
+
+# Domain oRunner unit test
+meos_add_test(domain_orunner_test domain_orunner_test.cpp)
+target_link_libraries(domain_orunner_test PRIVATE meos_domain)

@@ -2,14 +2,17 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "domain_header.h"
 #include "oControl.h"
 #include "oFreePunch.h"
+#include "oAbstractRunner.h"
 
 class oBase;
-class oClub;
+class oCard;
 class oCourse;
 
 // Minimal stub oEvent — provides just enough interface for oBase, oDataContainer,
@@ -34,12 +37,16 @@ public:
   // Class store — backing storage for getFreeClassId().
   mutable int qFreeClassId = 0;
 
+  // Runner store
+  mutable int qFreeRunnerId = 0;
+
   // Dirty flags set by changedObject() of course/control/class entities.
   bool globalModification = false;
   int tCalcNumMapsDataRevision = -1;
   struct SqlState { bool changed = false; };
   SqlState sqlCourses;
   SqlState sqlClasses;
+  mutable SqlState sqlRunners;
 
   bool isClient() const { return false; }
   bool hasDBConnection() const { return false; }
@@ -63,6 +70,34 @@ public:
 
   // Punch-code index (cleared when control numbers change). Stub used by oControl.
   // Full implementation lives in oFreePunch stubs section below.
+
+  // -----------------------------------------------------------------------
+  // oRunner stubs
+  // -----------------------------------------------------------------------
+
+  // Runner lookup hashes (cleared on change)
+  mutable std::multimap<int, oAbstractRunner*> bibStartNoToRunnerTeam;
+  mutable std::shared_ptr<std::unordered_multimap<int, oRunner*>> cardToRunnerHash;
+  mutable std::shared_ptr<std::map<int, std::vector<oRunner*>>> classIdToRunnerHash;
+
+  int getFreeRunnerId() const { return ++qFreeRunnerId; }
+
+  // Club lookups (stubs: no storage)
+  pClub getClub(int /*id*/) const { return nullptr; }
+  pClub getClub(const std::wstring& /*name*/) const { return nullptr; }
+  pClub getClubCreate(int /*id*/, const std::wstring& /*name*/) const { return nullptr; }
+
+  // Card allocation (stub)
+  oCard* allocateCard(oRunner* /*owner*/) const { return nullptr; }
+  oCard* getCard(int /*id*/) const { return nullptr; }
+
+  // Course lookup (stub)
+  oCourse* getCourseById(int /*id*/) const { return nullptr; }
+
+  // Class lookup (stub)
+  oClass* getClass(int /*id*/) const { return nullptr; }
+
+  bool hasPrevStage() const { return false; }
 
   // -----------------------------------------------------------------------
   // oPunch stubs
