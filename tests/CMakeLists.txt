@@ -50,3 +50,7 @@ target_link_libraries(results_api_test PRIVATE meos_net nlohmann_json::nlohmann_
 # Start list API integration test
 meos_add_test(startlist_api_test startlist_api_test.cpp)
 target_link_libraries(startlist_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
+# XML export integration test
+meos_add_test(xml_export_test xml_export_test.cpp)
+target_link_libraries(xml_export_test PRIVATE meos_net)

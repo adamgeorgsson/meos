@@ -2,6 +2,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <map>
+#include <sstream>
+
 using json = nlohmann::json;
 
 namespace meos::net {
@@ -330,6 +333,197 @@ void registerStartListRoutes(httplib::Server& svr, meos::db::Database& db) {
                     res.set_content(startListEntryToJson(*entry).dump(),
                                     "application/json");
                 }
+            });
+}
+
+namespace {
+
+static const char* IOF_NS =
+    "http://www.orienteering.org/datastandard/3.0";
+
+std::string xmlEscape(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        switch (c) {
+            case '&':  out += "&amp;";  break;
+            case '<':  out += "&lt;";   break;
+            case '>':  out += "&gt;";   break;
+            case '"':  out += "&quot;"; break;
+            case '\'': out += "&apos;"; break;
+            default:   out += c;        break;
+        }
+    }
+    return out;
+}
+
+std::string toIofStatus(const std::string& s) {
+    if (s == "ok")  return "OK";
+    if (s == "dns") return "DidNotStart";
+    if (s == "dnf") return "DidNotFinish";
+    if (s == "mp")  return "MissingPunch";
+    if (s == "dq")  return "Disqualified";
+    return "OK";
+}
+
+std::string buildResultListXml(meos::db::Database& db) {
+    auto results  = db.getAllResults();
+    auto runners  = db.getAllRunners();
+    auto classes  = db.getAllClasses();
+    auto clubs    = db.getAllClubs();
+    auto controls = db.getAllControls();
+
+    std::map<int, meos::domain::Runner>  runnerMap;
+    std::map<int, meos::domain::Class>   classMap;
+    std::map<int, meos::domain::Club>    clubMap;
+    std::map<int, int>                   controlCodeMap;
+
+    for (auto& r : runners)  runnerMap[r.id]          = r;
+    for (auto& c : classes)  classMap[c.id]            = c;
+    for (auto& c : clubs)    clubMap[c.id]             = c;
+    for (auto& c : controls) controlCodeMap[c.id]      = c.code;
+
+    // Group results by classId
+    std::map<int, std::vector<const meos::domain::Result*>> byClass;
+    for (const auto& r : results) byClass[r.classId].push_back(&r);
+
+    std::ostringstream xml;
+    xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        << "<ResultList xmlns=\"" << IOF_NS << "\"\n"
+        << "            xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+        << "            iofVersion=\"3.0\" status=\"Complete\">\n";
+
+    for (const auto& [classId, resList] : byClass) {
+        xml << "  <ClassResult>\n"
+            << "    <Class>\n"
+            << "      <Id>" << classId << "</Id>\n";
+        if (classMap.count(classId))
+            xml << "      <Name>" << xmlEscape(classMap.at(classId).name) << "</Name>\n";
+        xml << "    </Class>\n";
+
+        for (const auto* r : resList) {
+            xml << "    <PersonResult>\n"
+                << "      <Person>\n"
+                << "        <Id>" << r->runnerId << "</Id>\n";
+            if (runnerMap.count(r->runnerId)) {
+                const auto& runner = runnerMap.at(r->runnerId);
+                xml << "        <Name><Given>" << xmlEscape(runner.name) << "</Given></Name>\n";
+            }
+            xml << "      </Person>\n";
+
+            if (runnerMap.count(r->runnerId)) {
+                const auto& runner = runnerMap.at(r->runnerId);
+                if (runner.clubId && clubMap.count(*runner.clubId)) {
+                    const auto& club = clubMap.at(*runner.clubId);
+                    xml << "      <Organisation>\n"
+                        << "        <Id>" << club.id << "</Id>\n"
+                        << "        <Name>" << xmlEscape(club.name) << "</Name>\n"
+                        << "      </Organisation>\n";
+                }
+            }
+
+            xml << "      <Result>\n";
+            if (r->totalTime) xml << "        <Time>" << *r->totalTime << "</Time>\n";
+            if (r->position)  xml << "        <Position>" << *r->position << "</Position>\n";
+            xml << "        <Status>" << toIofStatus(r->status) << "</Status>\n";
+
+            for (const auto& s : r->splits) {
+                int code = controlCodeMap.count(s.controlId) ? controlCodeMap.at(s.controlId) : s.controlId;
+                xml << "        <SplitTime>\n"
+                    << "          <ControlCode>" << code << "</ControlCode>\n"
+                    << "          <Time>" << s.time << "</Time>\n"
+                    << "        </SplitTime>\n";
+            }
+            xml << "      </Result>\n"
+                << "    </PersonResult>\n";
+        }
+        xml << "  </ClassResult>\n";
+    }
+    xml << "</ResultList>\n";
+    return xml.str();
+}
+
+std::string buildStartListXml(meos::db::Database& db) {
+    auto entries = db.getAllStartList();
+    auto runners = db.getAllRunners();
+    auto classes = db.getAllClasses();
+    auto clubs   = db.getAllClubs();
+
+    std::map<int, meos::domain::Runner> runnerMap;
+    std::map<int, meos::domain::Class>  classMap;
+    std::map<int, meos::domain::Club>   clubMap;
+
+    for (auto& r : runners) runnerMap[r.id]  = r;
+    for (auto& c : classes) classMap[c.id]   = c;
+    for (auto& c : clubs)   clubMap[c.id]    = c;
+
+    // Group entries by classId
+    std::map<int, std::vector<const meos::domain::StartListEntry*>> byClass;
+    for (const auto& e : entries) byClass[e.classId].push_back(&e);
+
+    std::ostringstream xml;
+    xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        << "<StartList xmlns=\"" << IOF_NS << "\"\n"
+        << "           xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+        << "           iofVersion=\"3.0\">\n";
+
+    for (const auto& [classId, entryList] : byClass) {
+        xml << "  <ClassStart>\n"
+            << "    <Class>\n"
+            << "      <Id>" << classId << "</Id>\n";
+        if (classMap.count(classId))
+            xml << "      <Name>" << xmlEscape(classMap.at(classId).name) << "</Name>\n";
+        xml << "    </Class>\n";
+
+        for (const auto* e : entryList) {
+            xml << "    <PersonStart>\n"
+                << "      <Person>\n"
+                << "        <Id>" << e->runnerId << "</Id>\n";
+            if (runnerMap.count(e->runnerId)) {
+                const auto& runner = runnerMap.at(e->runnerId);
+                xml << "        <Name><Given>" << xmlEscape(runner.name) << "</Given></Name>\n";
+            }
+            xml << "      </Person>\n";
+
+            if (runnerMap.count(e->runnerId)) {
+                const auto& runner = runnerMap.at(e->runnerId);
+                if (runner.clubId && clubMap.count(*runner.clubId)) {
+                    const auto& club = clubMap.at(*runner.clubId);
+                    xml << "      <Organisation>\n"
+                        << "        <Id>" << club.id << "</Id>\n"
+                        << "        <Name>" << xmlEscape(club.name) << "</Name>\n"
+                        << "      </Organisation>\n";
+                }
+            }
+
+            xml << "      <Start>\n"
+                << "        <StartTime>" << xmlEscape(e->startTime) << "</StartTime>\n";
+            if (e->bib) xml << "        <BibNumber>" << *e->bib << "</BibNumber>\n";
+            if (runnerMap.count(e->runnerId)) {
+                const auto& runner = runnerMap.at(e->runnerId);
+                if (runner.cardNumber)
+                    xml << "        <ControlCard type=\"SI\">" << *runner.cardNumber << "</ControlCard>\n";
+            }
+            xml << "      </Start>\n"
+                << "    </PersonStart>\n";
+        }
+        xml << "  </ClassStart>\n";
+    }
+    xml << "</StartList>\n";
+    return xml.str();
+}
+
+}  // anonymous namespace
+
+void registerXmlExportRoutes(httplib::Server& svr, meos::db::Database& db) {
+    svr.Get("/api/v1/results/export/xml",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                res.set_content(buildResultListXml(db), "application/xml");
+            });
+
+    svr.Get("/api/v1/startlist/export/xml",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                res.set_content(buildStartListXml(db), "application/xml");
             });
 }
 

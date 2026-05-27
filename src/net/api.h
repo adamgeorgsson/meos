@@ -33,4 +33,9 @@ void registerResultsRoutes(httplib::Server& svr, meos::db::Database& db);
 // Registers GET /api/v1/startlist and GET /api/v1/startlist/{id} on svr.
 void registerStartListRoutes(httplib::Server& svr, meos::db::Database& db);
 
+// Registers IOF 3.0 XML export endpoints:
+//   GET /api/v1/results/export/xml   -> ResultList XML
+//   GET /api/v1/startlist/export/xml -> StartList XML
+void registerXmlExportRoutes(httplib::Server& svr, meos::db::Database& db);
+
 }  // namespace meos::net
