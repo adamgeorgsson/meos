@@ -3,6 +3,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -211,4 +212,15 @@ public:
   mutable SqlState sqlCards;
 
   int getFreeCardId() const { return ++qFreeCardId; }
+
+  // -----------------------------------------------------------------------
+  // oTeam stubs
+  // -----------------------------------------------------------------------
+  mutable int qFreeTeamId = 0;
+  mutable SqlState sqlTeams;
+
+  int getFreeTeamId() const { return ++qFreeTeamId; }
+
+  // Re-compute team results for a set of classes (stub: no-op in domain layer)
+  void calculateTeamResults(const std::set<int>& /*classIds*/, int /*resultType*/) const {}
 };

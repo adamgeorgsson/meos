@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cwchar>
+#include <limits>
 #include <list>
 #include <map>
 #include <memory>
@@ -161,6 +162,23 @@ inline wstring formatDate(int m, bool /*useIsoFormat*/) {
   else
     bf[0] = L'-', bf[1] = 0;
   return bf;
+}
+
+// Compare two bib strings: shorter wins; equal length uses polynomial hash ordering
+inline bool compareBib(const wstring& b1, const wstring& b2) {
+  int l1 = (int)b1.length();
+  int l2 = (int)b2.length();
+  if (l1 != l2) return l1 < l2;
+  if (l1 == 0) return false;
+  wchar_t maxc = 0, minc = std::numeric_limits<wchar_t>::max();
+  for (int k = 0; k < l1; k++) { maxc = std::max(maxc, b1[k]); minc = std::min(minc, b1[k]); }
+  for (int k = 0; k < l2; k++) { maxc = std::max(maxc, b2[k]); minc = std::min(minc, b2[k]); }
+  unsigned coeff = (unsigned)(maxc - minc) + 1;
+  unsigned z1 = 0;
+  for (int k = 0; k < l1; k++) z1 = coeff * z1 + (unsigned)(b1[k] - minc);
+  unsigned z2 = 0;
+  for (int k = 0; k < l2; k++) z2 = coeff * z2 + (unsigned)(b2[k] - minc);
+  return z1 < z2;
 }
 
 // Split a wstring by a wide delimiter string into a vector

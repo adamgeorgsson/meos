@@ -216,9 +216,25 @@ public:
   // Maximum running time for status MAX computation (0 = no limit)
   int getMaximumRunnerTime() const { return tMaxTime; }
 
+  // Bib mode for relay team bib assignment
+  BibMode getBibMode() const {
+    int m = getDCI().getInt("BibMode");
+    return (m >= BibUndefined && m <= BibLeg) ? static_cast<BibMode>(m) : BibUndefined;
+  }
+  // Returns the number of digits in a bib pattern (stub: returns 0)
+  static int extractBibPattern(const std::wstring& /*bibInfo*/, wchar_t /*pattern*/[32]) { return 0; }
+
   // Stub result-info store (cleared by setClubId, filled by result computation)
   struct ResultInfoItem {};
   mutable std::vector<ResultInfoItem> tResultInfo;
+
+  // AllowRecompute enum used by getTotalLegLeaderTime (full impl in oEvent)
+  enum class AllowRecompute { NoUseOld, Recompute };
+
+  // Returns the best leg time for the given leg across all teams/runners in the class.
+  // Stub: returns 0 (unknown leader). Full implementation requires oEvent runner lists.
+  int getTotalLegLeaderTime(AllowRecompute /*allow*/, int /*leg*/,
+                            bool /*multidayTotal*/, bool /*computedTime*/) const { return 0; }
 
   // Rogaining analysis stub (result computed in US-003g2)
   struct RogainingAnalysis {
@@ -258,4 +274,7 @@ private:
 
   std::string codeMultiCourseStr() const;
   std::set<int>& getMCourseIdSet(std::set<int>& in) const;
+
+  friend class oTeam;
+  friend class oRunner;
 };

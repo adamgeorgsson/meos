@@ -12,6 +12,7 @@ add_library(meos_domain STATIC
   classconfiginfo.cpp
   qualification_final.cpp
   oRunner.cpp
+  oTeam.cpp
   domain_stubs.cpp
 )
 target_include_directories(meos_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

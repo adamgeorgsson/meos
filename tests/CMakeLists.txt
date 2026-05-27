@@ -98,3 +98,7 @@ target_link_libraries(domain_orunner_test PRIVATE meos_domain)
 # Domain oRunner result / evaluateCard test (US-003g2)
 meos_add_test(domain_orunner_result_test domain_orunner_result_test.cpp)
 target_link_libraries(domain_orunner_result_test PRIVATE meos_domain)
+
+# Domain oTeam unit test (US-003h1)
+meos_add_test(domain_oteam_test domain_oteam_test.cpp)
+target_link_libraries(domain_oteam_test PRIVATE meos_domain)

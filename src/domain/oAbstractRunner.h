@@ -265,6 +265,14 @@ public:
   bool statusOK(bool computed, bool allowUpdate) const {
     return (computed ? getStatusComputed(allowUpdate) : tStatus) == StatusOK;
   }
+  bool prelStatusOK(bool computed, bool includeOutsideCompetition, bool allowUpdate) const {
+    bool ok = statusOK(computed, allowUpdate) || (tStatus == StatusUnknown && getRunningTime(false) > 0);
+    if (!ok && includeOutsideCompetition) {
+      RunnerStatus st = computed ? getStatusComputed(true) : tStatus;
+      ok = (st == StatusOutOfCompetition || st == StatusNoTiming) && getRunningTime(false) > 0;
+    }
+    return ok;
+  }
   bool isStatusOK(bool computed, bool allowUpdate) const;
   bool isStatusUnknown(bool computed, bool allowUpdate) const;
   bool hasResult() const;
