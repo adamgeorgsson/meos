@@ -28,7 +28,7 @@
 #include "gdifonts.h"
 
 class Table;
-enum KeyCommandCode;
+enum KeyCommandCode : int;
 
 class BaseInfo {
 protected:

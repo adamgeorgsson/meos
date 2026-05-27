@@ -39,6 +39,7 @@
 #include "gdifonts.h"
 #include "oEventDraw.h"
 #include "meosexception.h"
+#include <iostream>
 
 int ClassInfo::sSortOrder = 0;
 
@@ -576,7 +577,7 @@ void DrawOptimAlgo::computeBestStartDepth(DrawInfo& di, vector<ClassInfo>& cInfo
     for (int i = 0; i < 3; i++)
       cc += itow(c->getControl(i)->getId()) + L",";
     wstring w = pc->getName() + L"; " + cc + L"; " + itow(cInfo[k].unique) + L"; " + itow(cInfo[k].nRunners) + L"\n";
-    OutputDebugString(w.c_str());
+    std::cerr << narrow(w);
   }*/
 
   di.numDistinctInit = runnerPerGroup.size();

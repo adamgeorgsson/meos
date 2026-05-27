@@ -56,7 +56,7 @@ struct RenderedPage;
 class AnimationData;
 
 enum GDICOLOR;
-enum KeyCommandCode;
+enum KeyCommandCode : int;
 enum gdiFonts;
 #include "gdistructures.h"
 #include <memory>
