@@ -31,8 +31,8 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "oBase, oDataContainer, oDataInterface, oDataConstInterface, domain_header.h, oEvent.h stub, datadefiners.h added to src/domain/. Map-based DataMap storage replaces binary buffers. 13 unit tests pass."
     },
     {
       "id": "US-003b1",
