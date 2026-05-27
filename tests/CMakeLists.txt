@@ -22,3 +22,7 @@ target_link_libraries(clubs_api_test PRIVATE meos_net nlohmann_json::nlohmann_js
 # Controls API integration test
 meos_add_test(controls_api_test controls_api_test.cpp)
 target_link_libraries(controls_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
+# Courses API integration test
+meos_add_test(courses_api_test courses_api_test.cpp)
+target_link_libraries(courses_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)

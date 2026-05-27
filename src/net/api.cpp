@@ -81,4 +81,39 @@ void registerControlsRoutes(httplib::Server& svr, meos::db::Database& db) {
             });
 }
 
+void registerCoursesRoutes(httplib::Server& svr, meos::db::Database& db) {
+    svr.Get("/api/v1/courses",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                auto courses = db.getAllCourses();
+                json arr = json::array();
+                for (const auto& c : courses) {
+                    json j;
+                    j["id"] = c.id;
+                    j["name"] = c.name;
+                    if (c.length) j["length"] = *c.length;
+                    j["controls"] = c.controls;
+                    arr.push_back(j);
+                }
+                res.set_content(arr.dump(), "application/json");
+            });
+
+    svr.Get(R"(/api/v1/courses/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                int id = std::stoi(req.matches[1]);
+                auto course = db.getCourseById(id);
+                if (!course) {
+                    res.status = 404;
+                    res.set_content(makeError(404, "Not found").dump(),
+                                    "application/json");
+                } else {
+                    json j;
+                    j["id"] = course->id;
+                    j["name"] = course->name;
+                    if (course->length) j["length"] = *course->length;
+                    j["controls"] = course->controls;
+                    res.set_content(j.dump(), "application/json");
+                }
+            });
+}
+
 }  // namespace meos::net
