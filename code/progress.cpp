@@ -23,6 +23,7 @@
 #include "StdAfx.h"
 
 #include "progress.h"
+#include "meos_util.h"
 
 #include <chrono>
 
@@ -69,10 +70,10 @@ ProgressWindow::~ProgressWindow() {
 
 void ProgressWindow::process() {
   running = true;
-  uint64_t baseC = GetTickCount64();
+  uint64_t baseC = meos_steady_clock_ms();
   while (!terminate) {
    if (!terminate)
-      draw((GetTickCount64() - baseC)/40, getProgress());
+      draw((meos_steady_clock_ms() - baseC)/40, getProgress());
 
    if (!terminate) {
      std::unique_lock<std::mutex> lk(mtx);
@@ -154,7 +155,7 @@ void ProgressWindow::draw(int count, int prgBase) const
 }
 
 int ProgressWindow::getProgress() const {
-  uint64_t now = GetTickCount64();
+  uint64_t now = meos_steady_clock_ms();
   int dt = int(now-time);
   std::lock_guard<std::mutex> lock(mtx);
   return computeProgress(dt);
@@ -176,7 +177,7 @@ void ProgressWindow::setProgress(int prg) {
   std::lock_guard<std::mutex> lock(mtx);
   lastProgress = progress;
   lastTime = time;
-  time = GetTickCount64();
+  time = meos_steady_clock_ms();
   int newProgress = computeProgress(0);
   newProgress = prg > newProgress ? prg : newProgress;
   if (lastTime>0)

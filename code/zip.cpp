@@ -254,15 +254,13 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
 
 uLong filetime(const wchar_t *f, uLong *dt) {
   int ret = 0;
-  FILETIME ftLocal;
   HANDLE hFind;
   WIN32_FIND_DATA ff32;
 
   hFind = FindFirstFile(f,&ff32);
   if (hFind != INVALID_HANDLE_VALUE)
   {
-    FileTimeToLocalFileTime(&(ff32.ftLastWriteTime),&ftLocal);
-    FileTimeToDosDateTime(&ftLocal,((LPWORD)dt)+1,((LPWORD)dt)+0);
+    FileTimeToDosDateTime(&(ff32.ftLastWriteTime), ((LPWORD)dt) + 1, ((LPWORD)dt) + 0);
     FindClose(hFind);
     ret = 1;
   }

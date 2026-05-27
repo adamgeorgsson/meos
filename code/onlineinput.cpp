@@ -38,6 +38,7 @@
 
 #include "SportIdent.h"
 #include "xmlparser.h"
+#include <ctime>
 
 int AutomaticCB(gdioutput *gdi, GuiEventType type, BaseInfo* data);
 
@@ -845,17 +846,17 @@ void OnlineInput::processEntries(oEvent &oe, const xmlList &entries) {
 }
 
 time_t OnlineInput::getZeroTimeMSLinuxEpoch() const {
-  SYSTEMTIME st;
+  std::tm st = {};
   convertDateYMD(oe->getDate(), st, false);
 
-  // Convert SYSTEMTIME to struct tm
+  // Convert parsed date to struct tm
   tm tm{};
-  tm.tm_year = st.wYear - 1900;     // tm_year is years since 1900
-  tm.tm_mon = st.wMonth - 1;        // tm_mon is 0-based
-  tm.tm_mday = st.wDay;
-  tm.tm_hour = st.wHour;
-  tm.tm_min = st.wMinute;
-  tm.tm_sec = st.wSecond;
+  tm.tm_year = (st.tm_year + 1900) - 1900;     // tm_year is years since 1900
+  tm.tm_mon = (st.tm_mon + 1) - 1;        // tm_mon is 0-based
+  tm.tm_mday = st.tm_mday;
+  tm.tm_hour = st.tm_hour;
+  tm.tm_min = st.tm_min;
+  tm.tm_sec = st.tm_sec;
   tm.tm_isdst = -1;
 
   // Convert to epoch (UTC)

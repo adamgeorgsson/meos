@@ -29,6 +29,8 @@
 #include <sstream>
 #include <WinInet.h>
 #include <cstdint>
+#include <chrono>
+#include <ctime>
 
 using namespace std;
 
@@ -38,9 +40,9 @@ namespace MeOSUtil {
   int useHourFormat = true;
 }
 
-string convertSystemTimeN(const SYSTEMTIME &st);
-string convertSystemDateN(const SYSTEMTIME &st);
-string convertSystemTimeOnlyN(const SYSTEMTIME &st);
+string convertSystemTimeN(const std::tm &st);
+string convertSystemDateN(const std::tm &st);
+string convertSystemTimeOnlyN(const std::tm &st);
 extern int defaultCodePage;
 
 uint32_t mainThreadId = -1;
@@ -54,27 +56,27 @@ StringCache &StringCache::getInstance() {
 }
 
 string getLocalTimeN() {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = {};
+  meos_localtime_now(&st);
   return convertSystemTimeN(st);
 }
 
 string getLocalDateN()
 {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = {};
+  meos_localtime_now(&st);
   return convertSystemDateN(st);
 }
 
 wstring getLocalTime() {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = {};
+  meos_localtime_now(&st);
   return convertSystemTime(st);
 }
 
 wstring getLocalDate() {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = {};
+  meos_localtime_now(&st);
   return convertSystemDate(st);
 }
 
@@ -85,9 +87,9 @@ int getLocalAbsTime() {
 int getThisYear() {
   static int thisYear = 0;
   if (thisYear == 0) {
-    SYSTEMTIME st;
-    GetLocalTime(&st);
-    thisYear = st.wYear;
+    std::tm st = {};
+    meos_localtime_now(&st);
+    thisYear = (st.tm_year + 1900);
   }
   return thisYear;
 }
@@ -116,117 +118,105 @@ int extendYear(int year) {
 
 wstring getLocalTimeFileName()
 {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = {};
+  meos_localtime_now(&st);
 
   wchar_t bf[32];
-  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d%02d%02d_%02d%02d%02d", st.wYear, st.wMonth, st.wDay,
-    st.wHour, st.wMinute, st.wSecond);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d%02d%02d_%02d%02d%02d", (st.tm_year + 1900), (st.tm_mon + 1), st.tm_mday,
+    st.tm_hour, st.tm_min, st.tm_sec);
 
   return bf;
 }
 
 string getLocalTimeOnlyN()
 {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = {};
+  meos_localtime_now(&st);
   return convertSystemTimeOnlyN(st);
 }
 
 wstring getLocalTimeOnly()
 {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
+  std::tm st = {};
+  meos_localtime_now(&st);
   return convertSystemTimeOnly(st);
 }
 
 int getRelativeDay() {
-  SYSTEMTIME st;
-  GetLocalTime(&st);
-  FILETIME ft;
-  SystemTimeToFileTime(&st, &ft);
-
-  ULARGE_INTEGER u;
-  u.HighPart = ft.dwHighDateTime;
-  u.LowPart = ft.dwLowDateTime;
-  uint64_t qp = u.QuadPart;
-  qp /= 10ll * 1000 * 1000 * 3600 * 24;
-  qp -=  400*365;
-  return int(qp);
+  using namespace std::chrono;
+  auto t = system_clock::to_time_t(system_clock::now());
+  return static_cast<int>(t / (24 * 3600LL)) - 11226;
 }
 
-__int64 SystemTimeToInt64TenthSecond(const SYSTEMTIME &st) {
-  FILETIME ft;
-  SystemTimeToFileTime(&st, &ft);
-
-  ULARGE_INTEGER u;
-  u.HighPart = ft.dwHighDateTime;
-  u.LowPart = ft.dwLowDateTime;
-  __int64 qp = u.QuadPart; // Time resolution 100 ns
-  qp /= __int64(1000 * 1000 * 10 / timeUnitsPerSecond);
-  return qp;
+__int64 SystemTimeToInt64TenthSecond(const std::tm &st) {
+  std::tm tmp = st;
+#ifdef _WIN32
+  time_t t = _mkgmtime(&tmp);
+#else
+  time_t t = timegm(&tmp);
+#endif
+  __int64 ft100ns = (__int64(t) + 11644473600LL) * 10000000LL;
+  return ft100ns / __int64(10000000 / timeUnitsPerSecond);
 }
 
-SYSTEMTIME Int64TenthSecondToSystemTime(__int64 time) {
-  SYSTEMTIME st;
-  FILETIME ft;
-
-  ULARGE_INTEGER u; // Time resolution 100 ns
-  u.QuadPart = time * __int64(1000 * 1000 * 10 / timeUnitsPerSecond);
-  ft.dwHighDateTime = u.HighPart;
-  ft.dwLowDateTime = u.LowPart;
-
-  FileTimeToSystemTime(&ft, &st);
-
+std::tm Int64TenthSecondToSystemTime(__int64 time) {
+  __int64 ft100ns = time * __int64(10000000 / timeUnitsPerSecond);
+  time_t t = static_cast<time_t>(ft100ns / 10000000LL) - 11644473600LL;
+  std::tm st = {};
+#ifdef _WIN32
+  gmtime_s(&st, &t);
+#else
+  gmtime_r(&t, &st);
+#endif
   return st;
 }
 //2014-11-03 07:02:00
-string convertSystemTimeN(const SYSTEMTIME &st)
+string convertSystemTimeN(const std::tm &st)
 {
   char bf[64];
-  snprintf(bf, sizeof(bf), "%d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay,
-    st.wHour, st.wMinute, st.wSecond);
+  snprintf(bf, sizeof(bf), "%d-%02d-%02d %02d:%02d:%02d", (st.tm_year + 1900), (st.tm_mon + 1), st.tm_mday,
+    st.tm_hour, st.tm_min, st.tm_sec);
 
   return bf;
 }
 
 //2014-11-03 07:02:00
-wstring convertSystemTime(const SYSTEMTIME &st)
+wstring convertSystemTime(const std::tm &st)
 {
   wchar_t bf[64];
-  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay,
-    st.wHour, st.wMinute, st.wSecond);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d %02d:%02d:%02d", (st.tm_year + 1900), (st.tm_mon + 1), st.tm_mday,
+    st.tm_hour, st.tm_min, st.tm_sec);
 
   return bf;
 }
 
-string convertSystemTimeOnlyN(const SYSTEMTIME &st)
+string convertSystemTimeOnlyN(const std::tm &st)
 {
   char bf[32];
-  snprintf(bf, sizeof(bf), "%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+  snprintf(bf, sizeof(bf), "%02d:%02d:%02d", st.tm_hour, st.tm_min, st.tm_sec);
 
   return bf;
 }
 
-wstring convertSystemTimeOnly(const SYSTEMTIME &st) {
+wstring convertSystemTimeOnly(const std::tm &st) {
   wchar_t bf[32];
-  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%02d:%02d:%02d", st.tm_hour, st.tm_min, st.tm_sec);
 
   return bf;
 }
 
-string convertSystemDateN(const SYSTEMTIME &st)
+string convertSystemDateN(const std::tm &st)
 {
   char bf[32];
-  snprintf(bf, sizeof(bf), "%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
+  snprintf(bf, sizeof(bf), "%d-%02d-%02d", (st.tm_year + 1900), (st.tm_mon + 1), st.tm_mday);
 
   return bf;
 }
 
-wstring convertSystemDate(const SYSTEMTIME &st)
+wstring convertSystemDate(const std::tm &st)
 {
   wchar_t bf[32];
-  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
+  swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d-%02d-%02d", (st.tm_year + 1900), (st.tm_mon + 1), st.tm_mday);
 
   return bf;
 }
@@ -255,13 +245,13 @@ wstring formatDate(int m, bool useIsoFormat) {
   return bf;
 }
 
-int convertDateYMD(const wstring &m, SYSTEMTIME &st, bool checkValid) {
+int convertDateYMD(const wstring &m, std::tm &st, bool checkValid) {
   string ms(m.begin(), m.end());
   return convertDateYMD(ms, st, checkValid);
 }
 //Absolute time string to SYSTEM TIME
-int convertDateYMD(const string& m, SYSTEMTIME& st, bool checkValid) {
-  memset(&st, 0, sizeof(st));
+int convertDateYMD(const string& m, std::tm& st, bool checkValid) {
+  st = {};
 
   if (m.length() == 0)
     return -1;
@@ -305,9 +295,9 @@ int convertDateYMD(const string& m, SYSTEMTIME& st, bool checkValid) {
       day = 1;
     }
 
-    st.wYear = year;
-    st.wMonth = month;
-    st.wDay = day;
+    st.tm_year = year - 1900;
+    st.tm_mon = month - 1;
+    st.tm_mday = day;
 
     int t = year * 100 * 100 + month * 100 + day;
     if (t < 0)
@@ -347,9 +337,9 @@ int convertDateYMD(const string& m, SYSTEMTIME& st, bool checkValid) {
       }
     }
   }
-  st.wYear = year;
-  st.wMonth = month;
-  st.wDay = day;
+  st.tm_year = year - 1900;
+  st.tm_mon = month - 1;
+  st.tm_mday = day;
 
 
   int t = year * 100 * 100 + month * 100 + day;
@@ -361,13 +351,13 @@ int convertDateYMD(const string& m, SYSTEMTIME& st, bool checkValid) {
 //Absolute time string to absolute time int
 int convertDateYMD(const string &m, bool checkValid)
 {
-  SYSTEMTIME st;
+  std::tm st = {};
   return convertDateYMD(m, st, checkValid);
 }
 
 int convertDateYMD(const wstring &m, bool checkValid)
 {
-  SYSTEMTIME st;
+  std::tm st = {};
   return convertDateYMD(m, st, checkValid);
 }
 
@@ -2089,49 +2079,52 @@ void capitalize(wstring &str) {
 }
 
 bool checkValidDate(const wstring &date) {
-  SYSTEMTIME st;
+  std::tm st = {};
   if (convertDateYMD(date, st, false) <= 0)
     return false;
-
-  st.wHour = 12;
-  SYSTEMTIME utc;
-  if (!TzSpecificLocalTimeToSystemTime(0, &st, &utc)) {
-    return false;
-  }
-
-  return true;
+  st.tm_hour = 12;
+  time_t t = mktime(&st);
+  return t != (time_t)-1;
 }
 
 /** Return bias in seconds. UTC = local time + bias. */
 int getTimeZoneInfo(const wstring &date) {
   static wchar_t lastDate[16] = {0};
   static int lastValue = -1;
-  // Local caching
   if (lastValue != -1 && lastDate == date) {
     return lastValue;
   }
-  wcscpy_s(lastDate, 16, date.c_str());
-//  TIME_ZONE_INFORMATION tzi;
-  SYSTEMTIME st;
+  wcsncpy(lastDate, date.c_str(), 15);
+  lastDate[15] = 0;
+
+  std::tm st = {};
   convertDateYMD(date, st, false);
-  st.wHour = 12;
-  SYSTEMTIME utc;
-  if (!TzSpecificLocalTimeToSystemTime(0, &st, &utc)) {
+  st.tm_hour = 12;
+
+  time_t t_local = mktime(&st);
+  if (t_local == (time_t)-1) {
     lastValue = 0;
     return 0;
   }
 
-  int datecode = ((st.wYear * 12 + st.wMonth) * 31) + st.wDay;
-  int datecodeUTC = ((utc.wYear * 12 + utc.wMonth) * 31) + utc.wDay;
+  std::tm utc = {};
+#ifdef _WIN32
+  gmtime_s(&utc, &t_local);
+#else
+  gmtime_r(&t_local, &utc);
+#endif
 
+  int datecode = ((st.tm_year * 12 + (st.tm_mon + 1)) * 31) + st.tm_mday;
+  int datecodeUTC = ((utc.tm_year * 12 + (utc.tm_mon + 1)) * 31) + utc.tm_mday;
   int daydiff = 0;
   if (datecodeUTC > datecode)
     daydiff = 1;
   else if (datecodeUTC < datecode)
     daydiff = -1;
 
-  int t = st.wHour * timeConstSecPerHour;
-  int tUTC = daydiff * 24 * timeConstSecPerHour + utc.wHour * timeConstSecPerHour + utc.wMinute * timeConstSecPerMin + utc.wSecond;
+  int t = st.tm_hour * timeConstSecPerHour;
+  int tUTC = daydiff * 24 * timeConstSecPerHour + utc.tm_hour * timeConstSecPerHour
+    + utc.tm_min * timeConstSecPerMin + utc.tm_sec;
 
   lastValue = tUTC - t;
   return lastValue;
@@ -2625,31 +2618,16 @@ const wstring &codeRelativeTimeW(int rt) {
 }
 
 wstring addOrSubtractDays(const wstring& m, int days) {
-  // Convert wstring date to SYSTEMTIME
-  SYSTEMTIME st;
+  std::tm st = {};
   convertDateYMD(m, st, false);
-
-  // Convert SYSTEMTIME to FILETIME
-  FILETIME ft;
-  SystemTimeToFileTime(&st, &ft);
-
-  // Convert FILETIME to ULARGE_INTEGER for arithmetic
-  ULARGE_INTEGER ui;
-  ui.LowPart = ft.dwLowDateTime;
-  ui.HighPart = ft.dwHighDateTime;
-
-  // Add/subtract the number of days in 100-nanosecond intervals
-  constexpr int64_t intervals_per_day = 24 * timeConstSecPerHour * 10000000ull;
-  ui.QuadPart += days * intervals_per_day;
-
-  // Convert back to FILETIME
-  ft.dwLowDateTime = ui.LowPart;
-  ft.dwHighDateTime = ui.HighPart;
-
-  // Convert FILETIME back to SYSTEMTIME
-  SYSTEMTIME new_st;
-  FileTimeToSystemTime(&ft, &new_st);
-
+  time_t t = mktime(&st);
+  t += static_cast<time_t>(days) * 24 * 3600;
+  std::tm new_st = {};
+#ifdef _WIN32
+  localtime_s(&new_st, &t);
+#else
+  localtime_r(&t, &new_st);
+#endif
   return convertSystemDate(new_st);
 }
 

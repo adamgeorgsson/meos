@@ -1305,9 +1305,9 @@ int TabCompetition::competitionCB(gdioutput &gdi, GuiEventType type, BaseInfo *d
       if (checkEventor(gdi, bi))
         return 0;
 
-      SYSTEMTIME st;
-      GetLocalTime(&st);
-      st.wYear--; // Include last years competitions
+      std::tm st = {};
+      meos_localtime_now(&st);
+      st.tm_year--; // Include last years competitions
       getEventorCompetitions(gdi, convertSystemDate(st),  events);
       gdi.clearPage(true);
 
@@ -1322,7 +1322,7 @@ int TabCompetition::competitionCB(gdioutput &gdi, GuiEventType type, BaseInfo *d
       gdi.dropLine(-0.1);
       gdi.addSelection("EventorSel", 300, 200);
       sort(events.begin(), events.end());
-      st.wYear++; // Restore current time
+      st.tm_year++; // Restore current time
       wstring now = convertSystemDate(st);
 
       int selected = 0; // Select next event by default
@@ -2972,7 +2972,7 @@ void TabCompetition::getEventorCompetitions(gdioutput &gdi,
         wstring breakDate;
         eBreak.getObjectString("Date", breakDate);
 
-        SYSTEMTIME st;
+        std::tm st = {};
         convertDateYMD(breakDate, st, false);
         __int64 time = SystemTimeToInt64TenthSecond(st) - 10;
         breakDate = convertSystemDate(Int64TenthSecondToSystemTime(time));

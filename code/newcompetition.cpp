@@ -42,6 +42,7 @@
 #include <cmath>
 #include <io.h>
 #include "csvparser.h"
+#include <ctime>
 
 int CompetitionCB(gdioutput *gdi, GuiEventType type, BaseInfo* data);
 
@@ -205,7 +206,7 @@ int TabCompetition::newGuideCB(gdioutput &gdi, GuiEventType type, BaseInfo* data
     InputInfo &ii = *(InputInfo*)data;
     if (ii.id == "FirstStart" || ii.id == "Date") {
       int t,d;
-      SYSTEMTIME st;
+      std::tm st = {};
       if (ii.id == "FirstStart") {
         t = convertAbsoluteTimeHMS(ii.text, -1);
         d = convertDateYMD(gdi.getText("Date"), st, true);
@@ -224,8 +225,8 @@ int TabCompetition::newGuideCB(gdioutput &gdi, GuiEventType type, BaseInfo* data
         long long absT = SystemTimeToInt64TenthSecond(st);
         absT += max(0, t - timeConstHour);
         long long stopT = absT + 23 * timeConstHour;
-        SYSTEMTIME start = Int64TenthSecondToSystemTime(absT);
-        SYSTEMTIME end = Int64TenthSecondToSystemTime(stopT);
+        std::tm start = Int64TenthSecondToSystemTime(absT);
+        std::tm end = Int64TenthSecondToSystemTime(stopT);
         wstring s = L"Tävlingen måste avgöras mellan X och Y.#" + convertSystemTime(start) + L"#" + convertSystemTime(end);
         gdi.setTextTranslate("AllowedInterval", s, true);
       }
