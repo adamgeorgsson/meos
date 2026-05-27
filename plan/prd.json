@@ -119,8 +119,8 @@
         "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All criteria already satisfied. RunnerStatus, DynamicRunnerStatus, SortOrder are defined at global scope in oAbstractRunner.h. SpecialPunch is in oPunch class with global alias in oControl.h (using SpecialPunch = oPunch::SpecialPunch). oEvent.h includes oRunner.h→oAbstractRunner.h and oControl.h directly, so all enums are re-exported transitively. No code changes needed."
     },
     {
       "id": "US-009",
