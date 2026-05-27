@@ -36,6 +36,8 @@
 #include "CommDlg.h"
 #include "random.h"
 #include "metalist.h"
+#include <filesystem>
+#include <filesystem>
 
 MethodEditor::MethodEditor(oEvent *oe_) {
   oe = oe_;
@@ -350,7 +352,7 @@ int MethodEditor::methodCb(gdioutput &gdi, GuiEventType type, BaseInfo &data) {
       if (gdi.ask(L"Vill du ta bort 'X'?#" + currentResult->getName(true))) {
         wstring path = fileNameSource;//getInternalPath(currentResult->getTag());
         wstring rm = path + L".removed";
-        DeleteFile(rm.c_str());
+        { std::error_code ec; std::filesystem::remove(rm, ec); }
         _wrename(path.c_str(), rm.c_str());
         oe->loadGeneralResults(true, true);
         makeDirty(gdi, ClearDirty);

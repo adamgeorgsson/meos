@@ -17,6 +17,10 @@ Ported to C++ and modified to suite MeOS.
 
 #include <direct.h>
 #include <io.h>
+#include <filesystem>
+#include <chrono>
+#include <ctime>
+#include <cstdint>
 
 #include "meosexception.h"
 #include "meos_util.h"
@@ -239,10 +243,13 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
     target = base + L"zip" + itow(id) + L"/";
     id++;
   }
-  while ( _waccess( target.c_str(), 0 ) == 0 );
+  while ( std::filesystem::exists(target) );
 
-  if (CreateDirectory(target.c_str(), NULL) == 0)
-    throw std::exception("Failed to create temporary folder");
+  {
+    std::error_code ec;
+    std::filesystem::create_directories(target, ec);
+    if (ec) throw meosException("Failed to create temporary folder");
+  }
 
   registerTempFile(target);
   do_extract(uf, target.c_str(), password, extractedFiles);
@@ -253,18 +260,29 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
 
 
 uLong filetime(const wchar_t *f, uLong *dt) {
-  int ret = 0;
-  HANDLE hFind;
-  WIN32_FIND_DATA ff32;
+  namespace fs = std::filesystem;
+  std::error_code ec;
+  auto ftime = fs::last_write_time(f, ec);
+  if (ec) return 0;
 
-  hFind = FindFirstFile(f,&ff32);
-  if (hFind != INVALID_HANDLE_VALUE)
-  {
-    FileTimeToDosDateTime(&(ff32.ftLastWriteTime), ((LPWORD)dt) + 1, ((LPWORD)dt) + 0);
-    FindClose(hFind);
-    ret = 1;
-  }
-  return ret;
+  auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+      ftime - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
+  time_t ft_t = std::chrono::system_clock::to_time_t(sctp);
+
+  std::tm st = {};
+#ifdef _WIN32
+  localtime_s(&st, &ft_t);
+#else
+  localtime_r(&ft_t, &st);
+#endif
+
+  uint16_t dosTime = static_cast<uint16_t>(
+      ((st.tm_hour & 0x1F) << 11) | ((st.tm_min & 0x3F) << 5) | ((st.tm_sec / 2) & 0x1F));
+  uint16_t dosDate = static_cast<uint16_t>(
+      (((st.tm_year + 1900 - 1980) & 0x7F) << 9) | (((st.tm_mon + 1) & 0x0F) << 5) | (st.tm_mday & 0x1F));
+  *dt = (static_cast<uint32_t>(dosDate) << 16) | dosTime;
+
+  return 1;
 }
 
 int check_exist_file(const wchar_t* filename)

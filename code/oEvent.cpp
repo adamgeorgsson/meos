@@ -65,6 +65,8 @@
 #include "Table.h"
 #include <cstdint>
 #include <ctime>
+#include <filesystem>
+#include <fstream>
 
 extern Image image;
 
@@ -737,14 +739,10 @@ void oEvent::duplicate(const wstring &annotationIn, bool keepTags) {
 
   getUserFile(file, filename);
 
-  _wsplitpath_s(filename, NULL, 0, NULL,0, nameid, 64, NULL, 0);
-  int i=0;
-  while (nameid[i]) {
-    if (nameid[i]=='.') {
-      nameid[i]=0;
-      break;
-    }
-    i++;
+  {
+    wstring stemStr = std::filesystem::path(filename).stem().wstring();
+    wcsncpy(nameid, stemStr.c_str(), 63);
+    nameid[63] = L'\0';
   }
 
   wchar_t oldFile[260];
@@ -819,7 +817,7 @@ bool oEvent::save()
     int toDelete = maxBackup;
 
     for(int k = 0; k <= maxBackup; k++) {
-      swprintf(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, k);
+      swprintf(fn1, 260, L"%s.bu%d", CurrentFile, k);
       struct _stat st;
       int ret = _wstat(fn1, &st);
       if (ret==0) {
@@ -844,12 +842,12 @@ bool oEvent::save()
       }
     }
 
-    swprintf(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, toDelete);
+    swprintf(fn1, 260, L"%s.bu%d", CurrentFile, toDelete);
     ::_wremove(fn1);
 
     for(int k=toDelete;k>0;k--) {
-      swprintf(fn1, MAX_PATH, L"%s.bu%d", CurrentFile, k-1);
-      swprintf(fn2, MAX_PATH, L"%s.bu%d", CurrentFile, k);
+      swprintf(fn1, 260, L"%s.bu%d", CurrentFile, k-1);
+      swprintf(fn2, 260, L"%s.bu%d", CurrentFile, k);
       _wrename(fn1, fn2);
     }
 
@@ -981,17 +979,17 @@ bool oEvent::save(const wstring &fileArg, bool internalFormat, bool isAutoSave) 
         }
 
         wstring imgFile = fileArg.substr(0, lp + 1)  + itow(imgId) + L".png";
-        FILE *fout = nullptr;
-        _wfopen_s(&fout, imgFile.c_str(), L"wb");
-        if (fout == nullptr) 
-          error = L"Error opening " + imgFile;
-        else {
-          if (fwrite(rawData.data(), rawData.size(), 1, fout) != 1)
-            error = L"Error writing image.";
-          else
-            added = true;
-
-          fclose(fout);
+        {
+          std::ofstream ofs(std::filesystem::path(imgFile), std::ios::binary);
+          if (!ofs)
+            error = L"Error opening " + imgFile;
+          else {
+            ofs.write(reinterpret_cast<const char*>(rawData.data()), rawData.size());
+            if (ofs)
+              added = true;
+            else
+              error = L"Error writing image.";
+          }
         }
 
         if (added) {
@@ -1134,14 +1132,10 @@ namespace {
     getUserFile(file, filename);
 
     wchar_t CurrentNameId[64];
-    _wsplitpath_s(file, NULL, 0, NULL, 0, CurrentNameId, 64, NULL, 0);
-    int i = 0;
-    while (CurrentNameId[i]) {
-      if (CurrentNameId[i] == '.') {
-        CurrentNameId[i] = 0;
-        break;
-      }
-      i++;
+    {
+      wstring stemStr = std::filesystem::path(file).stem().wstring();
+      wcsncpy(CurrentNameId, stemStr.c_str(), 63);
+      CurrentNameId[63] = L'\0';
     }
 
     fn = file;
@@ -1189,17 +1183,13 @@ bool oEvent::open(const wstring &file, bool doImport, bool forMerge, bool forceN
   newCompetition(L"-");
   auto newNameId = currentNameId;
   if (!doImport) {
-    wcscpy_s(CurrentFile, MAX_PATH, file.c_str()); //Keep new file name, if imported
+    wcscpy_s(CurrentFile, 260, file.c_str()); //Keep new file name, if imported
 
     wchar_t CurrentNameId[64];
-    _wsplitpath_s(CurrentFile, NULL, 0, NULL,0, CurrentNameId, 64, NULL, 0);
-    int i=0;
-    while (CurrentNameId[i]) {
-      if (CurrentNameId[i]=='.') {
-        CurrentNameId[i]=0;
-        break;
-      }
-      i++;
+    {
+      wstring stemStr = std::filesystem::path(CurrentFile).stem().wstring();
+      wcsncpy(CurrentNameId, stemStr.c_str(), 63);
+      CurrentNameId[63] = L'\0';
     }
     currentNameId = CurrentNameId;
   }
@@ -1571,22 +1561,20 @@ bool oEvent::open(const xmlparser &xml, const wstring &fileArg) {
 
           wstring imgFile = fileArg.substr(0, lp + 1) + itow(imgId) + L".png";
 
-          FILE* pFile = nullptr;
-          _wfopen_s(&pFile, imgFile.c_str(), L"rb");
-
-          if (pFile != nullptr) {
-            fseek(pFile, 0, SEEK_END);
-            size_t pos = ftell(pFile);
-            fseek(pFile, 0, SEEK_SET);
-            bytes.resize(pos);
-            size_t read = fread_s(bytes.data(), bytes.size(), pos, 1, pFile);
-            bool ok = read == 1;
-            fclose(pFile);
-
-            if (ok)
-              image.provideFromMemory(imgId, fileName, bytes);
-            else if (err.empty())
-              err = L"Failed to load attached image: " + imgFile;
+          {
+            std::ifstream ifs(std::filesystem::path(imgFile), std::ios::binary);
+            if (ifs) {
+              ifs.seekg(0, std::ios::end);
+              size_t pos = static_cast<size_t>(ifs.tellg());
+              ifs.seekg(0, std::ios::beg);
+              bytes.resize(pos);
+              ifs.read(reinterpret_cast<char*>(bytes.data()), pos);
+              bool ok = (static_cast<size_t>(ifs.gcount()) == pos);
+              if (ok)
+                image.provideFromMemory(imgId, fileName, bytes);
+              else if (err.empty())
+                err = L"Failed to load attached image: " + imgFile;
+            }
           }
         }
       }
@@ -3827,104 +3815,90 @@ void oEvent::clearListedCmp()
 
 bool oEvent::enumerateCompetitions(const wchar_t *file, const wchar_t *filetype)
 {
-  WIN32_FIND_DATA fd;
+  namespace fs = std::filesystem;
 
-  wchar_t dir[MAX_PATH];
-  wchar_t FullPath[MAX_PATH];
+  fs::path dirPath(file);
 
-  wcscpy_s(dir, MAX_PATH, file);
+  wstring extFilter(filetype);
+  if (!extFilter.empty() && extFilter[0] == L'*')
+    extFilter = extFilter.substr(1); // e.g. ".meos"
 
-  if (dir[wcslen(file)-1]!='\\')
-    wcscat_s(dir, MAX_PATH, L"/");
-
-  wcscpy_s(FullPath, MAX_PATH, dir);
-
-  wcscat_s(dir, MAX_PATH, filetype);
-
-  HANDLE h=FindFirstFile(dir, &fd);
-
-  if (h==INVALID_HANDLE_VALUE)
-    return false;
-
-  bool more=true;
-  int id=1;
+  std::error_code ec;
+  int id = 1;
   cinfo.clear();
 
-  while (more) {
-    if (fd.cFileName[0]!='.') //Avoid .. and .
-    {
-      wchar_t FullPathFile[MAX_PATH];
-      wcscpy_s(FullPathFile, MAX_PATH, FullPath);
-      wcscat_s(FullPathFile, MAX_PATH, fd.cFileName);
+  for (const auto& entry : fs::directory_iterator(dirPath, ec)) {
+    if (entry.is_directory()) continue;
+    wstring fname = entry.path().filename().wstring();
+    if (fname.empty() || fname[0] == L'.') continue;
+    if (!extFilter.empty() && entry.path().extension().wstring() != extFilter)
+      continue;
 
-      CompetitionInfo ci;
+    wstring FullPathFile = entry.path().wstring();
 
-      ci.FullPath=FullPathFile;
-      ci.Name=L"";
-      ci.Date=L"2007-01-01";
-      ci.Id=id++;
-
-      ULARGE_INTEGER ull;
-      ull.LowPart = fd.ftLastWriteTime.dwLowDateTime;
-      ull.HighPart = fd.ftLastWriteTime.dwHighDateTime;
-      time_t ft_t = static_cast<time_t>(ull.QuadPart / 10000000ULL) - 11644473600LL;
-      std::tm st = {};
+    auto ftime = entry.last_write_time(ec);
+    auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+        ftime - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
+    time_t ft_t = std::chrono::system_clock::to_time_t(sctp);
+    std::tm st = {};
 #ifdef _WIN32
-      localtime_s(&st, &ft_t);
+    localtime_s(&st, &ft_t);
 #else
-      localtime_r(&ft_t, &st);
+    localtime_r(&ft_t, &st);
 #endif
-      ci.Modified = convertSystemTimeN(st);
-      xmlparser xp;
 
-      try {
-        xp.read(FullPathFile, 30);
+    CompetitionInfo ci;
+    ci.FullPath = FullPathFile;
+    ci.Name = L"";
+    ci.Date = L"2007-01-01";
+    ci.Id = id++;
+    ci.Modified = convertSystemTimeN(st);
 
-        const xmlobject date=xp.getObject("Date");
+    xmlparser xp;
+    try {
+      xp.read(FullPathFile, 30);
 
-        if (date) ci.Date=date.getWStr();
+      const xmlobject date = xp.getObject("Date");
+      if (date) ci.Date = date.getWStr();
 
-        const xmlobject name=xp.getObject("Name");
-
-        if (name) {
-          ci.Name = name.getWStr();
-          if (ci.Name.size() > 1 && ci.Name.at(0) == '%') {
-            ci.Name = lang.tl(ci.Name.substr(1));
-          }
+      const xmlobject name = xp.getObject("Name");
+      if (name) {
+        ci.Name = name.getWStr();
+        if (ci.Name.size() > 1 && ci.Name.at(0) == '%') {
+          ci.Name = lang.tl(ci.Name.substr(1));
         }
-        const xmlobject annotation=xp.getObject("Annotation");
-
-        if (annotation)
-          ci.Annotation=annotation.getWStr();
-
-        const xmlobject nameid = xp.getObject("NameId");
-        if (nameid)
-          ci.NameId = nameid.getWStr();
-
-        auto oData = xp.getObject("oData");
-        if (oData) {
-          auto preEvent = oData.getObject("PreEvent");
-          if (preEvent)
-            ci.preEvent = preEvent.getWStr();
-
-          auto postEvent = oData.getObject("PostEvent");
-          if (postEvent)
-            ci.postEvent = postEvent.getWStr();
-
-          auto importStamp = oData.getObject("ImportStamp");
-          if (importStamp)
-            ci.importTimeStamp = importStamp.getWStr();
-        }
-        cinfo.push_front(ci);
       }
-      catch (std::exception &) {
-        // XXX Do what??
+      const xmlobject annotation = xp.getObject("Annotation");
+      if (annotation)
+        ci.Annotation = annotation.getWStr();
+
+      const xmlobject nameid = xp.getObject("NameId");
+      if (nameid)
+        ci.NameId = nameid.getWStr();
+
+      auto oData = xp.getObject("oData");
+      if (oData) {
+        auto preEvent = oData.getObject("PreEvent");
+        if (preEvent)
+          ci.preEvent = preEvent.getWStr();
+
+        auto postEvent = oData.getObject("PostEvent");
+        if (postEvent)
+          ci.postEvent = postEvent.getWStr();
+
+        auto importStamp = oData.getObject("ImportStamp");
+        if (importStamp)
+          ci.importTimeStamp = importStamp.getWStr();
       }
+      cinfo.push_front(ci);
     }
-    more=FindNextFile(h, &fd)!=0;
+    catch (std::exception &) {
+      // XXX Do what??
+    }
   }
 
-  FindClose(h);
+  if (cinfo.empty() && ec)
+    return false;
 
   if (!getServerName().empty())
     sqlConnection->listCompetitions(this, true);
@@ -3983,21 +3957,16 @@ void oEvent::deleteBackups(const BackupInfo &bu) {
       toRemove.push_back(it->FullPath);
   }
   if (!toRemove.empty()) {
-    wchar_t path[260];
-    wchar_t drive[48];
-    wchar_t filename[260];
-    wchar_t ext[64];
-    //_splitpath_s(toRemove.back().c_str(), drive, ds, path, dirs, filename, fns, ext, exts);
-    _wsplitpath_s(toRemove.back().c_str(), drive, path, filename, ext);
-
-    wstring dest = wstring(drive) + path;
+    wstring dest = std::filesystem::path(toRemove.back()).parent_path().wstring();
+    if (!dest.empty() && dest.back() != L'/' && dest.back() != L'\\')
+      dest += L'/';
     toRemove.push_back(dest + bu.fileName + L".persons");
     toRemove.push_back(dest + bu.fileName + L".clubs");
     toRemove.push_back(dest + bu.fileName + L".wclubs");
     toRemove.push_back(dest + bu.fileName + L".wpersons");
 
     for (list<wstring>::iterator it = toRemove.begin(); it != toRemove.end(); ++it) {
-      DeleteFile(it->c_str());
+      { std::error_code ec; std::filesystem::remove(*it, ec); }
     }
   }
 }
@@ -4063,85 +4032,88 @@ bool BackupInfo::operator<(const BackupInfo &ci)
 }
 
 
+static bool matchWildcard(const wstring &name, const wstring &pattern) {
+  // Simple wildcard matcher: * = any sequence, ? = one char
+  size_t n = name.size(), p = pattern.size();
+  size_t ni = 0, pi = 0, star = wstring::npos, match = 0;
+  while (ni < n) {
+    if (pi < p && (pattern[pi] == L'?' || pattern[pi] == name[ni])) {
+      ni++; pi++;
+    } else if (pi < p && pattern[pi] == L'*') {
+      star = pi++; match = ni;
+    } else if (star != wstring::npos) {
+      pi = star + 1; ni = ++match;
+    } else return false;
+  }
+  while (pi < p && pattern[pi] == L'*') pi++;
+  return pi == p;
+}
+
 bool oEvent::enumerateBackups(const wstring &file, const wstring &filetype, int type)
 {
-  WIN32_FIND_DATA fd;
-  wchar_t dir[MAX_PATH];
-  wchar_t FullPath[MAX_PATH];
+  namespace fs = std::filesystem;
 
-  wcscpy_s(dir, MAX_PATH, file.c_str());
+  fs::path dirPath(file);
 
-  if (dir[file.length()-1]!='\\')//WCS
-    wcscat_s(dir, MAX_PATH, L"/");
+  // Strip leading '*' prefix to get the pattern after '*'
+  wstring pattern(filetype);
 
-  wcscpy_s(FullPath, MAX_PATH, dir);
-  wcscat_s(dir, MAX_PATH, filetype.c_str());
-  HANDLE h=FindFirstFile(dir, &fd);
+  std::error_code ec;
+  for (const auto& entry : fs::directory_iterator(dirPath, ec)) {
+    if (entry.is_directory()) continue;
+    wstring fname = entry.path().filename().wstring();
+    if (fname.empty() || fname[0] == L'.') continue;
+    if (!matchWildcard(fname, pattern))
+      continue;
 
-  if (h==INVALID_HANDLE_VALUE)
-    return false;
+    wstring FullPathFile = entry.path().wstring();
 
-  bool more=true;
-  while (more) {
-    if (fd.cFileName[0]!='.') {//Avoid .. and .
-      wchar_t FullPathFile[MAX_PATH];
-      wcscpy_s(FullPathFile, MAX_PATH, FullPath);
-      wcscat_s(FullPathFile, MAX_PATH, fd.cFileName);
+    BackupInfo ci;
+    ci.type = type;
+    ci.FullPath = FullPathFile;
+    ci.Name = L"";
+    ci.Date = L"2007-01-01";
+    ci.fileName = fname;
+    ci.fileSize = static_cast<uint32_t>(entry.file_size(ec));
+    size_t pIndex = ci.fileName.find_first_of(L".");
+    if (pIndex > 0 && pIndex < ci.fileName.size())
+      ci.fileName = ci.fileName.substr(0, pIndex);
 
-      BackupInfo ci;
-
-      ci.type = type;
-      ci.FullPath=FullPathFile;
-      ci.Name=L"";
-      ci.Date=L"2007-01-01";
-      ci.fileName = fd.cFileName;
-      ci.fileSize = fd.nFileSizeLow;
-      size_t pIndex = ci.fileName.find_first_of(L".");
-      if (pIndex>0 && pIndex<ci.fileName.size())
-        ci.fileName = ci.fileName.substr(0, pIndex);
-
-      ULARGE_INTEGER ull;
-      ull.LowPart = fd.ftLastWriteTime.dwLowDateTime;
-      ull.HighPart = fd.ftLastWriteTime.dwHighDateTime;
-      time_t ft_t = static_cast<time_t>(ull.QuadPart / 10000000ULL) - 11644473600LL;
-      std::tm st = {};
+    auto ftime = entry.last_write_time(ec);
+    auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+        ftime - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
+    time_t ft_t = std::chrono::system_clock::to_time_t(sctp);
+    std::tm st = {};
 #ifdef _WIN32
-      localtime_s(&st, &ft_t);
+    localtime_s(&st, &ft_t);
 #else
-      localtime_r(&ft_t, &st);
+    localtime_r(&ft_t, &st);
 #endif
 
-      ci.Modified = convertSystemTimeN(st);
-      xmlparser xp;
+    ci.Modified = convertSystemTimeN(st);
+    xmlparser xp;
 
-      try {
-        xp.read(FullPathFile, 5);
-        //xmlobject *xo=xp.getObject("meosdata");
-        const xmlobject date=xp.getObject("Date");
+    try {
+      xp.read(FullPathFile, 5);
+      const xmlobject date = xp.getObject("Date");
+      if (date) ci.Date = date.getWStr();
 
-        if (date) ci.Date=date.getWStr();
-
-        const xmlobject name=xp.getObject("Name");
-
-        if (name) {
-          ci.Name=name.getWStr();
-          if (ci.Name.size() > 1 && ci.Name.at(0) == '%') {
-            ci.Name = lang.tl(ci.Name.substr(1));
-          }
+      const xmlobject name = xp.getObject("Name");
+      if (name) {
+        ci.Name = name.getWStr();
+        if (ci.Name.size() > 1 && ci.Name.at(0) == '%') {
+          ci.Name = lang.tl(ci.Name.substr(1));
         }
+      }
 
-        backupInfo.push_front(ci);
-      }
-      catch (std::exception &) {
-        //XXX Do what?
-      }
+      backupInfo.push_front(ci);
     }
-    more=FindNextFile(h, &fd)!=0;
+    catch (std::exception &) {
+      //XXX Do what?
+    }
   }
 
-  FindClose(h);
-
-  return true;
+  return !ec;
 }
 
 bool oEvent::fillCompetitions(gdioutput &gdi,
@@ -4386,7 +4358,7 @@ void oEvent::newCompetition(const wstring &name)
 
   wstring file;
   getNewFileName(file, currentNameId);
-  wcscpy_s(CurrentFile, MAX_PATH, file.c_str());
+  wcscpy_s(CurrentFile, 260, file.c_str());
 
   oe->updateTabs();
 }
