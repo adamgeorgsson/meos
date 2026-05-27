@@ -251,4 +251,48 @@ void registerCompetitionsRoutes(httplib::Server& svr, meos::db::Database& db) {
             });
 }
 
+namespace {
+
+json resultToJson(const meos::domain::Result& r) {
+    json j;
+    j["id"] = r.id;
+    j["runnerId"] = r.runnerId;
+    j["classId"] = r.classId;
+    if (r.position) j["position"] = *r.position;
+    if (r.totalTime) j["totalTime"] = *r.totalTime;
+    j["status"] = r.status;
+    json splits = json::array();
+    for (const auto& s : r.splits) {
+        splits.push_back({{"controlId", s.controlId}, {"time", s.time}});
+    }
+    j["splits"] = splits;
+    return j;
+}
+
+}  // namespace
+
+void registerResultsRoutes(httplib::Server& svr, meos::db::Database& db) {
+    svr.Get("/api/v1/results",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                auto results = db.getAllResults();
+                json arr = json::array();
+                for (const auto& r : results) arr.push_back(resultToJson(r));
+                res.set_content(arr.dump(), "application/json");
+            });
+
+    svr.Get(R"(/api/v1/results/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                int id = std::stoi(req.matches[1]);
+                auto result = db.getResultById(id);
+                if (!result) {
+                    res.status = 404;
+                    res.set_content(makeError(404, "Not found").dump(),
+                                    "application/json");
+                } else {
+                    res.set_content(resultToJson(*result).dump(),
+                                    "application/json");
+                }
+            });
+}
+
 }  // namespace meos::net

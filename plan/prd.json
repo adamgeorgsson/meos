@@ -239,8 +239,8 @@
         "Typecheck passes"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "registerResultsRoutes in src/net/api.h/.cpp. GET /api/v1/results returns plain JSON array; GET /api/v1/results/{id} returns single object or 404. Optional position/totalTime fields omitted when absent. splits serialized as array of {controlId, time} objects. Integration tests via httplib::Client on port 18014 — 4 tests passing."
     },
     {
       "id": "US-015",
