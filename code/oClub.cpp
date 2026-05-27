@@ -93,9 +93,9 @@ void oClub::loadNameMap() {
   }
   if (!good) {
 #ifdef _DEBUG
-    MessageBox(NULL, L"Error processing clubnamemap.csv.\n\nTo run in debugger, copy this file (from the installation) to MeOS data directory or to the folder of meos.exe", L"MeOS", MB_ICONWARNING | MB_OK);
+    std::cerr << "Error processing clubnamemap.csv.\n\nTo run in debugger, copy this file (from the installation) to MeOS data directory or to the folder of meos.exe\n";
 #else
-   MessageBox(NULL, (L"Error processing: " + path).c_str(), L"MeOS", MB_ICONWARNING | MB_OK);
+    std::cerr << narrow(L"Error processing: " + path) << std::endl;
 #endif
 
   }

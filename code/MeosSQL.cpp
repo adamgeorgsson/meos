@@ -41,6 +41,7 @@
 #include "xmlparser.h"
 #include "maprenderer.h"
 #include <cstdint>
+#include <iostream>
 
 extern oEvent* gEvent;
 
@@ -2265,7 +2266,7 @@ OpFailStatus MeosSQL::syncUpdate(oRunner *r, bool forceWriteAll) {
 
   /*
   wstring str = L"write runner " + r->sName + L", st = " + itow(r->startTime) + L"\n";
-  OutputDebugString(str.c_str());
+  std::cerr << narrow(str);
   */
   OpFailStatus res = syncUpdate(queryset, "oRunner", r);
   if (res != OpFailStatus::opStatusFail) {
@@ -3242,7 +3243,7 @@ OpFailStatus MeosSQL::syncUpdate(QueryWrapper &updateqry,
 {
   nUpdate++;
   if (nUpdate % 100 == 99)
-    OutputDebugStringA((itos(nUpdate) +" updates\n").c_str());
+    std::cerr << (itos(nUpdate) + " updates\n");
 
   assert(ob->getEvent());
   if (!ob->getEvent())
@@ -4265,7 +4266,7 @@ void MeosSQL::synchronized(oBase &entity) {
   readTimes[make_pair(id, entity.getId())] = GetTickCount();
   readent++;
   if (readent % 100 == 99)
-    OutputDebugStringA("Read 100 entities\n");
+    std::cerr << "Read 100 entities\n";
 }
 
 bool MeosSQL::skipSynchronize(const oBase &entity) const {
@@ -4892,7 +4893,7 @@ OpFailStatus MeosSQL::storeImage(uint64_t id, const wstring& fileName, const vec
     }
   }
   catch (Exception &ex) {
-    OutputDebugStringA(ex.what());
+    std::cerr << ex.what();
     return OpFailStatus::opStatusFail;
   }
 

@@ -988,11 +988,11 @@ bool SportIdent::MonitorTEST(SI_StationInfo &si)
     if (++longSleepIter > 20) {
       std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 600));
       longSleepIter = 0;
-      OutputDebugString(L"Long sleep\n");
+      std::cerr << "Long sleep" << '\n';
     }
   }
 
-  OutputDebugString(L"--- Test Finished \n");
+  std::cerr << "--- Test Finished " << '\n';
 }
 
 bool SportIdent::MonitorSI(SI_StationInfo &si)
@@ -1071,7 +1071,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
 #ifdef DEBUG_SI
               char str[128];
               snprintf(str, sizeof(str), "EXTENDED: Card = %d, Station = %d, StationMode = %d", Card, Station, si.StationMode);
-              MessageBox(NULL, str, NULL, MB_OK);
+              std::cerr << str << '\n';
 #endif              
               addPunch(Time, Station & 511, Card & 0x00FFFFFF, mode);
             }
@@ -1107,7 +1107,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
 #ifdef DEBUG_SI
               char str[128];
               snprintf(str, sizeof(str), "OLD: Card = %d, Station = %d, StationMode = %d", DCard, Station, si.StationMode);
-              MessageBox(NULL, str, NULL, MB_OK);
+              std::cerr << str << '\n';
 #endif
             addPunch(Time, Station, DCard, si.stationMode());
             break;
@@ -1160,7 +1160,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
             bf[0]=chRead;
             readBytes(bf+1, 200,  hComm);
             //GetSI5DataExt(hComm);
-            MessageBox(NULL, lang.tl(L"Programmera stationen utan AUTOSEND").c_str(), NULL, MB_OK);
+            throw meosException(lang.tl(L"Programmera stationen utan AUTOSEND"));
             }
             break;
 
@@ -1168,7 +1168,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
             BYTE bf[200];
             bf[0]=chRead;
             readBytes(bf+1, 200,  hComm);
-            MessageBox(NULL, lang.tl(L"Programmera stationen utan AUTOSEND").c_str(), NULL, MB_OK);
+            throw meosException(lang.tl(L"Programmera stationen utan AUTOSEND"));
             }
             break;
           case 0xE8:{
@@ -1207,7 +1207,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
             }
 
             if (chRead == 0xEF)
-              MessageBox(NULL, lang.tl(L"Programmera stationen utan AUTOSEND").c_str(), NULL, MB_OK);
+              throw meosException(lang.tl(L"Programmera stationen utan AUTOSEND"));
             //MessageBox(NULL, st.c_str(), "Unknown SI response", MB_OK);
           }
          }
@@ -1247,7 +1247,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
      }
   }
   }
-  MessageBox(hWndNotify, L"EXIT 3", NULL, MB_OK);
+  std::cerr << "EXIT 3\n";
   return true;
 }
 
@@ -2168,7 +2168,7 @@ void start_si_thread(SportIdent *si)
       si->MonitorTEST(si_info);
     }
     else {
-      if (!si_info.hComm)  MessageBox(NULL, L"ERROR", 0, MB_OK);
+      if (!si_info.hComm)  throw meosException(L"ERROR");
       si->MonitorSI(si_info);
     }
   }
@@ -2200,7 +2200,7 @@ void SportIdent::startMonitorThread(const wchar_t *com) {
         std::this_thread::sleep_for(std::chrono::milliseconds(0));
     }
   }
-  else MessageBox(NULL, L"ERROR", 0, MB_OK);
+  else throw meosException(L"ERROR");
 }
 
 void checkport_si_thread(int *port)

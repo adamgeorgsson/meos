@@ -1119,6 +1119,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         gEvent->cbStartReconnectMachine = [](const wstring &error, int interval) {
           MySQLReconnect msqlr(error);
           msqlr.interval = interval;
+          msqlr.cbConfirmStop = [](const wstring &msg) -> bool {
+            return MessageBox(0, msg.c_str(), L"Warning", MB_YESNO | MB_ICONWARNING) == IDYES;
+          };
           TabAuto::tabAutoAddMachinge(msqlr);
         };
 

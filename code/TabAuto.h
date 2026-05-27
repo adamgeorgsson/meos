@@ -25,6 +25,7 @@
 #include "gdioutput.h"
 #include <string>
 #include <thread>
+#include <functional>
 #include "oListInfo.h"
 #include "importformats.h"
 
@@ -255,6 +256,8 @@ protected:
   bool toRemove = false;
 
 public:
+  std::function<bool(const wstring&)> cbConfirmStop;
+
   void settings(gdioutput &gdi, oEvent &oe, State state);
   shared_ptr<AutoMachine> clone() const final { 
     return make_shared<MySQLReconnect>(*this);
