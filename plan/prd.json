@@ -1,501 +1,140 @@
 {
-  "project": "MeOS Legacy Preparation",
-  "description": "Preparatory refactoring of legacy code/ directory: fix cross-platform blockers, reduce GUI coupling, replace Win32-specific APIs in domain code, and split oversized files. Operates exclusively on code/. Each story must keep the Windows build (MSVC v143) passing and preserve domain behavior.",
+  "project": "MeOS",
+  "description": "Legacy Code Preparation for Migration - non-functional refactorings in code/ that eliminate recurring friction points in the iterative domain migration. Every story must preserve existing Windows/MSBuild behavior.",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Fix include case sensitivity",
-      "description": "As a Linux build, I need every #include \"...\" directive to match the actual filename casing on disk so the project can compile on case-sensitive filesystems.",
+      "title": "Replace std::exception(\"msg\") with std::runtime_error(\"msg\") in domain code",
+      "description": "As a migration engineer, I want all message-bearing exception throws to use a standard, portable type so that domain code compiles on non-MSVC toolchains.",
       "acceptanceCriteria": [
-        "Run python3 .claude/skills/include-normalization/fix_includes.py from repo root (use --dry-run first)",
-        "Every #include \"...\" in code/*.h and code/*.cpp matches actual filename casing on disk",
-        "A grep/verification pass finds zero remaining case mismatches",
-        "Windows build passes"
+        "No `throw std::exception(\"...\")` remains in domain files in `code/` (verify by grep)",
+        "`meosException` (and any similar message-carrying exception class) inherits from `std::runtime_error` instead of `std::exception`",
+        "All existing `catch (const std::exception&)` blocks still catch these exceptions (std::runtime_error derives from std::exception)",
+        "Legacy MSBuild build of `code/` passes with no new warnings/errors"
       ],
       "priority": 1,
       "passes": true,
-      "notes": ""
+      "notes": "meosException already inherited std::runtime_error. Added <stdexcept> to StdAfx.h and replaced all throw std::exception(...) with throw std::runtime_error(...) across 11 files."
     },
     {
       "id": "US-002",
-      "title": "Extract string utilities from gdioutput",
-      "description": "As a domain file, I want to use widen/narrow/toUTF8/fromUTF8 without including the GUI header gdioutput.h.",
+      "title": "Make StringCache and Localizer thread-safe via thread_local",
+      "description": "As a developer, I want shared per-thread caches to use `thread_local` storage so they are both thread-safe and portable (no `GetCurrentThreadId()` + global map).",
       "acceptanceCriteria": [
-        "widen(), narrow(), toUTF8(), fromUTF8() are available as free functions from meos_util.h",
-        "gdioutput retains the existing static methods as thin wrappers/using-declarations for backward compatibility",
-        "No duplicate definitions of toUTF8 remain (remove old definition from localizer.cpp)",
-        "machinecontainer.cpp no longer needs to include gdioutput.h purely for these utilities",
-        "Windows build passes (no LNK2005 multiply-defined-symbol errors)"
+        "`StringCache::getInstance()` returns a `thread_local static StringCache` instance directly; the `GetCurrentThreadId()` lookup and global map are removed",
+        "`translate()` in `localizer.cpp` uses `thread_local` for its rotating-buffer state instead of plain `static`",
+        "No `<windows.h>`-only API remains in either implementation for thread identification",
+        "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 2,
       "passes": true,
-      "notes": ""
+      "notes": "Both changes were already in place: StringCache::getInstance() uses thread_local static StringCache instance (meos_util.cpp:49), and LocalizerImpl::translate() uses thread_local for int i and wstring value[] (localizer.cpp:145-147). No GetCurrentThreadId() in either. No code changes needed."
     },
     {
       "id": "US-003",
-      "title": "Replace Win32 string functions in domain code",
-      "description": "As cross-platform domain code, I want standard C++ replacements for _wtoi, sprintf_s, swprintf_s, _itow_s, _wtoi64.",
+      "title": "Header hygiene: remove StdAfx from .hpp, add explicit includes, fix opaque enum fwd decls",
+      "description": "As a non-PCH build, I want each header to be self-contained so it can be consumed without depending on precompiled-header injection or transitive includes.",
       "acceptanceCriteria": [
-        "Add inline wtoi(const wstring&) to meos_util.h (using wcstol) BEFORE running the script; remove any local wtoi in csvparser.cpp",
-        "Run python3 .claude/skills/replace_win32_strings/replace_win32_strings.py code/ (use --dry-run first)",
-        "No direct calls to _wtoi, _wtoi64, sprintf_s, swprintf_s, _itow_s in domain .cpp/.h files (Tab*/gdioutput excluded)",
-        "Manually fix _wtoi64 in datadefiners.h with std::wcstoll",
-        "Windows build passes"
+        "`#include \"StdAfx.h\"` is removed from `.hpp` files (e.g., `intkeymap.hpp`) and from any other standalone header where it appears; required standard headers are added explicitly",
+        "Opaque `enum KeyCommandCode;` (and any similar fwd decls) is replaced with an explicit underlying type (e.g., `enum KeyCommandCode : int;`) or the full include",
+        "`oTeam.h` includes `<set>` directly",
+        "Domain `.cpp` files that use `oDataContainer` include `oDataContainer.h` directly instead of relying on transitive inclusion through `oBase.h`",
+        "`oClass.cpp` includes `xmlparser.h` and `timeconstants.hpp` directly",
+        "Include-what-you-use pass over domain headers: missing includes (that previously resolved only via PCH) are added",
+        "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 3,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-004",
-      "title": "Replace Win32 types (DWORD/BOOL) in domain code",
-      "description": "As cross-platform domain code, I want DWORD replaced with uint32_t and Win32 BOOL replaced with bool, except where the value is passed to a Win32 API.",
+      "title": "Make oData buffers portable across sizeof(wchar_t)",
+      "description": "As a Linux build engineer, I want `oData` blob buffers to align correctly for wide-character access and to size themselves based on the platform's `wchar_t` so the same blob layout serializes on both platforms.",
       "acceptanceCriteria": [
-        "Run python3 .claude/skills/replace_win32_types/replace_win32_types.py (use --dry-run first)",
-        "No DWORD or Win32 BOOL usage in domain .cpp/.h files (except inside SQL string literals and variables passed to Win32 APIs)",
-        "Variables passed to Win32 APIs (GetComputerName, WideCharToMultiByte, etc.) keep their Win32 types",
-        "Add uint32_t overloads to gdioutput::getData where domain callers switched from DWORD",
-        "#include <cstdint> added where needed",
-        "Windows build passes"
+        "`BYTE oData[dataSize]` declarations in `oClass`, `oClub`, `oCourse`, `oControl`, `oRunner`, and `oTeam` are decorated with `alignas(sizeof(wchar_t))`",
+        "`dataSize` constants for these entities are expressed in terms of `sizeof(wchar_t)` (e.g., `N * static_cast<int>(sizeof(wchar_t)) + K`) and evaluate to the same integer value on Windows as today",
+        "On Windows the compiled struct layout and `sizeof` for each entity are unchanged",
+        "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-005",
-      "title": "Normalize path separators in domain code",
-      "description": "As cross-platform domain code, I want hardcoded backslash path separators replaced with portable alternatives.",
+      "title": "Add public accessors required by migration",
+      "description": "As a repository / REST / test author, I want public read access (and where needed, write access) to domain state without using `friend` or layout assumptions. Purely additive — existing call sites unaffected.",
       "acceptanceCriteria": [
-        "Run python3 .claude/skills/normalize_paths/normalize_paths.py (use --dry-run first)",
-        "Domain files use std::filesystem::path or forward-slash paths for file construction",
-        "Escape sequences (\\n, \\t) and regex patterns are NOT modified",
-        "Windows build passes"
+        "`oPunch::isUsed`, `oPunch::tIndex`, `oPunch::tMatchControlId` are public (or exposed via public accessors)",
+        "`oClass` exposes `int getNumLegs() const { return (int)legInfo.size(); }`",
+        "`oAbstractRunner::tInTeam`, `tLeg`, `tStartTime` are public (or exposed via public accessors)",
+        "`oAbstractRunner` exposes `const TempResult& getTempResult() const`",
+        "`oTeam` exposes a public `wstring getRunnerIdString() const` wrapper",
+        "`oCard` exposes `void setCardNo(int c)` if not already present",
+        "`oBase` (and each entity that owns an `oData` blob) exposes `const BYTE* getOData() const` and `static int getODataBlobSize()`",
+        "All additions are purely additive — no existing code is broken",
+        "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 5,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-006",
-      "title": "US-P0f1: Add callback members to oEvent.h",
-      "description": "Infrastructure step: add 13 std::function callback members to oEvent so subsequent stories can route Tab* dependencies through callbacks.",
+      "title": "Replace Win32 CompareString with standard wstring comparison",
+      "description": "As a Linux build engineer, I want sort comparisons in domain code to use portable `std::wstring` comparison so domain code does not depend on Win32 NLS APIs.",
       "acceptanceCriteria": [
-        "oEvent.h declares all 13 callback members per .claude/skills/tab-decoupling/SKILL.md (cbBaseButtons, cbKillMachines, cbSetSubSecondMode, cbTimerCallback, cbCheckPrintQueue, cbSyncCallback, cbGetSynchronize, cbGetSynchronizePunches, cbHasReconnectionMachine, cbStartReconnectMachine, cbGetListEditor, cbRemovedList, cbAddCard)",
-        "Callbacks are public std::function members with signatures matching SKILL.md",
-        "Windows build passes"
+        "`CompareString` calls in `GeneralResultInfo::compareResult` and `oAbstractRunner::compareClubs` are replaced with plain `wstring` comparison (`<` / `compare`)",
+        "No `CompareString`/`CompareStringEx` calls remain in domain files in `code/` (verify by grep)",
+        "ASCII sort order is preserved (minor differences in non-ASCII collation acceptable)",
+        "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 6,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-007",
-      "title": "US-P0f8: Register all Tab callbacks in meos.cpp",
-      "description": "Wire all 13 oEvent callbacks during application startup so call sites resolve correctly when the decoupling stories land.",
+      "title": "Misc portability: SQL_quote uses toUTF8, oListParam additive members, permute via std::shuffle",
+      "description": "As a migration engineer, I want a small set of remaining portability and completeness fixes so the legacy code stops repeatedly tripping the same migration patches.",
       "acceptanceCriteria": [
-        "meos.cpp registers all callbacks on oEvent after Tab objects are constructed",
-        "Lambdas capture only what's needed (Tab pointers safe for app lifetime; gdi_main is global)",
-        "Static Tab methods (TabList::baseButtons, TabAuto::tabAutoKillMachines, etc.) are invoked with no captures",
-        "Windows build passes"
+        "`SQL_quote()` uses `toUTF8(wstring)` from `meos_util.h` instead of calling `WideCharToMultiByte` directly",
+        "`oListParam` exposes `set<int> selection`, `bool lockUpdate`, and a working `filterInclude()` implementation, with sane defaults so existing call sites are unaffected",
+        "`permute()` is implemented using `std::shuffle` with `std::mt19937` seeded from `std::random_device`; any Win32-specific RNG paths are removed",
+        "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 7,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-008",
-      "title": "US-P0f2: Decouple oEvent.cpp from Tab* includes",
-      "description": "Replace direct TabAuto/TabSI/TabList/TabBase usage in oEvent.cpp with the callbacks registered in US-007.",
+      "title": "Move shared enums (SpecialPunch, RunnerStatus, DynamicRunnerStatus, SortOrder) out of oEvent.h",
+      "description": "As a developer, I want to include just an enum without dragging in the entire `oEvent` header so domain headers stay loosely coupled. Re-export from `oEvent.h` for backward compatibility.",
       "acceptanceCriteria": [
-        "oEvent.cpp no longer includes TabList.h, TabAuto.h, TabSI.h, or TabBase.h",
-        "3 call sites use cbBaseButtons, cbKillMachines, cbSetSubSecondMode (nested classes access via oe.cbXxx)",
-        "Add clearTabsCompetitionData() wrapper to gdioutput.h/cpp where needed (FixedTabs is only forward-declared)",
-        "Windows build passes"
+        "`SpecialPunch` is defined in `oControl.h` (or a dedicated enum header) and `oEvent.h` re-exports it (e.g., `using SpecialPunch = ::SpecialPunch;`)",
+        "`RunnerStatus`, `DynamicRunnerStatus`, and `SortOrder` are defined in `oAbstractRunner.h` (or a shared enum header) and `oEvent.h` re-exports them",
+        "All existing code that includes `oEvent.h` still compiles unchanged",
+        "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 8,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-009",
-      "title": "US-P0f3: Decouple autotask.cpp from Tab* includes",
-      "description": "Replace TabAuto/TabSI dynamic_casts in autotask.cpp with callbacks.",
+      "title": "Extract oAbstractRunner to its own header to break oRunner/oEvent circular include",
+      "description": "As a migration engineer, I want the `oRunner` / `oEvent` circular include resolved at the source so each migration run doesn't have to re-do the same extraction.",
       "acceptanceCriteria": [
-        "autotask.cpp no longer includes TabAuto.h or TabSI.h",
-        "dynamic_casts replaced with cbTimerCallback, cbCheckPrintQueue, cbSyncCallback, cbGetSynchronize, cbGetSynchronizePunches",
-        "Windows build passes"
+        "New header `oAbstractRunner.h` contains the full `oAbstractRunner` definition and only forward-declares `oEvent`",
+        "`oRunner.h` and `oTeam.h` include `oAbstractRunner.h` and no longer define `oAbstractRunner` themselves",
+        "`oEvent.h` no longer depends on the full definition of `oRunner` to use `oAbstractRunner` pointers/references",
+        "Methods that need the full `oEvent` definition (e.g., `DynamicValue` methods touching `oEvent::dataRevision`) live in `.cpp` files, not in the new header",
+        "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 9,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-010",
-      "title": "US-P0f4: Decouple oEventSQL.cpp from TabAuto",
-      "description": "Remove TabAuto include from oEventSQL.cpp and abstract MySQLReconnect creation via callback.",
-      "acceptanceCriteria": [
-        "oEventSQL.cpp no longer includes TabAuto.h",
-        "Uses cbHasReconnectionMachine and cbStartReconnectMachine",
-        "Add #include \"localizer.h\" directly (previously transitive via TabAuto.h)",
-        "Forward-declare isThreadReconnecting() locally",
-        "Windows build passes"
-      ],
-      "priority": 10,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-011",
-      "title": "US-P0f5: Decouple oEventResult.cpp from TabBase/TabList",
-      "description": "Replace dynamic_cast in oEventResult.cpp with callback.",
-      "acceptanceCriteria": [
-        "oEventResult.cpp no longer includes TabBase.h or TabList.h",
-        "dynamic_cast replaced with cbGetListEditor",
-        "Windows build passes"
-      ],
-      "priority": 11,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-012",
-      "title": "US-P0f6: Decouple metalist.cpp from TabAuto",
-      "description": "Replace cast in metalist.cpp with cbRemovedList callback.",
-      "acceptanceCriteria": [
-        "metalist.cpp no longer includes TabAuto.h",
-        "Uses cbRemovedList",
-        "Windows build passes"
-      ],
-      "priority": 12,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-013",
-      "title": "US-P0f7: Decouple onlineinput.cpp from TabSI",
-      "description": "Replace static TabSI call in onlineinput.cpp with cbAddCard callback.",
-      "acceptanceCriteria": [
-        "onlineinput.cpp no longer includes TabSI.h",
-        "Uses cbAddCard",
-        "Windows build passes"
-      ],
-      "priority": 13,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-014",
-      "title": "Replace Win32 time APIs with std::chrono",
-      "description": "As cross-platform domain code, I want GetLocalTime, SYSTEMTIME, GetTickCount64, FileTimeToLocalFileTime, SystemTimeToFileTime replaced with std::chrono / <ctime> equivalents.",
-      "acceptanceCriteria": [
-        "Add meos_steady_clock_ms() and meos_localtime_now() helpers to meos_util.h per .claude/skills/replace_time_apis/SKILL.md",
-        "Run python3 .claude/skills/replace_time_apis/replace_time_apis.py (use --dry-run first)",
-        "No GetLocalTime, SYSTEMTIME, GetTickCount64, FileTimeToLocalFileTime, SystemTimeToFileTime in domain .cpp/.h files",
-        "Fix write-context bugs (st.tm_year = value - 1900, st.tm_mon = value - 1) in TimeStamp.cpp, meos_util.cpp, oEventSpeaker.cpp",
-        "Remove invalid `0 /* TODO */ = expr` wMilliseconds assignments",
-        "Update UI callers (TabCompetition.cpp ~1308-1326, ~2975-2978) to pass std::tm to changed domain signatures",
-        "Windows build passes"
-      ],
-      "priority": 14,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-015",
-      "title": "Replace Win32 file APIs with std::filesystem",
-      "description": "As cross-platform domain code, I want FindFirstFile/FindNextFile, GetTempPath, CreateDirectory, DeleteFile, _wfopen_s, _waccess, MAX_PATH replaced with std::filesystem and <fstream>.",
-      "acceptanceCriteria": [
-        "Run python3 .claude/skills/replace_file_apis/replace_file_apis.py (use --dry-run first)",
-        "Manually fix script bug: std::filesystem::remove(x.c_str(, ec)) → { std::error_code ec; std::filesystem::remove(x, ec); }",
-        "No FindFirstFile, FindNextFile, WIN32_FIND_DATA, GetTempPath, CreateDirectory, DeleteFile, _wfopen_s, _waccess in domain files",
-        "No MAX_PATH/_MAX_PATH usage in domain files (grep manually after script)",
-        "Implement matchWildcard for *.bu? and *.dbmeos* patterns in enumerateBackups()",
-        "file_time_type → time_t uses two-clocks workaround",
-        "Windows build passes"
-      ],
-      "priority": 15,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-016",
-      "title": "Replace Win32 threading with std::thread/std::mutex",
-      "description": "As cross-platform domain code, I want CRITICAL_SECTION, _beginthread(ex), TerminateThread replaced with std::mutex, std::thread, and cooperative cancellation.",
-      "acceptanceCriteria": [
-        "No CRITICAL_SECTION, EnterCriticalSection, LeaveCriticalSection, InitializeCriticalSection, DeleteCriticalSection in domain .cpp/.h files",
-        "No _beginthread, _beginthreadex, TerminateThread in domain .cpp/.h files (excluding vendored code/mysql/)",
-        "MySQLReconnect has user-defined copy constructor (std::thread not copyable)",
-        "Download uses std::atomic<bool> threadRunning as completion flag",
-        "Replace ThreadHandle boolean checks with ThreadHandle.joinable()",
-        "socket.cpp uses std::thread(...).detach() for fire-and-forget",
-        "Windows build passes"
-      ],
-      "priority": 16,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-017",
-      "title": "Replace Sleep() with std::this_thread::sleep_for",
-      "description": "Mechanical replacement of Win32 Sleep(N) with std::this_thread::sleep_for(std::chrono::milliseconds(N)) in domain code.",
-      "acceptanceCriteria": [
-        "Run python3 .claude/skills/sleep-replacement/fix_sleep.py (use --dry-run first)",
-        "No Win32 Sleep() calls in domain .cpp/.h files",
-        "<thread> and <chrono> includes added where needed",
-        "Millisecond values preserved verbatim (especially in SportIdent.cpp serial loops)",
-        "Windows build passes"
-      ],
-      "priority": 17,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-018",
-      "title": "Replace std::exception(\"msg\") with std::runtime_error",
-      "description": "Replace MSVC-specific std::exception(const char*) with std::runtime_error throughout domain code.",
-      "acceptanceCriteria": [
-        "All `throw std::exception(\"...\")` replaced with `throw std::runtime_error(\"...\")` in domain files",
-        "meosException inherits from std::runtime_error",
-        "All existing catch (std::exception&) blocks still function",
-        "Windows build passes"
-      ],
-      "priority": 18,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-019",
-      "title": "Replace MessageBox/OutputDebugString in domain code",
-      "description": "Replace direct Win32 UI calls in domain code with exceptions, callbacks, or std::cerr.",
-      "acceptanceCriteria": [
-        "Run python3 .claude/skills/replace_msgbox_debug/replace_msgbox_debug.py (use --dry-run first)",
-        "No active MessageBox() calls in domain .cpp/.h files (most already commented out)",
-        "No active OutputDebugString/OutputDebugStringA/OutputDebugStringW calls in domain .cpp/.h files",
-        "OutputDebugString replacements use std::cerr (with narrow() for wide strings)",
-        "Block-comment-aware scan confirms zero active calls",
-        "Windows build passes"
-      ],
-      "priority": 19,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-020",
-      "title": "StringCache + Localizer translate() use thread_local",
-      "description": "Replace GetCurrentThreadId() with thread_local in StringCache::getInstance() and translate()'s static buffer.",
-      "acceptanceCriteria": [
-        "StringCache::getInstance() uses `thread_local static StringCache instance; return instance;`",
-        "translate()'s static index and value buffer are thread_local",
-        "No GetCurrentThreadId() in meos_util.h/cpp",
-        "Windows build passes"
-      ],
-      "priority": 20,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-021",
-      "title": "Add public accessors needed for migration",
-      "description": "Add public accessor methods and promote fields needed for repositories, tests, and cross-entity logic.",
-      "acceptanceCriteria": [
-        "oPunch::isUsed, tIndex, tMatchControlId are public",
-        "oClass has `int getNumLegs() const { return (int)legInfo.size(); }`",
-        "oAbstractRunner::tInTeam, tLeg, tStartTime are public",
-        "oAbstractRunner has `const TempResult& getTempResult() const`",
-        "oTeam has `wstring getRunnerIdString() const` public wrapper",
-        "oCard has `void setCardNo(int)` if missing",
-        "All entities with oData buffers expose `const BYTE* getOData() const` and `static int getODataBlobSize()` in public sections",
-        "Windows build passes"
-      ],
-      "priority": 21,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-022",
-      "title": "alignas + dynamic dataSize on oData buffers",
-      "description": "Add alignas(sizeof(wchar_t)) to oData buffers and make dataSize use sizeof(wchar_t)-based formulas. No-op on Windows.",
-      "acceptanceCriteria": [
-        "alignas(sizeof(wchar_t)) added to oData and oDataOld arrays in oClass.h, oClub.h, oCourse.h, oControl.h, oRunner.h (and oTeam.h if applicable)",
-        "dataSize constants use sizeof(wchar_t)-based formulas (e.g. `256 * static_cast<int>(sizeof(wchar_t)) + 64`) that evaluate to the legacy value on Windows",
-        "oCard skipped (no oData buffer)",
-        "Windows build passes with identical binary layout"
-      ],
-      "priority": 22,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-023",
-      "title": "Header hygiene: missing includes + StdAfx removal",
-      "description": "Audit headers for PCH-dependent implicit includes, remove StdAfx.h from standalone headers, fix invalid enum forward declarations.",
-      "acceptanceCriteria": [
-        "intkeymap.hpp no longer includes StdAfx.h",
-        "Other .hpp files audited for unnecessary StdAfx.h includes",
-        "oTeam.h includes <set> explicitly",
-        "Domain .cpp files include oDataContainer.h directly where getDI()/getDCI() is used",
-        "oClass.cpp includes xmlparser.h and timeconstants.hpp explicitly",
-        "`enum KeyCommandCode : int;` (with underlying type) in TableType.h",
-        "Windows build passes"
-      ],
-      "priority": 23,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-024",
-      "title": "Replace CompareString (Win32) with standard wstring comparison",
-      "description": "Replace Win32 CompareString API with standard `wstring <` comparison in domain code.",
-      "acceptanceCriteria": [
-        "No CompareString calls in domain .cpp/.h files",
-        "GeneralResultInfo::compareResult and oAbstractRunner::compareClubs use standard < comparison",
-        "Windows build passes"
-      ],
-      "priority": 24,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-025",
-      "title": "Misc: SQL_quote, oListParam, permute()",
-      "description": "Three small fixes that each reduce migration friction.",
-      "acceptanceCriteria": [
-        "SQL_quote() uses toUTF8() from meos_util.h instead of WideCharToMultiByte (depends on US-002)",
-        "oListParam in oListInfo.h/cpp has `set<int> selection`, `bool lockUpdate` (default false), and `filterInclude()` implementation",
-        "permute() in random.h/cpp uses std::shuffle with std::random_device + std::mt19937",
-        "Windows build passes"
-      ],
-      "priority": 25,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-026",
-      "title": "Move enums out of oEvent.h",
-      "description": "Move enums that don't belong to oEvent (SpecialPunch, RunnerStatus, DynamicRunnerStatus, SortOrder) into more appropriate headers; keep backward-compat using-declarations in oEvent.h.",
-      "acceptanceCriteria": [
-        "SpecialPunch moved to oControl.h (or a shared enum header)",
-        "RunnerStatus, DynamicRunnerStatus, SortOrder, isPossibleResultStatus moved to oAbstractRunner.h",
-        "oEvent.h retains using/typedef declarations so existing includers compile unchanged",
-        "Windows build passes"
-      ],
-      "priority": 26,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-027",
-      "title": "Extract oAbstractRunner to its own header",
-      "description": "Extract the oRunner/oTeam base class from oRunner.h into oAbstractRunner.h, forward-declaring oEvent to break the circular dependency.",
-      "acceptanceCriteria": [
-        "New file code/oAbstractRunner.h contains the base class and only forward-declares oEvent",
-        "oRunner.h includes oAbstractRunner.h instead of defining the base class inline",
-        "oTeam.h includes oAbstractRunner.h",
-        "DynamicValue methods referencing oEvent::dataRevision live in .cpp files, not inline",
-        "Circular dependency between oRunner.h and oEvent.h is broken",
-        "Windows build passes"
-      ],
-      "priority": 27,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-028",
-      "title": "Remove vendored third-party directories",
-      "description": "After vcpkg migrations land (prd-legacy-build.md US-P0m*), remove vendored libraries and pre-built libs from code/. SKIP this story if those vcpkg stories are not complete.",
-      "acceptanceCriteria": [
-        "Verify all US-P0m* stories in prd-legacy-build.md are complete and CI is green — if not, mark this story blocked",
-        "code/libharu/, code/mysql/, code/png/, code/minizip/, code/restbed/ removed",
-        "Pre-built libs (libharu.lib, libhpdf.lib, RestBed.lib, zlib libs) removed from code/lib64*, code/lib/",
-        "Runtime DLLs removed from code/dll/, code/dll64/",
-        "No source file references vendored include paths after deletion",
-        "Windows build and CI pass"
-      ],
-      "priority": 28,
-      "passes": true,
-      "notes": "SKIPPED: prd-legacy-build.md does not exist; US-P0m* vcpkg stories not complete. Verified blocked — prerequisites absent. Revisit when vcpkg build PRD is created."
-    },
-    {
-      "id": "US-029",
-      "title": "US-P0g1: Split oEvent.cpp",
-      "description": "Split oEvent.cpp (~7405 lines) into oEvent.cpp + oEventAdmin.cpp + oEventConfig.cpp.",
-      "acceptanceCriteria": [
-        "Verify split boundaries against current function starts before running script (previous correct values: 2835, 5335 — but ALWAYS re-verify)",
-        "Run python3 .claude/skills/split-files/split_file.py code/oEvent.cpp \"<verified>:oEventAdmin.cpp,<verified>:oEventConfig.cpp\" (dry-run first)",
-        "Create code/oEventInternal.h with `static inline` getNewFileName and any cross-file file-local helpers",
-        "Add #include \"oEventInternal.h\" in the includes block of new files",
-        "MeOS.vcxproj updated with both new files",
-        "Each resulting .cpp file ≤ ~3000 lines",
-        "Windows build passes"
-      ],
-      "priority": 29,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-030",
-      "title": "US-P0g2: Split oRunner.cpp",
-      "description": "Split oRunner.cpp (~7808 lines) into oRunner.cpp + oRunnerData.cpp + oRunnerResult.cpp.",
-      "acceptanceCriteria": [
-        "Verify split boundaries (previous values 2526, 5056 were correct — re-verify)",
-        "Run split_file.py with verified boundaries (dry-run first)",
-        "Create code/oRunnerInternal.h with `static inline` findNextControl, gotoNextLine, addMissingControl",
-        "MeOS.vcxproj updated",
-        "Each resulting .cpp file ≤ ~3000 lines",
-        "Windows build passes"
-      ],
-      "priority": 30,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-031",
-      "title": "US-P0g3: Split oClass.cpp",
-      "description": "Split oClass.cpp (~5684 lines) into oClass.cpp + oClassConfig.cpp.",
-      "acceptanceCriteria": [
-        "Verify split boundary (previous correct value 2838 — re-verify)",
-        "Run split_file.py with verified boundary (dry-run first)",
-        "Create code/oClassInternal.h with ClassSplit::evaluateTime/Result/Points as free inline functions",
-        "Remove `#define DODECLARETYPESYMBOLS` from oClassConfig.cpp to avoid LNK2005",
-        "MeOS.vcxproj updated",
-        "Each resulting .cpp file ≤ ~3000 lines",
-        "Windows build passes"
-      ],
-      "priority": 31,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-032",
-      "title": "US-P0g4: Split oListInfo.cpp",
-      "description": "Split oListInfo.cpp (~5910 lines) into oListInfo.cpp + oListInfoGen.cpp.",
-      "acceptanceCriteria": [
-        "Verify split boundary (previous correct value 2884 — re-verify)",
-        "Run split_file.py with verified boundary (dry-run first)",
-        "Create code/oListInfoInternal.h with PrintPostInfo + getControlName, getFullControlName, getResultTitle, generateNBestHead",
-        "MeOS.vcxproj updated",
-        "Each resulting .cpp file ≤ ~3000 lines",
-        "Windows build passes"
-      ],
-      "priority": 32,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-033",
-      "title": "US-P0g5: Split gdioutput.cpp",
-      "description": "Split gdioutput.cpp (~8174 lines) into gdioutput.cpp + gdioutputEvent.cpp + gdioutputUI.cpp.",
-      "acceptanceCriteria": [
-        "Verify split boundaries (previous correct values 5534, 8153 — re-verify; the original prd value 8174 was wrong)",
-        "Run split_file.py with verified boundaries (dry-run first)",
-        "Add `extern int defaultCodePage;` manually to gdioutputUI.cpp (not captured by include extraction due to #ifdef DEBUGRENDER)",
-        "MeOS.vcxproj updated",
-        "Each resulting .cpp file ≤ ~3000 lines",
-        "Windows build passes"
-      ],
-      "priority": 33,
-      "passes": true,
+      "passes": false,
       "notes": ""
     }
   ]
