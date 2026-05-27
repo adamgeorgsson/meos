@@ -21,16 +21,19 @@ static const char* LegTypeNames[nLegTypes]     = {"NO", "PA", "EX", "SM",
 // Parse a relative time string "M:SS" or "M:SS.t" into tenths-of-second units.
 static int parseRelativeTime(const char* s) {
   if (!s || !*s) return 0;
-  int total = 0;
-  // Try M:SS.t
+  // Try M:SS or M:SS.t  (output by codeTime when time has minutes)
   int min = 0, sec = 0, tenths = 0;
   int n = sscanf(s, "%d:%d.%d", &min, &sec, &tenths);
   if (n >= 2) {
-    total = (min * 60 + sec) * timeConstSecond + tenths;
-    return total;
+    return (min * 60 + sec) * timeConstSecond + tenths;
   }
-  // Plain integer (raw unit value)
-  return atoi(s);
+  // Try S.t  (output by codeTime when time fits in seconds with tenths)
+  n = sscanf(s, "%d.%d", &sec, &tenths);
+  if (n == 2) {
+    return sec * timeConstSecond + tenths;
+  }
+  // Plain integer: codeTime outputs whole seconds, so convert to tenths
+  return atoi(s) * timeConstSecond;
 }
 
 // Split string by delimiter into vector<string>
@@ -210,11 +213,13 @@ void oClass::setCourse(pCourse c) {
 
 void oClass::setNumStages(int no) {
   int current = (int)MultiCourse.size();
-  if (no == current) return;
+  if (no == current && (int)legInfo.size() == no) return;
   MultiCourse.resize(no);
+  // Only initialize legInfo slots that are genuinely new (beyond existing legInfo)
+  int legCurrent = (int)legInfo.size();
   legInfo.resize(no);
-  if (no > current) {
-    for (int k = current; k < no; ++k)
+  if (no > legCurrent) {
+    for (int k = legCurrent; k < no; ++k)
       legInfo[k] = oLegInfo(); // default: STTime, LTNormal
   }
   updateChanged();

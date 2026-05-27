@@ -139,8 +139,8 @@
         "Tests pass"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "72 unit tests added covering class-course assignment, multi-stage management, start methods, leg info, parallel navigation, timing flags, fee fields, class type, operator<, codeLegMethod/importLegMethod round-trip, parseCourses, isRogaining. Fixed parseRelativeTime (plain int → seconds) and setNumStages (preserve imported legInfo)."
     },
     {
       "id": "US-003f1",
