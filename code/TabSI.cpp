@@ -5803,9 +5803,7 @@ public:
         oe->getRunners(selectedClasses, rList, true);
                 
         sort(rList.begin(), rList.end(), [](const pRunner& a, const pRunner& b) -> bool {
-          return CompareString(LOCALE_USER_DEFAULT, 0,
-                               a->getName().c_str(), a->getName().length(),
-                               b->getName().c_str(), b->getName().length()) == CSTR_LESS_THAN; });
+          return a->getName() < b->getName(); });
 
         vector<pair<wstring, size_t>> rItem;
         for (pRunner r : rList) {

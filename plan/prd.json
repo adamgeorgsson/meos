@@ -91,8 +91,8 @@
         "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "GeneralResultInfo::compareResult and oAbstractRunner::compareClubs already used standard wstring comparison. Replaced the only remaining CompareString call in TabSI.cpp (a sort lambda) with a->getName() < b->getName()."
     },
     {
       "id": "US-007",
