@@ -23,6 +23,8 @@
 #include "StdAfx.h"
 #include "random.h"
 #include <cstdint>
+#include <algorithm>
+#include <random>
 
 static int _rbp=0;
 static int _rbinterval=1;
@@ -83,34 +85,17 @@ int GetRandomNumber(int m)
 
 void permute(vector<int> &vec)
 {
-  if (vec.empty())
-    return;
-
-  permute(&vec.front(), vec.size());
+  static std::random_device rd;
+  static std::mt19937 gen(rd());
+  std::shuffle(vec.begin(), vec.end(), gen);
 }
 
 void permute(int *array, int size)
 {
-  int size1=size-1;
-
-  int m=0;
-
-  while(m<=size1) {
-    if (GetRandomBit()) {
-      int t=array[size1];
-      array[size1]=array[m];
-      size1--;
-      array[m]=t;
-    }
-    else m++;
-  }
-
-  int p1=m;
-  int p2=size-m;
-
-  if (p1>1) permute(array, p1);
-
-  if (p2>1) permute(&array[p1], p2);
+  vector<int> tmp(array, array + size);
+  permute(tmp);
+  for (int i = 0; i < size; ++i)
+    array[i] = tmp[i];
 }
 
 //Truely 16-bit random number

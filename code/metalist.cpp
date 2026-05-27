@@ -228,39 +228,6 @@ public:
 
 
 
-oListParam::oListParam() {
-  lockUpdate = false;
-  listCode = EStdResultList; //Just need a default
-  cb = 0;
-  legNumber = 0;
-  useControlIdResultTo = 0;
-  useControlIdResultFrom = 0;
-  filterMaxPer = 0;
-  pageBreak = false;
-  showInterTimes = false;
-  showSplitTimes = false;
-  splitAnalysis = false;
-  useLargeSize = false;
-  saved = false;
-  inputNumber = 0;
-  nextList = 0; // No linked list
-  previousList = 0;
-  relayLegIndex = -1;
-  bgColor = -1;
-  fgColor = -1;
-  bgColor2 = -1;
-
-  nColumns = 0;
-  animate = true;
-  timePerPage = 8000;
-  margin = 5;
-  screenMode = 0;
-
-  htmlScale = 1.0;
-  htmlRows = 60;
-  htmlTypeTag = "free";
-}
-
 void oListParam::serialize(xmlparser &xml, 
                            const MetaListContainer &container, 
                            const map<int, int> &idToIndex) const {
@@ -390,10 +357,6 @@ void oListParam::deserialize(const xmlobject &xml, const MetaListContainer &cont
   }
 
   saved = true;
-}
-
-bool oListParam::filterInclude(int count, const oAbstractRunner *r) const {
-  return filterMaxPer == 0 || count <= filterMaxPer || (r != nullptr && r->matchAbstractRunner(alwaysInclude));
 }
 
 const wstring &oListParam::getCustomTitle(const wstring &t) const

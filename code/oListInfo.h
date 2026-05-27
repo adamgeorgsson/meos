@@ -447,7 +447,7 @@ struct oListParam {
   GUICALLBACK cb;
   set<int> selection;
   
-  bool lockUpdate; // Temporary prevent animation update
+  bool lockUpdate = false; // Temporary prevent animation update
 
   int useControlIdResultTo;
   int useControlIdResultFrom;

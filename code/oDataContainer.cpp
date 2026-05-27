@@ -928,47 +928,19 @@ string oDataContainer::C_STRING(const string &name, int len)
 
 string oDataContainer::SQL_quote(const wchar_t *in)
 {
-  int len = wcslen(in);
-  size_t alloc = len*4+4;
-  if (alloc < 500) {
-    char output[512];
-    int len8 = WideCharToMultiByte(CP_UTF8, 0, in, len+1, output, alloc, 0, 0);
-    output[len8] = 0;
-    const char *inutf = output;
-    char out[1024];
-    int o=0;
-    while(*inutf && o<1023){
-      if (*inutf=='\'')
-        out[o++]='\'';
-      if (*inutf=='\\')
-        out[o++]='\\';
-      out[o++]=*inutf;
-      inutf++;
-    }
-    out[o]=0;
-    return out;
+  string utf = toUTF8(in);
+  const char *inutf = utf.c_str();
+  string out;
+  out.reserve(utf.size() + 4);
+  while (*inutf) {
+    if (*inutf == '\'')
+      out += '\'';
+    if (*inutf == '\\')
+      out += '\\';
+    out += *inutf;
+    ++inutf;
   }
-  else {
-    vector<char> output;
-    output.resize(alloc);
-    int len8 = WideCharToMultiByte(CP_UTF8, 0, in, len+1, &output.front(), alloc, 0, 0);
-    output[len8] = 0;
-    const char *inutf = &output.front();
-  
-    vector<char> out;
-    out.reserve(alloc);
-    while(*inutf){
-      if (*inutf=='\'')
-        out.push_back('\'');
-      if (*inutf=='\\')
-        out.push_back('\\');
-      out.push_back(*inutf);
-      inutf++;
-    }
-    out.push_back(0);
-    string outs(&out[0]);
-    return outs;
-  }
+  return out;
 }
 
 string oDataContainer::generateSQLDefinition(const std::set<string>& exclude) const {
