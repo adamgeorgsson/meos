@@ -22,6 +22,7 @@
 
 ************************************************************************/
 #include "oBase.h"
+#include "oAbstractRunner.h"
 #include "oRunner.h"
 #include <set>
 
