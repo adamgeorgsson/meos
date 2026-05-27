@@ -1,17 +1,25 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "domain_header.h"
 
 class oBase;
+class oClub;
 
 // Minimal stub oEvent — provides just enough interface for oBase, oDataContainer,
-// oPunch, and oControl. Full competition management logic lives in the legacy
+// oPunch, oControl, and oClub. Full competition management logic lives in the legacy
 // code/oEvent.h.
 class oEvent {
 public:
   int dataRevision = 0;
   bool hasPendingDBConnection = false;
+
+  // Simplified club list — used by oClub::assignInvoiceNumber and friends.
+  std::vector<oClub*> Clubs;
+  // Simplified invoice date store (avoids pulling in full DataContainer on oEvent).
+  mutable std::wstring eventInvoiceDate_;
+  mutable int qFreeClubId_ = 0;
 
   bool isClient() const { return false; }
   bool hasDBConnection() const { return false; }
@@ -61,4 +69,27 @@ public:
 
   // Zero-time number in tenths-of-sec units (stub: 0).
   int getZeroTimeNum() const { return 0; }
+
+  // -----------------------------------------------------------------------
+  // oClub stubs
+  // -----------------------------------------------------------------------
+
+  // Allocate a fresh club ID (stub: auto-increment from 1).
+  int getFreeClubId() const { return ++qFreeClubId_; }
+
+  // Returns the ID of the "vacant" club if it exists (stub: 0 = none).
+  int getVacantClubIfExist(bool /*create*/) const { return 0; }
+
+  // Returns true if any runner/team belongs to this club (stub: false).
+  bool isClubUsed(int /*clubId*/) const { return false; }
+
+  // Remove a club by ID (stub: no-op).
+  void removeClub(int /*clubId*/) {}
+
+  // Synchronize a list identified by integer ID (stub: no-op).
+  void synchronizeList(int /*listId*/) {}
+
+  // Property accessors used by assignInvoiceNumber (stub: always return default).
+  int getPropertyInt(const char* /*name*/, int def) const { return def; }
+  void setProperty(const char* /*name*/, int /*val*/) {}
 };

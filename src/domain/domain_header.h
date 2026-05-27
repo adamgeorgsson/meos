@@ -4,13 +4,27 @@
 #include <cstdio>
 #include <cwchar>
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
 // Win32 type and function shims for cross-platform compilation
 #ifndef _WIN32
+#include <cwctype>  // towlower
 using __int64 = int64_t;
+
+inline int _wcsicmp(const wchar_t* a, const wchar_t* b) {
+  while (*a && *b) {
+    wchar_t la = static_cast<wchar_t>(towlower(static_cast<wint_t>(*a)));
+    wchar_t lb = static_cast<wchar_t>(towlower(static_cast<wint_t>(*b)));
+    if (la != lb) return la < lb ? -1 : 1;
+    ++a; ++b;
+  }
+  wchar_t la = static_cast<wchar_t>(towlower(static_cast<wint_t>(*a)));
+  wchar_t lb = static_cast<wchar_t>(towlower(static_cast<wint_t>(*b)));
+  return la < lb ? -1 : (la > lb ? 1 : 0);
+}
 
 inline int wcsncpy_s(wchar_t* dest, size_t destSize, const wchar_t* src, size_t count) {
   if (!dest || destSize == 0) return 22;
@@ -37,6 +51,7 @@ using std::wstring;
 using std::string;
 using std::vector;
 using std::list;
+using std::map;
 using std::shared_ptr;
 using std::make_shared;
 using std::pair;

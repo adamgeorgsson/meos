@@ -77,8 +77,8 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "oClub.h/cpp migrated to src/domain/ with DataMap pattern. src/util/common_enums.h created with cVacantId/cNoClubId. _wcsicmp and using std::map added to domain_header.h. Compact-name algorithm, ShortName override, assignInvoiceNumber all implemented. 30 unit tests pass."
     },
     {
       "id": "US-003d",

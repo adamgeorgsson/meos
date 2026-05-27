@@ -66,3 +66,7 @@ target_link_libraries(domain_ocontrol_test PRIVATE meos_domain)
 # Domain oPunch unit test
 meos_add_test(domain_opunch_test domain_opunch_test.cpp)
 target_link_libraries(domain_opunch_test PRIVATE meos_domain)
+
+# Domain oClub unit test
+meos_add_test(domain_oclub_test domain_oclub_test.cpp)
+target_link_libraries(domain_oclub_test PRIVATE meos_domain)
