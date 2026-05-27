@@ -304,6 +304,12 @@ namespace MeOSUtil {
   extern int useHourFormat;
 }
 
+// String encoding free functions (usable without including gdioutput.h)
+const wstring &widen(const string &input);
+const string &narrow(const wstring &input);
+const string &toUTF8(const wstring &input);
+const wstring &fromUTF8(const string &input);
+
 void string2Wide(const string &in, wstring &out);
 void wide2String(const wstring &in, string &out);
 

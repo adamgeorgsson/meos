@@ -2652,6 +2652,46 @@ wstring addOrSubtractDays(const wstring& m, int days) {
   return convertSystemDate(new_st);
 }
 
+const string &narrow(const wstring &input) {
+  string &output = StringCache::getInstance().get();
+  output.clear();
+  output.insert(output.begin(), input.begin(), input.end());
+  return output;
+}
+
+const wstring &widen(const string &input) {
+  wstring &output = StringCache::getInstance().wget();
+  int cp = 1252;
+  if (input.empty()) {
+    output = L"";
+    return output;
+  }
+  output.reserve(input.size() + 1);
+  output.resize(input.size(), 0);
+  MultiByteToWideChar(cp, MB_PRECOMPOSED, input.c_str(), input.size(), &output[0], output.size() * sizeof(wchar_t));
+  return output;
+}
+
+const wstring &fromUTF8(const string &input) {
+  wstring &output = StringCache::getInstance().wget();
+  size_t alloc = input.length() + 1;
+  output.resize(alloc);
+  wchar_t *ptr = &output[0];
+  int wlen = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.length(), ptr, alloc);
+  ptr[wlen] = 0;
+  output.resize(wlen);
+  return output;
+}
+
+const string &toUTF8(const wstring &winput) {
+  string &output = StringCache::getInstance().get();
+  size_t alloc = winput.length() * 4 + 32;
+  output.resize(alloc);
+  WideCharToMultiByte(CP_UTF8, 0, winput.c_str(), winput.length() + 1, (char *)output.c_str(), alloc, 0, 0);
+  output.resize(strlen(output.c_str()));
+  return output;
+}
+
 const string &codeRelativeTime(int rt) {
   char bf[32];
   int subSec = timeConstSecond == 1 ? 0 : rt % timeConstSecond;
