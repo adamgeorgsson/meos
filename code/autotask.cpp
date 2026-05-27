@@ -25,8 +25,6 @@
 
 #include "oEvent.h"
 #include "autotask.h"
-#include "TabAuto.h"
-#include "TabSI.h"
 #include "meos_util.h"
 #include "socket.h"
 #include "meosexception.h"
@@ -100,9 +98,6 @@ void AutoTask::setTimers() {
 }
 
 void AutoTask::interfaceTimeout(const vector<gdioutput *> &windows) {
-  TabAuto *tabAuto = dynamic_cast<TabAuto *>(gdi.getTabs().get(TAutoTab));
-  TabSI *tabSI = dynamic_cast<TabSI *>(gdi.getTabs().get(TSITab));
-
   if (lock)
     return;
   lock = true;
@@ -115,11 +110,11 @@ void AutoTask::interfaceTimeout(const vector<gdioutput *> &windows) {
         windows[k]->CheckInterfaceTimeouts(tick);
     }
 
-    if (tabAuto)
-      tabAuto->timerCallback(gdi);
+    if (oe.cbTimerCallback)
+      oe.cbTimerCallback(gdi);
 
-    if (tabSI)
-      while(tabSI->checkpPrintQueue(gdi));
+    if (oe.cbCheckPrintQueue)
+      while(oe.cbCheckPrintQueue(gdi));
   }
   catch (meosException &ex) {
     msg = ex.wwhat();
@@ -242,8 +237,6 @@ bool AutoTask::synchronizeImpl(const vector<gdioutput *> &windows) {
   uint32_t d=0;
   bool doSync = false;
   bool doSyncPunch = false;
-  TabAuto *tabAuto = dynamic_cast<TabAuto *>(gdi.getTabs().get(TAutoTab));
-
   for (size_t k = 0; k<windows.size(); k++) {
     if (windows[k] && windows[k]->getData("DataSync", d)) {
       doSync = true;
@@ -257,9 +250,9 @@ bool AutoTask::synchronizeImpl(const vector<gdioutput *> &windows) {
   wstring msg;
   bool ret = false;
   try {
-    if (doSync || (tabAuto && tabAuto->synchronize)) {
+    if (doSync || (oe.cbGetSynchronize && oe.cbGetSynchronize())) {
 
-      if (tabAuto && tabAuto->synchronizePunches)
+      if (oe.cbGetSynchronizePunches && oe.cbGetSynchronizePunches())
         doSyncPunch = true;
 
       if ( oe.autoSynchronizeLists(doSyncPunch) || oe.getRevision() != currentRevision) {
@@ -286,8 +279,8 @@ bool AutoTask::synchronizeImpl(const vector<gdioutput *> &windows) {
           }
         }
 
-        if (tabAuto)
-          tabAuto->syncCallback(gdi);
+        if (oe.cbSyncCallback)
+          oe.cbSyncCallback(gdi);
       }
     }
     oe.resetSQLChanged(false, true);
