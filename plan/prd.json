@@ -414,7 +414,7 @@
       ],
       "priority": 28,
       "passes": false,
-      "notes": ""
+      "notes": "BLOCKED: prd-legacy-build.md does not exist; US-P0m* vcpkg stories not complete. Skip until those are done."
     },
     {
       "id": "US-029",
@@ -430,7 +430,7 @@
         "Windows build passes"
       ],
       "priority": 29,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

@@ -202,6 +202,8 @@
     <ClCompile Include="oCourse.cpp" />
     <ClCompile Include="oDataContainer.cpp" />
     <ClCompile Include="oEvent.cpp" />
+    <ClCompile Include="oEventAdmin.cpp" />
+    <ClCompile Include="oEventConfig.cpp" />
     <ClCompile Include="oEventDraw.cpp" />
     <ClCompile Include="oEventResult.cpp" />
     <ClCompile Include="oEventSpeaker.cpp" />
@@ -304,6 +306,7 @@
     <ClInclude Include="oCourse.h" />
     <ClInclude Include="oDataContainer.h" />
     <ClInclude Include="oEvent.h" />
+    <ClInclude Include="oEventInternal.h" />
     <ClInclude Include="oEventDraw.h" />
     <ClInclude Include="oFreeImport.h" />
     <ClInclude Include="oFreePunch.h" />
