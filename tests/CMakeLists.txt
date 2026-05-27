@@ -1,4 +1,5 @@
 find_package(GTest REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # Macro for standardized test registration
 macro(meos_add_test TEST_NAME)
@@ -13,3 +14,7 @@ meos_add_test(smoke_test smoke_test.cpp)
 # Seed test
 meos_add_test(seed_test seed_test.cpp)
 target_link_libraries(seed_test PRIVATE meos_db)
+
+# Clubs API integration test
+meos_add_test(clubs_api_test clubs_api_test.cpp)
+target_link_libraries(clubs_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
