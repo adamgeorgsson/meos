@@ -58,8 +58,8 @@
         "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All 6 entity headers (oClass, oClub, oCourse, oControl, oRunner, oTeam) already had alignas(sizeof(wchar_t)) on oData/oDataOld and dataSize expressed via sizeof(wchar_t). No code changes needed."
     },
     {
       "id": "US-005",
