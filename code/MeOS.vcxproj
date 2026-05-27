@@ -173,6 +173,8 @@
     <ClCompile Include="csvparser.cpp" />
     <ClCompile Include="download.cpp" />
     <ClCompile Include="gdioutput.cpp" />
+    <ClCompile Include="gdioutputEvent.cpp" />
+    <ClCompile Include="gdioutputUI.cpp" />
     <ClCompile Include="generalresult.cpp" />
     <ClCompile Include="HTMLWriter.cpp" />
     <ClCompile Include="image.cpp" />
