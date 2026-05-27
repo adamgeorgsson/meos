@@ -57,10 +57,10 @@ protected:
   vector<pRunner> Runners;
   void setRunnerInternal(int k, pRunner r);
 
-  static const int dataSize = 256;
+  static constexpr int dataSize = 128 * static_cast<int>(sizeof(wchar_t));
   int getDISize() const final {return dataSize;}
-  BYTE oData[dataSize];
-  BYTE oDataOld[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
 
   // Remove runner r by force and mark as need correction
   void correctRemove(pRunner r);

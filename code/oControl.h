@@ -81,10 +81,10 @@ protected:
   wstring Name;
   bool decodeNumbers(string s);
 
-  static const int dataSize = 64;
+  static constexpr int dataSize = 32 * static_cast<int>(sizeof(wchar_t));
   int getDISize() const final {return dataSize;}
-  BYTE oData[dataSize];
-  BYTE oDataOld[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
 
   /// Table methods
   void addTableRow(Table &table) const;

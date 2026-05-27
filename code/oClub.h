@@ -65,10 +65,10 @@ protected:
 
   static map<wstring, wstring> manualCompactNameMap;
   
-  static const int dataSize = 768;
+  static constexpr int dataSize = 384 * static_cast<int>(sizeof(wchar_t));
   int getDISize() const final {return dataSize;}
-  BYTE oData[dataSize];
-  BYTE oDataOld[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
 
   int tNumRunners;
   int tFee;

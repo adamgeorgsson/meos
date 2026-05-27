@@ -649,11 +649,11 @@ protected:
   //Speaker data
   int speakerPriority = 0;
 
-  static constexpr int dataSize = 256+64;
+  static constexpr int dataSize = 128 * static_cast<int>(sizeof(wchar_t)) + 64;
   int getDISize() const final {return dataSize;}
 
-  BYTE oData[dataSize];
-  BYTE oDataOld[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
 
   void changedObject() final;
 

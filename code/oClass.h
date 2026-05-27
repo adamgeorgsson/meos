@@ -303,11 +303,11 @@ protected:
   // Used to force show of full multi course dialog
   bool tShowMultiDialog;
 
-  static constexpr int dataSize = 512+64;
+  static constexpr int dataSize = 256 * static_cast<int>(sizeof(wchar_t)) + 64;
   int getDISize() const final {return dataSize;}
 
-  BYTE oData[dataSize];
-  BYTE oDataOld[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
   vector< vector<wstring> > oDataStr;
   //Multicourse data
   string codeMultiCourse() const;

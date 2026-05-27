@@ -52,11 +52,11 @@ protected:
   pControl start = nullptr;
   pControl finish = nullptr;
 
-  static const int dataSize = 128;
+  static constexpr int dataSize = 64 * static_cast<int>(sizeof(wchar_t));
   int getDISize() const final {return dataSize;}
 
-  BYTE oData[dataSize];
-  BYTE oDataOld[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oData[dataSize];
+  alignas(sizeof(wchar_t)) BYTE oDataOld[dataSize];
 
   // Length of each leg, Start-1, 1-2,... N-Finish.
   vector<int> legLengths;

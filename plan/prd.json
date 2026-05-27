@@ -323,7 +323,7 @@
         "Windows build passes with identical binary layout"
       ],
       "priority": 22,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
