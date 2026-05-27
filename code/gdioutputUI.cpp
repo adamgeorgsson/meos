@@ -617,7 +617,7 @@ DWORD gdioutput::makeEvent(const string &id, const string &origin,
 #ifndef MEOSDB
     ::flushEvent(id, origin, data, extraData);
 #else
-    throw std::exception("internal gdi/database error");
+    throw std::runtime_error("internal gdi/database error");
 #endif
   }
   else {
@@ -694,7 +694,7 @@ RectangleInfo &gdioutput::getRectangle(const char *id) {
     return *it;
   }
   string err = string("Internal Error, identifier not found: X#") + id;
-  throw std::exception(err.c_str());
+  throw std::runtime_error(err.c_str());
 }
   
 void gdioutput::setOffset(int x, int y, bool update)
@@ -1171,7 +1171,7 @@ void gdioutput::getTargetDimension(int &x, int &y) const
 
 Table &gdioutput::getTable() const {
   if (Tables.empty())
-    throw std::exception("No table defined");
+    throw std::runtime_error("No table defined");
 
   return *const_cast<Table *>(Tables.back().table.get());
 }

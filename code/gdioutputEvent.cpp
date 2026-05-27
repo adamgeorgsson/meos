@@ -919,7 +919,7 @@ BaseInfo& gdioutput::getBaseInfo(const char* id, int requireExtraMatch) const {
   }
 
   string err = string("Internal Error, identifier not found: X#") + id;
-  throw std::exception(err.c_str());
+  throw std::runtime_error(err.c_str());
 }
 
 const wstring &gdioutput::getText(const char *id, bool acceptMissing, int requireExtraMatch) const {
@@ -965,7 +965,7 @@ const wstring &gdioutput::getText(const char *id, bool acceptMissing, int requir
 #ifdef _DEBUG
   if (!acceptMissing) {
     string err = string("Internal Error, identifier not found: X#") + id;
-    throw std::exception(err.c_str());
+    throw std::runtime_error(err.c_str());
   }
 #endif
   return _EmptyWString;
@@ -1618,7 +1618,7 @@ void gdioutput::setInputStatus(const char *id, bool status, bool acceptMissing, 
 #ifdef _DEBUG
   if (!hit) {
     string err = string("Internal Error, identifier not found: X#") + id;
-    throw std::exception(err.c_str());
+    throw std::runtime_error(err.c_str());
   }
 #endif
 }
