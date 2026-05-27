@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "RestService.h"
 #include "meos_util.h"
 #include "restserver.h"

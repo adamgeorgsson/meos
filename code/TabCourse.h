@@ -21,7 +21,7 @@
 
 ************************************************************************/
 
-#include "tabbase.h"
+#include "TabBase.h"
 
 struct ClassDrawSpecification;
 

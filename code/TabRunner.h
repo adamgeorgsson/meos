@@ -20,7 +20,7 @@
     Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
-#include "tabbase.h"
+#include "TabBase.h"
 #include "Printer.h"
 #include "autocompletehandler.h"
 #include <deque>

@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "oEvent.h"
 #include "MeOSFeatures.h"
 #include "meosexception.h"

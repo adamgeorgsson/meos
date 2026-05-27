@@ -19,7 +19,7 @@
     Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <algorithm>
 
@@ -32,7 +32,7 @@
 #include "localizer.h"
 #include "gdifonts.h"
 #include "oEvent.h"
-#include "tabbase.h"
+#include "TabBase.h"
 #include "CommDlg.h"
 #include "random.h"
 #include "metalist.h"

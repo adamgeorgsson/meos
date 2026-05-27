@@ -1,329 +1,502 @@
 {
-  "project": "MeOS",
-  "description": "JSON REST API Backend (Read-Only) — C++ HTTP server in src/ serving JSON at /api/v1/* on port 2009, backed by SQLite, also serving the React SPA",
+  "project": "MeOS Legacy Preparation",
+  "description": "Preparatory refactoring of legacy code/ directory: fix cross-platform blockers, reduce GUI coupling, replace Win32-specific APIs in domain code, and split oversized files. Operates exclusively on code/. Each story must keep the Windows build (MSVC v143) passing and preserve domain behavior.",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Modular source layout",
-      "description": "As a developer, I need the src/ directory organized into modules so that code is maintainable and each layer has clear responsibilities.",
+      "title": "Fix include case sensitivity",
+      "description": "As a Linux build, I need every #include \"...\" directive to match the actual filename casing on disk so the project can compile on case-sensitive filesystems.",
       "acceptanceCriteria": [
-        "Directory structure exists: src/util/, src/domain/, src/db/, src/net/, src/app/",
-        "Each module has its own CMakeLists.txt producing a static library (except app which produces the executable)",
-        "Top-level CMakeLists.txt includes all modules via add_subdirectory",
-        "Dependency graph is acyclic: util <- domain <- db <- net <- app",
-        "cmake --preset default && cmake --build build succeeds",
-        "ctest --test-dir build passes",
-        "Typecheck passes"
+        "Run python3 .claude/skills/include-normalization/fix_includes.py from repo root (use --dry-run first)",
+        "Every #include \"...\" in code/*.h and code/*.cpp matches actual filename casing on disk",
+        "A grep/verification pass finds zero remaining case mismatches",
+        "Windows build passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Modules wired: util/domain/db/db/net/app each have CMakeLists.txt producing static libs (app = executable). Acyclic chain. Root CMakeLists uses add_subdirectory."
+      "notes": ""
     },
     {
       "id": "US-002",
-      "title": "Utility module (string and time)",
-      "description": "As a developer, I need string and time utilities so that the backend can convert between internal representations and JSON-friendly formats.",
+      "title": "Extract string utilities from gdioutput",
+      "description": "As a domain file, I want to use widen/narrow/toUTF8/fromUTF8 without including the GUI header gdioutput.h.",
       "acceptanceCriteria": [
-        "src/util/string_util.h/.cpp provides toUTF8(wstring) -> string and fromUTF8(string) -> wstring",
-        "src/util/time_util.h/.cpp provides formatTimeHMS(int seconds) -> string returning \"HH:MM:SS\" and parseTimeHMS(string) -> int parsing \"HH:MM:SS\" to seconds",
-        "Unit tests verify round-trip conversion for strings with Swedish characters (e.g., \"IF Berget\", \"Bjornparken, Stockholm\")",
-        "Unit tests verify formatTimeHMS(36000) == \"10:00:00\" and parseTimeHMS(\"10:02:00\") == 36120",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "widen(), narrow(), toUTF8(), fromUTF8() are available as free functions from meos_util.h",
+        "gdioutput retains the existing static methods as thin wrappers/using-declarations for backward compatibility",
+        "No duplicate definitions of toUTF8 remain (remove old definition from localizer.cpp)",
+        "machinecontainer.cpp no longer needs to include gdioutput.h purely for these utilities",
+        "Windows build passes (no LNK2005 multiply-defined-symbol errors)"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "Implemented string_util (toUTF8/fromUTF8 hand-rolled UTF-8 codec, no platform deps) and time_util (formatTimeHMS/parseTimeHMS). Unit tests in tests/util_test.cpp cover Swedish characters, round-trip, and invalid input."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-003",
-      "title": "Domain entities",
-      "description": "As a developer, I need C++ structs matching the frontend's TypeScript types so that serialization is straightforward.",
+      "title": "Replace Win32 string functions in domain code",
+      "description": "As cross-platform domain code, I want standard C++ replacements for _wtoi, sprintf_s, swprintf_s, _itow_s, _wtoi64.",
       "acceptanceCriteria": [
-        "src/domain/entities.h defines structs: Competition, Club, Control, Course, Class, Runner, Team, SplitTime, Result, StartListEntry",
-        "Field names and types match src/ui/web/src/types/index.ts exactly (std::string for strings, int for numbers, std::vector<int> for arrays, std::optional for optional fields)",
-        "src/domain/entities.h is usable from all other modules",
-        "Build passes",
-        "Typecheck passes"
+        "Add inline wtoi(const wstring&) to meos_util.h (using wcstol) BEFORE running the script; remove any local wtoi in csvparser.cpp",
+        "Run python3 .claude/skills/replace_win32_strings/replace_win32_strings.py code/ (use --dry-run first)",
+        "No direct calls to _wtoi, _wtoi64, sprintf_s, swprintf_s, _itow_s in domain .cpp/.h files (Tab*/gdioutput excluded)",
+        "Manually fix _wtoi64 in datadefiners.h with std::wcstoll",
+        "Windows build passes"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "Created src/domain/entities.h with structs Competition, Club, Control, Course, Class, Runner, Team, SplitTime, Result, StartListEntry matching TypeScript types exactly. std::optional for optional fields, std::vector<int> for arrays of IDs."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-004",
-      "title": "SQLite database layer",
-      "description": "As a developer, I need a database abstraction that creates tables, seeds test data, and provides read access for all entities.",
+      "title": "Replace Win32 types (DWORD/BOOL) in domain code",
+      "description": "As cross-platform domain code, I want DWORD replaced with uint32_t and Win32 BOOL replaced with bool, except where the value is passed to a Win32 API.",
       "acceptanceCriteria": [
-        "src/db/database.h/.cpp provides a Database class that opens/creates a SQLite file",
-        "Database::createTables() creates tables for all entities (competitions, clubs, controls, courses, course_controls, classes, runners, teams, team_members, results, splits, start_list)",
-        "PRAGMA foreign_keys=ON and PRAGMA journal_mode=WAL are set on connection",
-        "Read methods exist: getAllClubs() -> vector<Club>, getClubById(int) -> optional<Club>, and equivalent for all entities",
-        "getAllCourses() joins course_controls to populate the controls vector",
-        "getAllTeams() joins team_members to populate the members vector",
-        "getAllResults() joins splits to populate the splits vector",
-        "sqlite3 is added to vcpkg.json and linked in CMake",
-        "Unit tests verify CRUD operations against an in-memory SQLite database (:memory:)",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "Run python3 .claude/skills/replace_win32_types/replace_win32_types.py (use --dry-run first)",
+        "No DWORD or Win32 BOOL usage in domain .cpp/.h files (except inside SQL string literals and variables passed to Win32 APIs)",
+        "Variables passed to Win32 APIs (GetComputerName, WideCharToMultiByte, etc.) keep their Win32 types",
+        "Add uint32_t overloads to gdioutput::getData where domain callers switched from DWORD",
+        "#include <cstdint> added where needed",
+        "Windows build passes"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "Database class with SQLite3 (vcpkg), createTables for all entities, read methods with JOIN for courses/teams/results. Tests use :memory: DB."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-005",
-      "title": "Database seed data",
-      "description": "As a user, I want the server to start with test data so that the frontend shows real content immediately.",
+      "title": "Normalize path separators in domain code",
+      "description": "As cross-platform domain code, I want hardcoded backslash path separators replaced with portable alternatives.",
       "acceptanceCriteria": [
-        "src/db/seed.h/.cpp provides a seedIfEmpty(Database&) function",
-        "When competitions table is empty, seed inserts data matching src/ui/web/src/mocks/db.ts exactly: 1 competition, 5 clubs, 7 controls, 5 courses (with course_controls), 5 classes, 6 runners, 5 teams (with team_members), 6 results (with splits), 6 start list entries",
-        "When the database already has data, seeding is skipped",
-        "Entity IDs in seed data match the mock IDs (e.g., club \"IF Berget\" has id=1)",
-        "Build passes",
-        "Typecheck passes"
+        "Run python3 .claude/skills/normalize_paths/normalize_paths.py (use --dry-run first)",
+        "Domain files use std::filesystem::path or forward-slash paths for file construction",
+        "Escape sequences (\\n, \\t) and regex patterns are NOT modified",
+        "Windows build passes"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": "Implemented seedIfEmpty(Database&) in src/db/seed.h/.cpp. Seeds all entities matching db.ts mock data exactly (1 competition, 5 clubs, 7 controls, 5 courses with course_controls, 5 classes, 6 runners, 5 teams with team_members, 6 results with splits, 6 start list entries). Skips when data exists. Wrapped in transaction for atomicity."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-006",
-      "title": "HTTP server with CORS",
-      "description": "As a developer, I need an HTTP server that handles CORS and serves as the foundation for the API and SPA.",
+      "title": "US-P0f1: Add callback members to oEvent.h",
+      "description": "Infrastructure step: add 13 std::function callback members to oEvent so subsequent stories can route Tab* dependencies through callbacks.",
       "acceptanceCriteria": [
-        "src/net/http_server.h/.cpp wraps httplib::Server",
-        "All responses include Access-Control-Allow-Origin: * header",
-        "OPTIONS requests on /api/* return 204 with CORS headers (Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS and Access-Control-Allow-Headers: Content-Type)",
-        "cpp-httplib is added to vcpkg.json and linked in CMake",
-        "Server port is configurable (default 2009)",
-        "Build passes",
-        "Typecheck passes"
+        "oEvent.h declares all 13 callback members per .claude/skills/tab-decoupling/SKILL.md (cbBaseButtons, cbKillMachines, cbSetSubSecondMode, cbTimerCallback, cbCheckPrintQueue, cbSyncCallback, cbGetSynchronize, cbGetSynchronizePunches, cbHasReconnectionMachine, cbStartReconnectMachine, cbGetListEditor, cbRemovedList, cbAddCard)",
+        "Callbacks are public std::function members with signatures matching SKILL.md",
+        "Windows build passes"
       ],
       "priority": 6,
-      "passes": true,
-      "notes": "HttpServer in src/net/http_server.h/.cpp wraps cpp-httplib 0.39.0. CORS via set_pre_routing_handler: all responses get Access-Control-Allow-Origin: *; OPTIONS /api/* returns 204 with Allow-Methods and Allow-Headers. Port configurable (default 2009). cpp-httplib added to vcpkg.json, linked as httplib::httplib."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-007",
-      "title": "JSON API — Clubs endpoint",
-      "description": "As a frontend user, I want to see real club data on the Clubs page.",
+      "title": "US-P0f8: Register all Tab callbacks in meos.cpp",
+      "description": "Wire all 13 oEvent callbacks during application startup so call sites resolve correctly when the decoupling stories land.",
       "acceptanceCriteria": [
-        "GET /api/v1/clubs returns JSON array of all clubs e.g. [{\"id\":1,\"name\":\"IF Berget\",\"country\":\"SE\"}, ...]",
-        "GET /api/v1/clubs/{id} returns single club object or 404",
-        "Response Content-Type is application/json",
-        "Response body is a plain array/object (no {\"data\":...} envelope) — matching the MSW mock format",
-        "404 body matches ApiError shape: {\"message\":\"Not found\",\"status\":404}",
-        "nlohmann-json is added to vcpkg.json and linked in CMake",
-        "Integration test starts server on a test port, performs HTTP GET, and verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "meos.cpp registers all callbacks on oEvent after Tab objects are constructed",
+        "Lambdas capture only what's needed (Tab pointers safe for app lifetime; gdi_main is global)",
+        "Static Tab methods (TabList::baseButtons, TabAuto::tabAutoKillMachines, etc.) are invoked with no captures",
+        "Windows build passes"
       ],
       "priority": 7,
-      "passes": true,
-      "notes": "Implemented registerClubsRoutes in src/net/api.h/.cpp using nlohmann-json 3.12.0. GET /api/v1/clubs returns plain JSON array; GET /api/v1/clubs/{id} returns single object or 404 with {message,status} shape. Optional country field omitted when absent. Integration tests via httplib::Client against server on port 18007 — 4 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-008",
-      "title": "JSON API — Controls endpoint",
-      "description": "As a frontend user, I want to see real control data on the Controls page.",
+      "title": "US-P0f2: Decouple oEvent.cpp from Tab* includes",
+      "description": "Replace direct TabAuto/TabSI/TabList/TabBase usage in oEvent.cpp with the callbacks registered in US-007.",
       "acceptanceCriteria": [
-        "GET /api/v1/controls returns JSON array e.g. [{\"id\":1,\"code\":101,\"description\":\"Fork junction\",\"type\":\"normal\"}, ...]",
-        "GET /api/v1/controls/{id} returns single control or 404",
-        "Response Content-Type is application/json with no envelope wrapper",
-        "Integration test verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "oEvent.cpp no longer includes TabList.h, TabAuto.h, TabSI.h, or TabBase.h",
+        "3 call sites use cbBaseButtons, cbKillMachines, cbSetSubSecondMode (nested classes access via oe.cbXxx)",
+        "Add clearTabsCompetitionData() wrapper to gdioutput.h/cpp where needed (FixedTabs is only forward-declared)",
+        "Windows build passes"
       ],
       "priority": 8,
-      "passes": true,
-      "notes": "registerControlsRoutes in src/net/api.h/.cpp. GET /api/v1/controls returns plain JSON array; GET /api/v1/controls/{id} returns single object or 404. Optional description/type fields omitted when absent. Integration tests via httplib::Client on port 18008 — 4 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-009",
-      "title": "JSON API — Courses endpoint",
-      "description": "As a frontend user, I want to see real course data on the Courses page.",
+      "title": "US-P0f3: Decouple autotask.cpp from Tab* includes",
+      "description": "Replace TabAuto/TabSI dynamic_casts in autotask.cpp with callbacks.",
       "acceptanceCriteria": [
-        "GET /api/v1/courses returns JSON array e.g. [{\"id\":1,\"name\":\"Long\",\"length\":12500,\"controls\":[6,1,2,3,4,5,7]}, ...]",
-        "GET /api/v1/courses/{id} returns single course with controls array, or 404",
-        "controls field is an ordered array of control IDs matching the course's control sequence",
-        "Integration test verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "autotask.cpp no longer includes TabAuto.h or TabSI.h",
+        "dynamic_casts replaced with cbTimerCallback, cbCheckPrintQueue, cbSyncCallback, cbGetSynchronize, cbGetSynchronizePunches",
+        "Windows build passes"
       ],
       "priority": 9,
-      "passes": true,
-      "notes": "registerCoursesRoutes in src/net/api.h/.cpp. GET /api/v1/courses returns plain JSON array; GET /api/v1/courses/{id} returns single course with controls array or 404. Optional length field omitted when absent. nlohmann-json serializes vector<int> controls directly. Integration tests via httplib::Client on port 18009 — 4 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-010",
-      "title": "JSON API — Classes endpoint",
-      "description": "As a frontend user, I want to see real class data on the Classes page.",
+      "title": "US-P0f4: Decouple oEventSQL.cpp from TabAuto",
+      "description": "Remove TabAuto include from oEventSQL.cpp and abstract MySQLReconnect creation via callback.",
       "acceptanceCriteria": [
-        "GET /api/v1/classes returns JSON array e.g. [{\"id\":1,\"name\":\"H21E\",\"courseId\":1,\"startMethod\":\"individual\"}, ...]",
-        "GET /api/v1/classes/{id} returns single class or 404",
-        "Integration test verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "oEventSQL.cpp no longer includes TabAuto.h",
+        "Uses cbHasReconnectionMachine and cbStartReconnectMachine",
+        "Add #include \"localizer.h\" directly (previously transitive via TabAuto.h)",
+        "Forward-declare isThreadReconnecting() locally",
+        "Windows build passes"
       ],
       "priority": 10,
-      "passes": true,
-      "notes": "registerClassesRoutes in src/net/api.h/.cpp. GET /api/v1/classes returns plain JSON array; GET /api/v1/classes/{id} returns single object or 404. Optional courseId/startMethod fields omitted when absent. Integration tests via httplib::Client on port 18010 — 4 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-011",
-      "title": "JSON API — Runners endpoint",
-      "description": "As a frontend user, I want to see real runner data on the Runners page.",
+      "title": "US-P0f5: Decouple oEventResult.cpp from TabBase/TabList",
+      "description": "Replace dynamic_cast in oEventResult.cpp with callback.",
       "acceptanceCriteria": [
-        "GET /api/v1/runners returns JSON array e.g. [{\"id\":1,\"name\":\"Anna Lindstrom\",\"clubId\":1,\"classId\":2,\"startTime\":\"10:00:00\",\"cardNumber\":2001234,\"status\":\"ok\"}, ...]",
-        "GET /api/v1/runners/{id} returns single runner or 404",
-        "Optional fields (clubId, classId, startTime, cardNumber, status) are included only when present (not serialized as null)",
-        "Integration test verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "oEventResult.cpp no longer includes TabBase.h or TabList.h",
+        "dynamic_cast replaced with cbGetListEditor",
+        "Windows build passes"
       ],
       "priority": 11,
-      "passes": true,
-      "notes": "registerRunnersRoutes in src/net/api.h/.cpp. GET /api/v1/runners returns plain JSON array; GET /api/v1/runners/{id} returns single object or 404. All optional fields (clubId, classId, startTime, cardNumber, status) omitted when absent. runnerToJson helper avoids duplication. Integration tests via httplib::Client on port 18011 — 4 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-012",
-      "title": "JSON API — Teams endpoint",
-      "description": "As a frontend user, I want to see real team data on the Teams page.",
+      "title": "US-P0f6: Decouple metalist.cpp from TabAuto",
+      "description": "Replace cast in metalist.cpp with cbRemovedList callback.",
       "acceptanceCriteria": [
-        "GET /api/v1/teams returns JSON array e.g. [{\"id\":1,\"name\":\"Berget Red\",\"clubId\":1,\"classId\":1,\"members\":[2]}, ...]",
-        "GET /api/v1/teams/{id} returns single team with members array, or 404",
-        "Integration test verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "metalist.cpp no longer includes TabAuto.h",
+        "Uses cbRemovedList",
+        "Windows build passes"
       ],
       "priority": 12,
-      "passes": true,
-      "notes": "registerTeamsRoutes in src/net/api.h/.cpp. GET /api/v1/teams returns plain JSON array; GET /api/v1/teams/{id} returns single team with members array or 404. Optional clubId/classId fields omitted when absent. members (vector<int>) serializes directly to JSON array. Integration tests via httplib::Client on port 18012 — 4 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-013",
-      "title": "JSON API — Competition endpoint",
-      "description": "As a frontend user, I want to see real competition info on the Competition page.",
+      "title": "US-P0f7: Decouple onlineinput.cpp from TabSI",
+      "description": "Replace static TabSI call in onlineinput.cpp with cbAddCard callback.",
       "acceptanceCriteria": [
-        "GET /api/v1/competitions returns the competition object e.g. {\"id\":1,\"name\":\"Spring Cup 2026\",\"date\":\"2026-05-15\",\"organizer\":\"IF Berget\",\"location\":\"Bjornparken, Stockholm\",\"description\":\"Annual spring orienteering competition\"}",
-        "Endpoint returns a singleton object, not an array",
-        "Integration test verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "onlineinput.cpp no longer includes TabSI.h",
+        "Uses cbAddCard",
+        "Windows build passes"
       ],
       "priority": 13,
-      "passes": true,
-      "notes": "registerCompetitionsRoutes in src/net/api.h/.cpp. GET /api/v1/competitions returns singleton competition object (not array) — takes first result from getAllCompetitions(). All required fields (id, name, date, organizer, location) always included; optional description omitted when absent. Returns 404 if no competition in DB. Integration tests via httplib::Client on port 18013 — 3 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-014",
-      "title": "JSON API — Results endpoint",
-      "description": "As a frontend user, I want to see real results on the Results page.",
+      "title": "Replace Win32 time APIs with std::chrono",
+      "description": "As cross-platform domain code, I want GetLocalTime, SYSTEMTIME, GetTickCount64, FileTimeToLocalFileTime, SystemTimeToFileTime replaced with std::chrono / <ctime> equivalents.",
       "acceptanceCriteria": [
-        "GET /api/v1/results returns JSON array e.g. [{\"id\":1,\"runnerId\":1,\"classId\":2,\"position\":1,\"totalTime\":4512,\"status\":\"ok\",\"splits\":[{\"controlId\":1,\"time\":1234},{\"controlId\":2,\"time\":2456}]}, ...]",
-        "Results with no position/totalTime (e.g., DNS/DNF) omit those fields or set them to null",
-        "splits is an array of {controlId, time} objects",
-        "Integration test verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "Add meos_steady_clock_ms() and meos_localtime_now() helpers to meos_util.h per .claude/skills/replace_time_apis/SKILL.md",
+        "Run python3 .claude/skills/replace_time_apis/replace_time_apis.py (use --dry-run first)",
+        "No GetLocalTime, SYSTEMTIME, GetTickCount64, FileTimeToLocalFileTime, SystemTimeToFileTime in domain .cpp/.h files",
+        "Fix write-context bugs (st.tm_year = value - 1900, st.tm_mon = value - 1) in TimeStamp.cpp, meos_util.cpp, oEventSpeaker.cpp",
+        "Remove invalid `0 /* TODO */ = expr` wMilliseconds assignments",
+        "Update UI callers (TabCompetition.cpp ~1308-1326, ~2975-2978) to pass std::tm to changed domain signatures",
+        "Windows build passes"
       ],
       "priority": 14,
-      "passes": true,
-      "notes": "registerResultsRoutes in src/net/api.h/.cpp. GET /api/v1/results returns plain JSON array; GET /api/v1/results/{id} returns single object or 404. Optional position/totalTime fields omitted when absent. splits serialized as array of {controlId, time} objects. Integration tests via httplib::Client on port 18014 — 4 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-015",
-      "title": "JSON API — Start list endpoint",
-      "description": "As a frontend user, I want to see real start list data on the Start List page.",
+      "title": "Replace Win32 file APIs with std::filesystem",
+      "description": "As cross-platform domain code, I want FindFirstFile/FindNextFile, GetTempPath, CreateDirectory, DeleteFile, _wfopen_s, _waccess, MAX_PATH replaced with std::filesystem and <fstream>.",
       "acceptanceCriteria": [
-        "GET /api/v1/startlist returns JSON array e.g. [{\"id\":1,\"runnerId\":1,\"classId\":2,\"startTime\":\"10:00:00\",\"bib\":1}, ...]",
-        "Integration test verifies JSON structure",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "Run python3 .claude/skills/replace_file_apis/replace_file_apis.py (use --dry-run first)",
+        "Manually fix script bug: std::filesystem::remove(x.c_str(, ec)) → { std::error_code ec; std::filesystem::remove(x, ec); }",
+        "No FindFirstFile, FindNextFile, WIN32_FIND_DATA, GetTempPath, CreateDirectory, DeleteFile, _wfopen_s, _waccess in domain files",
+        "No MAX_PATH/_MAX_PATH usage in domain files (grep manually after script)",
+        "Implement matchWildcard for *.bu? and *.dbmeos* patterns in enumerateBackups()",
+        "file_time_type → time_t uses two-clocks workaround",
+        "Windows build passes"
       ],
       "priority": 15,
-      "passes": true,
-      "notes": "registerStartListRoutes in src/net/api.h/.cpp. GET /api/v1/startlist returns plain JSON array; GET /api/v1/startlist/{id} returns single object or 404. Optional bib field omitted when absent. Integration tests via httplib::Client on port 18015 — 4 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-016",
-      "title": "XML export endpoints (IOF 3.0)",
-      "description": "As a frontend user, I want to export results and start lists as IOF XML.",
+      "title": "Replace Win32 threading with std::thread/std::mutex",
+      "description": "As cross-platform domain code, I want CRITICAL_SECTION, _beginthread(ex), TerminateThread replaced with std::mutex, std::thread, and cooperative cancellation.",
       "acceptanceCriteria": [
-        "GET /api/v1/results/export/xml returns IOF 3.0 ResultList XML with Content-Type: application/xml",
-        "GET /api/v1/startlist/export/xml returns IOF 3.0 StartList XML with Content-Type: application/xml",
-        "XML includes the IOF 3.0 namespace: http://www.orienteering.org/datastandard/3.0",
-        "Integration test verifies Content-Type and namespace presence",
-        "Build passes",
-        "Tests pass",
-        "Typecheck passes"
+        "No CRITICAL_SECTION, EnterCriticalSection, LeaveCriticalSection, InitializeCriticalSection, DeleteCriticalSection in domain .cpp/.h files",
+        "No _beginthread, _beginthreadex, TerminateThread in domain .cpp/.h files (excluding vendored code/mysql/)",
+        "MySQLReconnect has user-defined copy constructor (std::thread not copyable)",
+        "Download uses std::atomic<bool> threadRunning as completion flag",
+        "Replace ThreadHandle boolean checks with ThreadHandle.joinable()",
+        "socket.cpp uses std::thread(...).detach() for fire-and-forget",
+        "Windows build passes"
       ],
       "priority": 16,
-      "passes": true,
-      "notes": "registerXmlExportRoutes in src/net/api.h/.cpp. GET /api/v1/results/export/xml returns IOF 3.0 ResultList XML; GET /api/v1/startlist/export/xml returns IOF 3.0 StartList XML. Both with Content-Type: application/xml. Results grouped by class, includes runner/club/splits. Integration tests via httplib::Client on port 18016 — 6 tests passing."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-017",
-      "title": "SPA static file serving with fallback",
-      "description": "As a user, I want to open http://localhost:2009 in my browser and see the full React application.",
+      "title": "Replace Sleep() with std::this_thread::sleep_for",
+      "description": "Mechanical replacement of Win32 Sleep(N) with std::this_thread::sleep_for(std::chrono::milliseconds(N)) in domain code.",
       "acceptanceCriteria": [
-        "The server serves static files from a configurable directory (default: src/ui/web/dist/)",
-        "GET / serves index.html",
-        "GET /assets/foo.js serves the corresponding file with the correct Content-Type",
-        "Any GET request that does not match /api/* and does not match a static file returns index.html (SPA fallback)",
-        "Build passes",
-        "Typecheck passes"
+        "Run python3 .claude/skills/sleep-replacement/fix_sleep.py (use --dry-run first)",
+        "No Win32 Sleep() calls in domain .cpp/.h files",
+        "<thread> and <chrono> includes added where needed",
+        "Millisecond values preserved verbatim (especially in SportIdent.cpp serial loops)",
+        "Windows build passes"
       ],
       "priority": 17,
-      "passes": true,
-      "notes": "Added serveStaticFiles(static_dir) to HttpServer. Registers catch-all GET '.*' handler after API routes: serves real files with correct MIME type, falls back to index.html for SPA routing. Default dir: src/ui/web/dist."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-018",
-      "title": "Application entry point",
-      "description": "As a user, I want to run a single binary that starts the server with a seeded database.",
+      "title": "Replace std::exception(\"msg\") with std::runtime_error",
+      "description": "Replace MSVC-specific std::exception(const char*) with std::runtime_error throughout domain code.",
       "acceptanceCriteria": [
-        "src/app/main.cpp replaces the stub src/main.cpp",
-        "On startup: opens/creates meos.sqlite, runs createTables(), runs seedIfEmpty(), registers all API routes, starts HTTP server on port 2009",
-        "Server logs startup message to stdout: 'MeOS server listening on http://localhost:2009'",
-        "Ctrl+C gracefully stops the server",
-        "cmake --preset default && cmake --build build produces a working meos binary",
-        "Running ./build/meos starts the server and curl http://localhost:2009/api/v1/clubs returns valid JSON",
-        "Build passes",
-        "Typecheck passes"
+        "All `throw std::exception(\"...\")` replaced with `throw std::runtime_error(\"...\")` in domain files",
+        "meosException inherits from std::runtime_error",
+        "All existing catch (std::exception&) blocks still function",
+        "Windows build passes"
       ],
       "priority": 18,
-      "passes": true,
-      "notes": "src/app/main.cpp opens meos.sqlite, calls createTables()+seedIfEmpty(), registers all API routes and XML export, sets up SPA static file serving, installs SIGINT/SIGTERM handlers, prints startup message, then calls server.listen(). No new CMake changes needed — meos_db is transitive via meos_net PUBLIC link."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-019",
-      "title": "Frontend backend toggle (VITE_USE_BACKEND)",
-      "description": "As a developer, I want to easily switch between MSW mocks and the real backend during development.",
+      "title": "Replace MessageBox/OutputDebugString in domain code",
+      "description": "Replace direct Win32 UI calls in domain code with exceptions, callbacks, or std::cerr.",
       "acceptanceCriteria": [
-        "src/ui/web/src/main.tsx checks for VITE_USE_BACKEND env variable",
-        "When VITE_USE_BACKEND is set (any truthy value), MSW worker is NOT started — requests go to the real backend via the Vite proxy",
-        "When VITE_USE_BACKEND is not set (default), MSW starts as before — no behavior change for frontend-only development",
-        "npm test still passes (tests always use MSW regardless of env var)",
-        "npm run typecheck passes",
-        "npm run lint passes",
-        "Typecheck passes"
+        "Run python3 .claude/skills/replace_msgbox_debug/replace_msgbox_debug.py (use --dry-run first)",
+        "No active MessageBox() calls in domain .cpp/.h files (most already commented out)",
+        "No active OutputDebugString/OutputDebugStringA/OutputDebugStringW calls in domain .cpp/.h files",
+        "OutputDebugString replacements use std::cerr (with narrow() for wide strings)",
+        "Block-comment-aware scan confirms zero active calls",
+        "Windows build passes"
       ],
       "priority": 19,
-      "passes": true,
-      "notes": "Added VITE_USE_BACKEND check in main.tsx: when set, MSW worker is skipped so requests go to the real backend via the Vite proxy. When not set (default), MSW starts as before. vite-env.d.ts augmented with ImportMetaEnv interface for type safety. All 274 tests pass."
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "StringCache + Localizer translate() use thread_local",
+      "description": "Replace GetCurrentThreadId() with thread_local in StringCache::getInstance() and translate()'s static buffer.",
+      "acceptanceCriteria": [
+        "StringCache::getInstance() uses `thread_local static StringCache instance; return instance;`",
+        "translate()'s static index and value buffer are thread_local",
+        "No GetCurrentThreadId() in meos_util.h/cpp",
+        "Windows build passes"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Add public accessors needed for migration",
+      "description": "Add public accessor methods and promote fields needed for repositories, tests, and cross-entity logic.",
+      "acceptanceCriteria": [
+        "oPunch::isUsed, tIndex, tMatchControlId are public",
+        "oClass has `int getNumLegs() const { return (int)legInfo.size(); }`",
+        "oAbstractRunner::tInTeam, tLeg, tStartTime are public",
+        "oAbstractRunner has `const TempResult& getTempResult() const`",
+        "oTeam has `wstring getRunnerIdString() const` public wrapper",
+        "oCard has `void setCardNo(int)` if missing",
+        "All entities with oData buffers expose `const BYTE* getOData() const` and `static int getODataBlobSize()` in public sections",
+        "Windows build passes"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-022",
+      "title": "alignas + dynamic dataSize on oData buffers",
+      "description": "Add alignas(sizeof(wchar_t)) to oData buffers and make dataSize use sizeof(wchar_t)-based formulas. No-op on Windows.",
+      "acceptanceCriteria": [
+        "alignas(sizeof(wchar_t)) added to oData and oDataOld arrays in oClass.h, oClub.h, oCourse.h, oControl.h, oRunner.h (and oTeam.h if applicable)",
+        "dataSize constants use sizeof(wchar_t)-based formulas (e.g. `256 * static_cast<int>(sizeof(wchar_t)) + 64`) that evaluate to the legacy value on Windows",
+        "oCard skipped (no oData buffer)",
+        "Windows build passes with identical binary layout"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Header hygiene: missing includes + StdAfx removal",
+      "description": "Audit headers for PCH-dependent implicit includes, remove StdAfx.h from standalone headers, fix invalid enum forward declarations.",
+      "acceptanceCriteria": [
+        "intkeymap.hpp no longer includes StdAfx.h",
+        "Other .hpp files audited for unnecessary StdAfx.h includes",
+        "oTeam.h includes <set> explicitly",
+        "Domain .cpp files include oDataContainer.h directly where getDI()/getDCI() is used",
+        "oClass.cpp includes xmlparser.h and timeconstants.hpp explicitly",
+        "`enum KeyCommandCode : int;` (with underlying type) in TableType.h",
+        "Windows build passes"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Replace CompareString (Win32) with standard wstring comparison",
+      "description": "Replace Win32 CompareString API with standard `wstring <` comparison in domain code.",
+      "acceptanceCriteria": [
+        "No CompareString calls in domain .cpp/.h files",
+        "GeneralResultInfo::compareResult and oAbstractRunner::compareClubs use standard < comparison",
+        "Windows build passes"
+      ],
+      "priority": 24,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-025",
+      "title": "Misc: SQL_quote, oListParam, permute()",
+      "description": "Three small fixes that each reduce migration friction.",
+      "acceptanceCriteria": [
+        "SQL_quote() uses toUTF8() from meos_util.h instead of WideCharToMultiByte (depends on US-002)",
+        "oListParam in oListInfo.h/cpp has `set<int> selection`, `bool lockUpdate` (default false), and `filterInclude()` implementation",
+        "permute() in random.h/cpp uses std::shuffle with std::random_device + std::mt19937",
+        "Windows build passes"
+      ],
+      "priority": 25,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-026",
+      "title": "Move enums out of oEvent.h",
+      "description": "Move enums that don't belong to oEvent (SpecialPunch, RunnerStatus, DynamicRunnerStatus, SortOrder) into more appropriate headers; keep backward-compat using-declarations in oEvent.h.",
+      "acceptanceCriteria": [
+        "SpecialPunch moved to oControl.h (or a shared enum header)",
+        "RunnerStatus, DynamicRunnerStatus, SortOrder, isPossibleResultStatus moved to oAbstractRunner.h",
+        "oEvent.h retains using/typedef declarations so existing includers compile unchanged",
+        "Windows build passes"
+      ],
+      "priority": 26,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-027",
+      "title": "Extract oAbstractRunner to its own header",
+      "description": "Extract the oRunner/oTeam base class from oRunner.h into oAbstractRunner.h, forward-declaring oEvent to break the circular dependency.",
+      "acceptanceCriteria": [
+        "New file code/oAbstractRunner.h contains the base class and only forward-declares oEvent",
+        "oRunner.h includes oAbstractRunner.h instead of defining the base class inline",
+        "oTeam.h includes oAbstractRunner.h",
+        "DynamicValue methods referencing oEvent::dataRevision live in .cpp files, not inline",
+        "Circular dependency between oRunner.h and oEvent.h is broken",
+        "Windows build passes"
+      ],
+      "priority": 27,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-028",
+      "title": "Remove vendored third-party directories",
+      "description": "After vcpkg migrations land (prd-legacy-build.md US-P0m*), remove vendored libraries and pre-built libs from code/. SKIP this story if those vcpkg stories are not complete.",
+      "acceptanceCriteria": [
+        "Verify all US-P0m* stories in prd-legacy-build.md are complete and CI is green — if not, mark this story blocked",
+        "code/libharu/, code/mysql/, code/png/, code/minizip/, code/restbed/ removed",
+        "Pre-built libs (libharu.lib, libhpdf.lib, RestBed.lib, zlib libs) removed from code/lib64*, code/lib/",
+        "Runtime DLLs removed from code/dll/, code/dll64/",
+        "No source file references vendored include paths after deletion",
+        "Windows build and CI pass"
+      ],
+      "priority": 28,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-029",
+      "title": "US-P0g1: Split oEvent.cpp",
+      "description": "Split oEvent.cpp (~7405 lines) into oEvent.cpp + oEventAdmin.cpp + oEventConfig.cpp.",
+      "acceptanceCriteria": [
+        "Verify split boundaries against current function starts before running script (previous correct values: 2835, 5335 — but ALWAYS re-verify)",
+        "Run python3 .claude/skills/split-files/split_file.py code/oEvent.cpp \"<verified>:oEventAdmin.cpp,<verified>:oEventConfig.cpp\" (dry-run first)",
+        "Create code/oEventInternal.h with `static inline` getNewFileName and any cross-file file-local helpers",
+        "Add #include \"oEventInternal.h\" in the includes block of new files",
+        "MeOS.vcxproj updated with both new files",
+        "Each resulting .cpp file ≤ ~3000 lines",
+        "Windows build passes"
+      ],
+      "priority": 29,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-030",
+      "title": "US-P0g2: Split oRunner.cpp",
+      "description": "Split oRunner.cpp (~7808 lines) into oRunner.cpp + oRunnerData.cpp + oRunnerResult.cpp.",
+      "acceptanceCriteria": [
+        "Verify split boundaries (previous values 2526, 5056 were correct — re-verify)",
+        "Run split_file.py with verified boundaries (dry-run first)",
+        "Create code/oRunnerInternal.h with `static inline` findNextControl, gotoNextLine, addMissingControl",
+        "MeOS.vcxproj updated",
+        "Each resulting .cpp file ≤ ~3000 lines",
+        "Windows build passes"
+      ],
+      "priority": 30,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-031",
+      "title": "US-P0g3: Split oClass.cpp",
+      "description": "Split oClass.cpp (~5684 lines) into oClass.cpp + oClassConfig.cpp.",
+      "acceptanceCriteria": [
+        "Verify split boundary (previous correct value 2838 — re-verify)",
+        "Run split_file.py with verified boundary (dry-run first)",
+        "Create code/oClassInternal.h with ClassSplit::evaluateTime/Result/Points as free inline functions",
+        "Remove `#define DODECLARETYPESYMBOLS` from oClassConfig.cpp to avoid LNK2005",
+        "MeOS.vcxproj updated",
+        "Each resulting .cpp file ≤ ~3000 lines",
+        "Windows build passes"
+      ],
+      "priority": 31,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-032",
+      "title": "US-P0g4: Split oListInfo.cpp",
+      "description": "Split oListInfo.cpp (~5910 lines) into oListInfo.cpp + oListInfoGen.cpp.",
+      "acceptanceCriteria": [
+        "Verify split boundary (previous correct value 2884 — re-verify)",
+        "Run split_file.py with verified boundary (dry-run first)",
+        "Create code/oListInfoInternal.h with PrintPostInfo + getControlName, getFullControlName, getResultTitle, generateNBestHead",
+        "MeOS.vcxproj updated",
+        "Each resulting .cpp file ≤ ~3000 lines",
+        "Windows build passes"
+      ],
+      "priority": 32,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-033",
+      "title": "US-P0g5: Split gdioutput.cpp",
+      "description": "Split gdioutput.cpp (~8174 lines) into gdioutput.cpp + gdioutputEvent.cpp + gdioutputUI.cpp.",
+      "acceptanceCriteria": [
+        "Verify split boundaries (previous correct values 5534, 8153 — re-verify; the original prd value 8174 was wrong)",
+        "Run split_file.py with verified boundaries (dry-run first)",
+        "Add `extern int defaultCodePage;` manually to gdioutputUI.cpp (not captured by include extraction due to #ifdef DEBUGRENDER)",
+        "MeOS.vcxproj updated",
+        "Each resulting .cpp file ≤ ~3000 lines",
+        "Windows build passes"
+      ],
+      "priority": 33,
+      "passes": false,
+      "notes": ""
     }
   ]
 }

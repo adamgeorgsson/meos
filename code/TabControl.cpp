@@ -20,14 +20,14 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <algorithm>
 
 #include "oEvent.h"
 #include "gdioutput.h"
 #include "meos_util.h"
-#include "table.h"
+#include "Table.h"
 #include <cassert>
 #include "maprenderer.h"
 #include "MeOSFeatures.h"

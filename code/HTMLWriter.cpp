@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "gdioutput.h"
 #include <vector>
 #include <map>
@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include "meos_util.h"
-#include "Localizer.h"
+#include "localizer.h"
 #include "gdiconstants.h"
 #include "HTMLWriter.h"
 #include "Printer.h"

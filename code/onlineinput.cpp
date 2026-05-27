@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <sys/stat.h>
 #include "oEvent.h"
@@ -29,8 +29,8 @@
 #include "onlineinput.h"
 #include "meos_util.h"
 
-#include "meosException.h"
-#include "Download.h"
+#include "meosexception.h"
+#include "download.h"
 #include "xmlparser.h"
 #include "progress.h"
 #include "csvparser.h"

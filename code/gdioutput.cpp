@@ -25,10 +25,10 @@
 //////////////////////////////////////////////////////////////////////
 #define _USE_MATH_DEFINES
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "gdioutput.h"
 #include "gdiconstants.h"
-#include "meosException.h"
+#include "meosexception.h"
 
 #include "process.h"
 
@@ -46,7 +46,7 @@
 #include "meos_util.h"
 #include "Table.h"
 
-#include "Localizer.h"
+#include "localizer.h"
 
 #include "TabBase.h"
 #include "toolbar.h"

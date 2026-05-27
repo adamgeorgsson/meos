@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include <sys/stat.h>
 #include <shellapi.h>
@@ -32,8 +32,8 @@
 #include "meos_util.h"
 
 #include "infoserver.h"
-#include "meosException.h"
-#include "Download.h"
+#include "meosexception.h"
+#include "download.h"
 #include "xmlparser.h"
 #include "progress.h"
 #include "machinecontainer.h"

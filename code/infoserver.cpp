@@ -21,14 +21,14 @@
 ************************************************************************/
 
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "meos_util.h"
 #include "infoserver.h"
 #include "xmlparser.h"
 #include "oEvent.h"
 #include "download.h"
 #include "progress.h"
-#include "meosException.h"
+#include "meosexception.h"
 #include "gdioutput.h"
 
 void base64_encode(const vector<BYTE> &input, string &output);

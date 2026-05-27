@@ -24,7 +24,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #define DODECLARETYPESYMBOLS
 
 #include <cassert>
@@ -33,7 +33,7 @@
 #include "Table.h"
 #include "meos_util.h"
 #include <limits>
-#include "Localizer.h"
+#include "localizer.h"
 #include <algorithm>
 #include "inthashmap.h"
 #include "intkeymapimpl.hpp"

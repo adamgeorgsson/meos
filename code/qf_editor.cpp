@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "gdioutput.h"
 #include "qf_editor.h"
 #include "qualification_final.h"

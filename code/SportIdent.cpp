@@ -26,7 +26,7 @@
 
 // Check implementation r56.
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "meos.h"
 #include "SportIdent.h"
 #include <fstream>

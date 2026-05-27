@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "RunnerDB.h"
 #include "xmlparser.h"
 #include "oRunner.h"
@@ -31,7 +31,7 @@
 #include "sys/stat.h"
 #include "meos_util.h"
 #include "oDataContainer.h"
-#include "meosException.h"
+#include "meosexception.h"
 
 #include <algorithm>
 #include <cassert>

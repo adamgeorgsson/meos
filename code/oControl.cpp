@@ -24,7 +24,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include <algorithm>
 
 #include "oControl.h"
@@ -32,7 +32,7 @@
 #include "gdioutput.h"
 #include "meos_util.h"
 #include <cassert>
-#include "Localizer.h"
+#include "localizer.h"
 #include "Table.h"
 #include "MeOSFeatures.h"
 #include <set>

@@ -20,7 +20,7 @@
 
 ************************************************************************/
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include <set>
 #include "oDataContainer.h"
 #include "oEvent.h"
@@ -29,8 +29,8 @@
 #include "xmlparser.h"
 #include "Table.h"
 #include "meos_util.h"
-#include "Localizer.h"
-#include "meosException.h"
+#include "localizer.h"
+#include "meosexception.h"
 
 oDataContainer::oDataContainer(int maxsize) {
   dataPointer = 0;

@@ -24,7 +24,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "csvparser.h"
 #include "oEvent.h"
 #include "SportIdent.h"
