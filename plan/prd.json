@@ -105,8 +105,8 @@
         "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All three criteria already in place. SQL_quote (oDataContainer.cpp:929) already calls toUTF8(in) — no WideCharToMultiByte. oListParam already has set<int> selection, bool lockUpdate=false, and filterInclude() implemented in oListInfo.cpp:122. permute() (random.cpp:86-91) already uses std::shuffle with static std::mt19937 seeded from std::random_device. No code changes needed."
     },
     {
       "id": "US-008",
