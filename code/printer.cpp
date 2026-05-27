@@ -169,7 +169,7 @@ void gdioutput::printSetup(PrinterObject &po)
     int error = CommDlgExtendedError();
     if (error!=0) {
       char sb[127];
-      sprintf_s(sb, "Printing Error Code=%d", error);
+      snprintf(sb, sizeof(sb), "Printing Error Code=%d", error);
       //MessageBox(hWnd, sb, NULL, MB_OK);
       alert(sb);
       po.freePrinter();
@@ -235,7 +235,7 @@ void gdioutput::print(pEvent oe, Table *t, bool printMeOSHeader, bool noMargin, 
     int error = CommDlgExtendedError();
     if (error != 0) {
       char sb[128];
-      sprintf_s(sb, "Printing Error Code=%d", error);
+      snprintf(sb, sizeof(sb), "Printing Error Code=%d", error);
       alert(sb);
       po.freePrinter();
       po.hDC = 0;
@@ -318,7 +318,7 @@ void gdioutput::print(PrinterObject &po, pEvent oe, bool printMeOSHeader, bool n
       int error=CommDlgExtendedError();
       if (error!=0) {
         char sb[128];
-        sprintf_s(sb, "Printing Error Code=%d", error);
+        snprintf(sb, sizeof(sb), "Printing Error Code=%d", error);
         alert(sb);
         po.hDC = 0;
       }
@@ -366,7 +366,7 @@ bool gdioutput::startDoc(PrinterObject &po)
   di.cbSize = sizeof(DOCINFO);
 
   wchar_t sb[256];
-  swprintf_s(sb, L"MeOS");
+  swprintf(sb, sizeof(sb)/sizeof(wchar_t), L"MeOS");
 
   di.lpszDocName = sb;
   di.lpszOutput = (LPTSTR) NULL;
@@ -860,16 +860,16 @@ wstring PageInfo::pageInfo(const RenderedPage &page) const {
     wchar_t bf[256];
     if (nPagesTotal > 1) {
       if (!page.info.empty())
-        swprintf_s(bf, L"MeOS %s, %s, (%d/%d)", getLocalTime().c_str(),
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"MeOS %s, %s, (%d/%d)", getLocalTime().c_str(),
                   page.info.c_str(), page.nPage, nPagesTotal);
       else
-        swprintf_s(bf, L"MeOS %s, (%d/%d)", getLocalTime().c_str(), page.nPage, nPagesTotal);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"MeOS %s, (%d/%d)", getLocalTime().c_str(), page.nPage, nPagesTotal);
     }
     else {
       if (!page.info.empty())
-        swprintf_s(bf, L"MeOS %s, %s", getLocalTime().c_str(), page.info.c_str());
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"MeOS %s, %s", getLocalTime().c_str(), page.info.c_str());
       else
-        swprintf_s(bf, L"MeOS %s", getLocalTime().c_str());
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"MeOS %s", getLocalTime().c_str());
     }
     return bf;
   }

@@ -111,7 +111,7 @@ void xmlparser::write(const char *tag, const wstring &Value)
     }
     else {
       char bf[512];
-      sprintf_s(bf, "<%s>%s</%s>\n", tag, valEnc.c_str(), tag);
+      snprintf(bf, sizeof(bf), "<%s>%s</%s>\n", tag, valEnc.c_str(), tag);
       fOut() << bf;
     }
     /*fOut() << "<" << tag << ">"
@@ -133,7 +133,7 @@ void xmlparser::write(const char *tag, const string &Value)
     }
     else {
       char bf[512];
-      sprintf_s(bf, "<%s>%s</%s>\n", tag, valEnc.c_str(), tag);
+      snprintf(bf, sizeof(bf), "<%s>%s</%s>\n", tag, valEnc.c_str(), tag);
       fOut() << bf;
     }
   }
@@ -152,7 +152,7 @@ void xmlparser::write(const char *tag, const char *Value)
     }
     else {
       char bf[512];
-      sprintf_s(bf, "<%s>%s</%s>\n", tag, valEnc.c_str(), tag);
+      snprintf(bf, sizeof(bf), "<%s>%s</%s>\n", tag, valEnc.c_str(), tag);
       fOut() << bf;
     }
   }
@@ -164,7 +164,7 @@ void xmlparser::write(const char *tag, const char *Value)
 void xmlparser::write(const char *tag)
 {
   char bf[128];
-  sprintf_s(bf, "<%s/>\n", tag);
+  snprintf(bf, sizeof(bf), "<%s/>\n", tag);
   fOut() << bf;
 
   //fOut() << "<" << tag << "/>" << endl;
@@ -308,7 +308,7 @@ void xmlparser::write(const char *tag, const char *prop,
 void xmlparser::write(const char *tag, int Value) {
   if (!cutMode || Value!=0) {
     char bf[256];
-    sprintf_s(bf, "<%s>%d</%s>\n", tag, Value, tag);
+    snprintf(bf, sizeof(bf), "<%s>%d</%s>\n", tag, Value, tag);
     fOut() << bf;
     //fOut() << "<" << tag << ">"
     //       << Value
@@ -321,7 +321,7 @@ void xmlparser::write(const char *tag, int Value) {
 void xmlparser::write(const char* tag, double value) {
   if (!cutMode || value != 0.0) {
     char bf[256];
-    sprintf_s(bf, "<%s>%s</%s>\n", tag, oDataContainer::formatDouble(value).c_str(), tag);
+    snprintf(bf, sizeof(bf), "<%s>%s</%s>\n", tag, oDataContainer::formatDouble(value).c_str(), tag);
     fOut() << bf;
   }
   if (!fOut().good())
@@ -334,23 +334,23 @@ void xmlparser::writeTime(const char *tag, int relativeTime) {
     int subSec = timeConstSecond == 1 ? 0 : relativeTime % timeConstSecond;
 
     if (timeConstSecond == 1 || relativeTime == -1)
-      sprintf_s(bf, "<%s>%d</%s>\n", tag, relativeTime, tag);
+      snprintf(bf, sizeof(bf), "<%s>%d</%s>\n", tag, relativeTime, tag);
     else if (subSec == 0 && relativeTime != -10) 
-      sprintf_s(bf, "<%s>%d</%s>\n", tag, relativeTime / timeConstSecond, tag);
+      snprintf(bf, sizeof(bf), "<%s>%d</%s>\n", tag, relativeTime / timeConstSecond, tag);
     else if (relativeTime >= 0)
       if (timeConstSecond == 10)
-        sprintf_s(bf, "<%s>%d.%d</%s>\n", tag, (relativeTime / timeConstSecond), 
+        snprintf(bf, sizeof(bf), "<%s>%d.%d</%s>\n", tag, (relativeTime / timeConstSecond), 
                                                (relativeTime % timeConstSecond), tag);
       else
-        sprintf_s(bf, "<%s>%d.%02d</%s>\n", tag, (relativeTime / timeConstSecond),
+        snprintf(bf, sizeof(bf), "<%s>%d.%02d</%s>\n", tag, (relativeTime / timeConstSecond),
                                                  (relativeTime % timeConstSecond), tag);
     else {
       int at = std::abs(relativeTime);
       if (timeConstSecond == 10)
-        sprintf_s(bf, "<%s>-%d.%d</%s>\n", tag, (at / timeConstSecond),
+        snprintf(bf, sizeof(bf), "<%s>-%d.%d</%s>\n", tag, (at / timeConstSecond),
                                                 (at % timeConstSecond), tag);
       else
-        sprintf_s(bf, "<%s>-%d.%02d</%s>\n", tag, (at / timeConstSecond),
+        snprintf(bf, sizeof(bf), "<%s>-%d.%02d</%s>\n", tag, (at / timeConstSecond),
                                                   (at % timeConstSecond), tag);
     }
     fOut() << bf;
@@ -364,12 +364,12 @@ void xmlparser::writeBool(const char *tag, bool value)
   if (!cutMode || value) {
     if (value) {
       char bf[256];
-      sprintf_s(bf, "<%s>true</%s>\n", tag, tag);
+      snprintf(bf, sizeof(bf), "<%s>true</%s>\n", tag, tag);
       fOut() << bf;
     }
     else {
       char bf[256];
-      sprintf_s(bf, "<%s>false</%s>\n", tag, tag);
+      snprintf(bf, sizeof(bf), "<%s>false</%s>\n", tag, tag);
       fOut() << bf;
     }
   }
@@ -403,7 +403,7 @@ void xmlparser::startTag(const char *tag, const char *prop, const wstring &Value
     const string &valEnc = encodeXML(Value);
     if (valEnc.length() < 128) {
       char bf[256];
-      sprintf_s(bf, "<%s %s=\"%s\">\n", tag, prop, valEnc.c_str());
+      snprintf(bf, sizeof(bf), "<%s %s=\"%s\">\n", tag, prop, valEnc.c_str());
       fOut() << bf;
     }
     else {
@@ -425,7 +425,7 @@ void xmlparser::startTag(const char *tag, const char *prop, const string &Value)
     const string &valEnc = encodeXML(Value);
     if (valEnc.length() < 128) {
       char bf[256];
-      sprintf_s(bf, "<%s %s=\"%s\">\n", tag, prop, valEnc.c_str());
+      snprintf(bf, sizeof(bf), "<%s %s=\"%s\">\n", tag, prop, valEnc.c_str());
       fOut() << bf;
     }
     else {
@@ -476,7 +476,7 @@ void xmlparser::startTag(const char *tag)
 {
   if (tagStackPointer<32) {
     char bf[128];
-    sprintf_s(bf, "<%s>\n", tag);
+    snprintf(bf, sizeof(bf), "<%s>\n", tag);
     fOut() << bf;
     tagStack[tagStackPointer++]=tag;
     if (!fOut().good())
@@ -491,7 +491,7 @@ void xmlparser::endTag()
   if (tagStackPointer>0) {
     char bf[128];
     const char *tag = tagStack[--tagStackPointer].c_str();
-    sprintf_s(bf, "</%s>\n", tag);
+    snprintf(bf, sizeof(bf), "</%s>\n", tag);
     fOut() << bf;
 
     if (!fOut().good())
@@ -752,13 +752,13 @@ bool xmlparser::processTag(char *start, char *end) {
         xd.next = xmlinfo.size();
       }
       else {
-        sprintf_s(err, "Unmatched tag '%s', expected '%s'.", tag, xd.tag);
+        snprintf(err, sizeof(err), "Unmatched tag '%s', expected '%s'.", tag, xd.tag);
         throw std::exception(err);
       }
     }
     else
     {
-      sprintf_s(err, "Unmatched tag '%s'.", tag);
+      snprintf(err, sizeof(err), "Unmatched tag '%s'.", tag);
       throw std::exception(err);
     }
   }

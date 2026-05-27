@@ -672,7 +672,7 @@ vector<wstring> oEntryBlock::getPersons() const
       n+=L" "+ePersons[k].name2;
 
     if (ePersons[k].cardNo>0) {
-      swprintf_s(bf, L" (%d)", ePersons[k].cardNo);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L" (%d)", ePersons[k].cardNo);
       n+=bf;
     }
 
@@ -793,7 +793,7 @@ bool oFreeImport::analyze(vector<bool> &b, int &offset, int &delta) const
 
 bool oFreeImport::isCard(const wchar_t *p) const
 {
-  int k=_wtoi(p);
+  int k=wtoi(p);
   return (p[0]=='0' && p[1]==0) || (k>=1000 && k<10000000);
 }
 
@@ -806,7 +806,7 @@ bool oFreeImport::isTime(const wstring &m) const
     if (!isdigit(BYTE(m[k])) && !(m[k]==':' || m[k]=='.'))
       return false;
 
-  int hour=_wtoi(m.c_str());
+  int hour=wtoi(m.c_str());
   if (hour<0 || hour>23)
     return false;
 
@@ -816,7 +816,7 @@ bool oFreeImport::isTime(const wstring &m) const
 
   if (kp>0) {
     wstring mtext=m.substr(kp+1);
-    minute=_wtoi(mtext.c_str());
+    minute=wtoi(mtext.c_str());
 
     if (minute<0 || minute>60)
       return false;
@@ -824,7 +824,7 @@ bool oFreeImport::isTime(const wstring &m) const
     kp=mtext.find_last_of(':');
 
     if (kp>0) {
-      second=_wtoi(mtext.substr(kp+1).c_str());
+      second=wtoi(mtext.substr(kp+1).c_str());
       if (second<0 || second>60)
         return false;
     }
@@ -965,7 +965,7 @@ void oFreeImport::analyzePart(wchar_t *part, const MatchPattern &ptrn, int nName
       else lastType = Unknown;
     }
     else if (isCardV[k]) {
-      entry.setCardNo(_wtoi(words[k]));
+      entry.setCardNo(wtoi(words[k]));
       lastInsertedType = Card;
       used[k]=true, k++;
       lastType = Name;
@@ -1139,50 +1139,50 @@ void oFreeImport::init(const oRunnerList &r, const oClubList &clb, const oClassL
     classDB.insert(clsPrefix[k]);
 
     for (size_t j=0; j<ages.size();j++) {
-      swprintf_s(bf, L"%d", ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%d", ages[j]);
       classDB.insert(bf);
 
-      swprintf_s(bf, L"%s%d", clsPrefix[k], ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%d", clsPrefix[k], ages[j]);
       classDB.insert(bf);
-      swprintf_s(bf, L"%s %d", clsPrefix[k], ages[j]);
-      classDB.insert(bf);
-
-      swprintf_s(bf, L"%s%dM", clsPrefix[k], ages[j]);
-      classDB.insert(bf);
-      swprintf_s(bf, L"%s%dL", clsPrefix[k], ages[j]);
-      classDB.insert(bf);
-      swprintf_s(bf, L"%s%dK", clsPrefix[k], ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s %d", clsPrefix[k], ages[j]);
       classDB.insert(bf);
 
-      swprintf_s(bf, L"%s %dM", clsPrefix[k], ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%dM", clsPrefix[k], ages[j]);
       classDB.insert(bf);
-      swprintf_s(bf, L"%s %dL", clsPrefix[k], ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%dL", clsPrefix[k], ages[j]);
       classDB.insert(bf);
-      swprintf_s(bf, L"%s %dK", clsPrefix[k], ages[j]);
-      classDB.insert(bf);
-
-      swprintf_s(bf, L"%s%d M", clsPrefix[k], ages[j]);
-      classDB.insert(bf);
-      swprintf_s(bf, L"%s%d L", clsPrefix[k], ages[j]);
-      classDB.insert(bf);
-      swprintf_s(bf, L"%s%d K", clsPrefix[k], ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%dK", clsPrefix[k], ages[j]);
       classDB.insert(bf);
 
-      swprintf_s(bf, L"%s%d Lång", clsPrefix[k], ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s %dM", clsPrefix[k], ages[j]);
       classDB.insert(bf);
-      swprintf_s(bf, L"%s%d Kort", clsPrefix[k], ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s %dL", clsPrefix[k], ages[j]);
       classDB.insert(bf);
-      swprintf_s(bf, L"%s%d Motion", clsPrefix[k], ages[j]);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s %dK", clsPrefix[k], ages[j]);
+      classDB.insert(bf);
+
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%d M", clsPrefix[k], ages[j]);
+      classDB.insert(bf);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%d L", clsPrefix[k], ages[j]);
+      classDB.insert(bf);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%d K", clsPrefix[k], ages[j]);
+      classDB.insert(bf);
+
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%d Lång", clsPrefix[k], ages[j]);
+      classDB.insert(bf);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%d Kort", clsPrefix[k], ages[j]);
+      classDB.insert(bf);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%d Motion", clsPrefix[k], ages[j]);
       classDB.insert(bf);
 
       if (ages[j]>=18 && ages[j]<=21) {
-        swprintf_s(bf, L"%s %dE", clsPrefix[k], ages[j]);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s %dE", clsPrefix[k], ages[j]);
         classDB.insert(bf);
-        swprintf_s(bf, L"%s %d Elit", clsPrefix[k], ages[j]);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s %d Elit", clsPrefix[k], ages[j]);
         classDB.insert(bf);
-        swprintf_s(bf, L"%s%dE", clsPrefix[k], ages[j]);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%dE", clsPrefix[k], ages[j]);
         classDB.insert(bf);
-        swprintf_s(bf, L"%s%d Elit", clsPrefix[k], ages[j]);
+        swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"%s%d Elit", clsPrefix[k], ages[j]);
         classDB.insert(bf);
       }
     }
@@ -1221,15 +1221,15 @@ void oFreeImport::init(const oRunnerList &r, const oClubList &clb, const oClassL
   classDB.insert(L"U4");
 
   for (int j=1;j<10;j++) {
-    swprintf_s(bf, L"Ö%d", j);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Ö%d", j);
     classDB.insert(bf);
-    swprintf_s(bf, L"Ö %d", j);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Ö %d", j);
     classDB.insert(bf);
-    swprintf_s(bf, L"Öppen %d", j);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Öppen %d", j);
     classDB.insert(bf);
-    swprintf_s(bf, L"D%d", j);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"D%d", j);
     classDB.insert(bf);
-    swprintf_s(bf, L"Direkt %d", j);
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), L"Direkt %d", j);
     classDB.insert(bf);
   }
 }
@@ -1379,7 +1379,7 @@ int oFreeImport::preAnalyzeRow(vector<wchar_t *> &p,
         type=0;
       else if (ptrn[j].isClass())
         type=1;
-      else if (ptrn[j].isCard() && _wtoi(p[j])>0)
+      else if (ptrn[j].isCard() && wtoi(p[j])>0)
         type=3;
     }
 
@@ -1410,11 +1410,11 @@ int oFreeImport::preAnalyzeRow(vector<wchar_t *> &p,
     int idx = -1;
     for (size_t k = 0; k<classified.size(); k++) {
       if (classified[k] == 3) {
-        int a = idx>=0 ? _wtoi(p[idx]) : -1;
+        int a = idx>=0 ? wtoi(p[idx]) : -1;
         if (a==-1)
           idx = k;
         else {
-          int b = _wtoi(p[k]);
+          int b = wtoi(p[k]);
           if (b>0 && b<a)
             idx = k;
         }
@@ -1594,7 +1594,7 @@ void oFreeImport::extractEntries(wchar_t *str, vector<oEntryBlock> &entries)
           type = Club;
         else if (ptrn[j].isClass())
           type = Class;
-        else if (ptrn[j].isCard() && _wtoi(p[j])>0)
+        else if (ptrn[j].isCard() && wtoi(p[j])>0)
           type = Card;
       }
 
@@ -1682,7 +1682,7 @@ void oFreeImport::extractEntries(wchar_t *str, vector<oEntryBlock> &entries)
           continue;
 
         lastInsertedType = Card;
-        entry.setCardNo(_wtoi(p[j]));
+        entry.setCardNo(wtoi(p[j]));
         if (readNames&1) {
           readNames++;
           entry.completeName();

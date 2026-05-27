@@ -304,6 +304,10 @@ namespace MeOSUtil {
   extern int useHourFormat;
 }
 
+// Portable wstring-to-int conversion (replaces _wtoi)
+inline int wtoi(const wchar_t *s) { return static_cast<int>(std::wcstol(s, nullptr, 10)); }
+inline int wtoi(const wstring &s) { return wtoi(s.c_str()); }
+
 // String encoding free functions (usable without including gdioutput.h)
 const wstring &widen(const string &input);
 const string &narrow(const wstring &input);

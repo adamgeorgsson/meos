@@ -134,7 +134,7 @@ string oCourse::getControls() const {
   string str = "";
   char bf[16];
   for (int m = 0; m < nControls(); m++) {
-    sprintf_s(bf, 16, "%d;", controls[m]->Id);
+    snprintf(bf, 16, "%d;", controls[m]->Id);
     str += bf;
   }
 
@@ -147,12 +147,12 @@ wstring oCourse::getControlsUI() const {
   int m;
 
   for (m = 0; m < nControls() - 1; m++) {
-    swprintf_s(bf, 16, L"%d, ", controls[m]->Id);
+    swprintf(bf, 16, L"%d, ", controls[m]->Id);
     str += bf;
   }
 
   if (m < nControls()) {
-    swprintf_s(bf, 16, L"%d", controls[m]->Id);
+    swprintf(bf, 16, L"%d", controls[m]->Id);
     str += bf;
   }
 
@@ -376,20 +376,20 @@ bool oCourse::fillCourse(gdioutput& gdi, const string& name)
     wchar_t bf[256];
     if (controls[k]->isRogaining(rogaining)) {
       if (controls[k]->getStatus() == oControl::ControlStatus::StatusRogainingRequired)
-        swprintf_s(bf, 64, L"R!\t%s", c.c_str());
+        swprintf(bf, 64, L"R!\t%s", c.c_str());
       else
-        swprintf_s(bf, 64, L"R\t%s", c.c_str());
+        swprintf(bf, 64, L"R\t%s", c.c_str());
       offset--;
     }
     else if (multi == 1) {
-      swprintf_s(bf, 64, L"%d\t%s", k + offset, c.c_str());
+      swprintf(bf, 64, L"%d\t%s", k + offset, c.c_str());
     }
     else
-      swprintf_s(bf, 64, L"%d%c\t%s", k + offset, 'A', c.c_str());
+      swprintf(bf, 64, L"%d%c\t%s", k + offset, 'A', c.c_str());
     gdi.addItem(name, bf, k);
     while (multi > 1) {
       submulti++;
-      swprintf_s(bf, 64, L"%d%c\t-:-", k + offset, 'A' + submulti);
+      swprintf(bf, 64, L"%d%c\t-:-", k + offset, 'A' + submulti);
       gdi.addItem(name, bf, -1);
       multi--;
     }
@@ -1554,7 +1554,7 @@ pair<int, bool> oCourse::inputData(int id, const wstring &input,
 
   if (id >= 100) { 
     int cix = id - 100;
-    int v = _wtoi(input.c_str());
+    int v = wtoi(input.c_str());
     pControl ctrl = oe->getControl(v);
     if (!ctrl && v > 32 && v < 300)
       ctrl = oe->addControl(v, v, L"");

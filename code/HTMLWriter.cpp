@@ -54,7 +54,7 @@ static string getColor(int color) {
   int g = (color >> 8) & 0xFF;
   int b = (color >> 16) & 0xFF;
   char bf[32];
-  sprintf_s(bf, "%02x%02x%02x", r, g, b);
+  snprintf(bf, sizeof(bf), "%02x%02x%02x", r, g, b);
   return bf;
 }
 

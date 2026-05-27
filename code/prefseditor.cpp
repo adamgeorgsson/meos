@@ -157,7 +157,7 @@ void PrefsEditor::handle(gdioutput &gdi, BaseInfo &data, GuiEventType type) {
 
 wstring PrefsEditor::codeValue(const wstring &val, PropertyType p) const {
   if (p == Boolean) {
-    if (_wtoi(val.c_str()) != 0) {
+    if (wtoi(val.c_str()) != 0) {
       return lang.tl(L"true[boolean]");
     }
     else {
@@ -165,14 +165,14 @@ wstring PrefsEditor::codeValue(const wstring &val, PropertyType p) const {
     }
   }
   else if (p == Integer)
-    return itow(_wtoi(val.c_str()));
+    return itow(wtoi(val.c_str()));
   else
     return val;
 }
 
 GDICOLOR PrefsEditor::selectColor(const wstring &val, PropertyType p) const {
   if (p == Boolean) {
-    if (_wtoi(val.c_str()) != 0) {
+    if (wtoi(val.c_str()) != 0) {
       return colorDarkGreen;
     }
     else {

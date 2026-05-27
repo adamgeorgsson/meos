@@ -298,7 +298,7 @@ string decode(BYTE *bf, int read)
       st+="DLE ";
     else{
       char d[10];
-      sprintf_s(d, "%02X  ", bf[k]);
+      snprintf(d, sizeof(d), "%02X  ", bf[k]);
       st+=d;
     }
   }
@@ -623,7 +623,7 @@ int SportIdent::readByte(BYTE &byte, HANDLE hComm)
   {
 #ifdef DEBUG_SI2
     char t[64];
-    sprintf_s(t, 64, "read=%02X\n", (int)byte);
+    snprintf(t, 64, "read=%02X\n", (int)byte);
     debugLog(t);
 #endif
     if (dwRead)
@@ -676,12 +676,12 @@ int SportIdent::readBytes_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDLE h
   }
 #ifdef DEBUG_SI2
   char t[64];
-  sprintf_s(t, 64, "retry=%d\n", d);
+  snprintf(t, 64, "retry=%d\n", d);
   debugLog(t);
 
   for (int k = 0; k < read; k++) {
     char t[64];
-    sprintf_s(t, 64, "mreadd=%02X\n", (int)byte[k]);
+    snprintf(t, 64, "mreadd=%02X\n", (int)byte[k]);
     debugLog(t);
   }
 #endif
@@ -701,7 +701,7 @@ int SportIdent::readBytes(BYTE *byte, DWORD len,  HANDLE hComm)
 #ifdef DEBUG_SI2
     for (int k = 0; k < dwRead; k++) {
       char t[64];
-      sprintf_s(t, 64, "mread=%02X\n", (int)byte[k]);
+      snprintf(t, 64, "mread=%02X\n", (int)byte[k]);
       debugLog(t);
     }
 #endif
@@ -733,7 +733,7 @@ int SportIdent::readBytesDLE_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDL
   }
 #ifdef DEBUG_SI2
   char t[64];
-  sprintf_s(t, 64, "retry=%d\n", d);
+  snprintf(t, 64, "retry=%d\n", d);
   debugLog(t);
 #endif
 
@@ -1031,7 +1031,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
               /*for (int i = 0; i < 32; i++) {
                 uint32_t c = bf[i];
                 char xxx[20];
-                sprintf_s(xxx, "%X ", c);
+                snprintf(xxx, sizeof(xxx), "%X ", c);
                 OutputDebugStringA(xxx);                
               }
               OutputDebugStringA("\n");*/
@@ -1063,7 +1063,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
 
 #ifdef DEBUG_SI
               char str[128];
-              sprintf_s(str, "EXTENDED: Card = %d, Station = %d, StationMode = %d", Card, Station, si.StationMode);
+              snprintf(str, sizeof(str), "EXTENDED: Card = %d, Station = %d, StationMode = %d", Card, Station, si.StationMode);
               MessageBox(NULL, str, NULL, MB_OK);
 #endif              
               addPunch(Time, Station & 511, Card & 0x00FFFFFF, mode);
@@ -1099,7 +1099,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
 
 #ifdef DEBUG_SI
               char str[128];
-              sprintf_s(str, "OLD: Card = %d, Station = %d, StationMode = %d", DCard, Station, si.StationMode);
+              snprintf(str, sizeof(str), "OLD: Card = %d, Station = %d, StationMode = %d", DCard, Station, si.StationMode);
               MessageBox(NULL, str, NULL, MB_OK);
 #endif
             addPunch(Time, Station, DCard, si.stationMode());
@@ -1194,7 +1194,7 @@ bool SportIdent::MonitorSI(SI_StationInfo &si)
                 st+="DLE ";
               else{
                 char d[10];
-                sprintf_s(d, "%02X (%d) ", bf[k], bf[k]);
+                snprintf(d, sizeof(d), "%02X (%d) ", bf[k], bf[k]);
                 st+=d;
               }
             }
@@ -1454,7 +1454,7 @@ void SportIdent::getSI9DataExt(HANDLE hComm)
       if (read == 9) {
         /*for (int i = 0; i < read; i++) {
           char xx[20];
-          sprintf_s(xx, "%02x ", bf[i]);
+          snprintf(xx, sizeof(xx), "%02x ", bf[i]);
           OutputDebugStringA(xx);
         }
         OutputDebugStringA("\n\n");*/
@@ -1481,7 +1481,7 @@ void SportIdent::getSI9DataExt(HANDLE hComm)
           /*
           for (int i = 0; i < read; i++) {
             char xx[20];
-            sprintf_s(xx, "%02x ", bf[i]);
+            snprintf(xx, sizeof(xx), "%02x ", bf[i]);
             OutputDebugStringA(xx);
             if (i%20==19)
               OutputDebugStringA("\n");
@@ -1496,7 +1496,7 @@ void SportIdent::getSI9DataExt(HANDLE hComm)
             if (miliVolt > 5000)
               miliVolt = 900; // Not allowed
             /*char xx[30];
-            sprintf_s(xx, "V = %f\n\n", voltage);
+            snprintf(xx, sizeof(xx), "V = %f\n\n", voltage);
             OutputDebugStringA(xx);*/
           }
         }
@@ -1750,7 +1750,7 @@ bool SportIdent::getCard9Data(BYTE *data, SICard &card)
     if (m%16==0) fout << endl;
 
     char bf[16];
-    sprintf_s(bf, 16, "%02x ", (DWORD)data[m]);
+    snprintf(bf, 16, "%02x ", (DWORD)data[m]);
     fout << bf;
   }
 
@@ -1846,7 +1846,7 @@ bool SportIdent::getCard6Data(BYTE *data, SICard &card)
     if (m%16==0) fout << endl;
 
     char bf[16];
-    sprintf_s(bf, 16, "%02x ", (DWORD)data[m]);
+    snprintf(bf, 16, "%02x ", (DWORD)data[m]);
     fout << bf;
   }
 
@@ -2201,7 +2201,7 @@ void checkport_si_thread(void *ptr)
 {
   int *port=(int *)ptr;
   wchar_t bf[16];
-  swprintf_s(bf, 16, L"COM%d", *port);
+  swprintf(bf, 16, L"COM%d", *port);
   SportIdent si(NULL, *port, false);
 
   if (!si.openCom(bf))
@@ -2323,7 +2323,7 @@ void SportIdent::getInfoString(const wstring &com, vector<pair<bool, wstring>> &
     }
 
     wchar_t bf[128];
-    swprintf_s(bf, lang.tl(L"TCP: Port %d, Nolltid: %s").c_str(), tcpPortOpen, L"00:00:00");//WCS
+    swprintf(bf, sizeof(bf)/sizeof(wchar_t), lang.tl(L"TCP: Port %d, Nolltid: %s").c_str(), tcpPortOpen, L"00:00:00");//WCS
     infov.emplace_back(false, bf);
     return;
   }
@@ -2372,7 +2372,7 @@ void SportIdent::getInfoString(const wstring &com, vector<pair<bool, wstring>> &
 
     if (da.stationNumber) {
       wchar_t bf[16];
-      swprintf_s(bf, L" (%d).", da.stationNumber);
+      swprintf(bf, sizeof(bf)/sizeof(wchar_t), L" (%d).", da.stationNumber);
       info+=bf;
     }
 

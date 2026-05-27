@@ -103,7 +103,7 @@ string C_UINT64(string name)
 string C_STRING(string name, int len=64)
 {
   char bf[16];
-  sprintf_s(bf, "%d", len);
+  snprintf(bf, sizeof(bf), "%d", len);
   return " "+name+" VARCHAR("+ bf +") NOT NULL DEFAULT '', ";
 }
 
