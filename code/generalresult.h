@@ -98,9 +98,7 @@ public:
       const wstring &name = src->getName();
       const wstring &oname = o.src->getName();
 
-      return CompareString(LOCALE_USER_DEFAULT, 0,
-        name.c_str(), name.length(),
-        oname.c_str(), oname.length()) == CSTR_LESS_THAN;
+      return name < oname;
     }
 
     bool operator<(const GeneralResultInfo &o) const {

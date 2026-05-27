@@ -47,9 +47,7 @@ GeneralResultCtr::GeneralResultCtr(const wstring &file, const shared_ptr<Dynamic
 }
 
 bool GeneralResultCtr::operator<(const GeneralResultCtr &c) const {
-  return CompareString(LOCALE_USER_DEFAULT, 0,
-                       name.c_str(), name.length(),
-                       c.name.c_str(), c.name.length()) == CSTR_LESS_THAN;
+  return name < c.name;
 }
 
 const wstring& GeneralResultCtr::getName() const {

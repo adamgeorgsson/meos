@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <chrono>
 #include <ctime>
+#include <cwctype>
 #include <filesystem>
 
 using namespace std;
@@ -1055,8 +1056,12 @@ bool fileExists(const wstring &file)
 bool stringMatch(const wstring &a, const wstring &b) {
   wstring aa = trim(a);
   wstring bb = trim(b);
-
-  return CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE, aa.c_str(), aa.length(), bb.c_str(), bb.length())==2;
+  if (aa.size() != bb.size())
+    return false;
+  for (size_t i = 0; i < aa.size(); ++i)
+    if (towlower((wint_t)aa[i]) != towlower((wint_t)bb[i]))
+      return false;
+  return true;
 }
 
 const string &encodeXML(const string &in)
@@ -2473,8 +2478,15 @@ void moveFile(const wstring& src, const wstring& dst) {
 }
 
 int compareStringIgnoreCase(const wstring &a, const wstring &b) {
-  return CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE, a.c_str(), a.length(),
-                       b.c_str(), b.length()) - CSTR_EQUAL;
+  for (size_t i = 0; i < a.size() && i < b.size(); ++i) {
+    wint_t la = towlower((wint_t)a[i]);
+    wint_t lb = towlower((wint_t)b[i]);
+    if (la < lb) return -1;
+    if (la > lb) return 1;
+  }
+  if (a.size() < b.size()) return -1;
+  if (a.size() > b.size()) return 1;
+  return 0;
 }
 
 const char* meosException::narrow(const wstring& msg) {

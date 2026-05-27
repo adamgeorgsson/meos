@@ -1244,9 +1244,7 @@ void oClub::changedObject() {
 }
 
 bool oClub::operator<(const oClub &c) const {
-  return CompareString(LOCALE_USER_DEFAULT, 0,
-                      name.c_str(), name.length(),
-                      c.name.c_str(), c.name.length()) == CSTR_LESS_THAN;
+  return name < c.name;
 }
 
 wstring oClub::getInvoiceDate(oEvent &oe) {

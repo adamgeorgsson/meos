@@ -1024,9 +1024,7 @@ static bool oTeam::compareGeneral(const oTeam& a, const oTeam& b) {
     return compareResult(a, b);
   }
 
-  return CompareString(LOCALE_USER_DEFAULT, 0,
-    a.getName().c_str(), a.getName().length(),
-    b.getName().c_str(), b.getName().length()) == CSTR_LESS_THAN;
+  return a.getName() < b.getName();
 }
 
 bool oEvent::sortTeams(SortOrder so, int leg, bool linearLeg) {

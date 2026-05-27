@@ -835,12 +835,8 @@ int oAbstractRunner::compareClubs(const oClub* ca, const oClub* cb) {
 
     const wstring an = ca->getName();
     const wstring bn = cb->getName();
-    int res = CompareString(LOCALE_USER_DEFAULT, 0,
-      an.c_str(), an.length(),
-      bn.c_str(), bn.length());
-
-    if (res != CSTR_EQUAL)
-      return res == CSTR_LESS_THAN;
+    if (an != bn)
+      return an < bn;
   }
   return 2;
 }
@@ -886,9 +882,7 @@ bool oTeam::compareResult(const oTeam &a, const oTeam &b)
     return aix < bix;
   }
 
-  return CompareString(LOCALE_USER_DEFAULT, 0,
-                       a.sName.c_str(), a.sName.length(),
-                       b.sName.c_str(), b.sName.length()) == CSTR_LESS_THAN;
+  return a.sName < b.sName;
 }
 
 bool oTeam::compareResultNoSno(const oTeam &a, const oTeam &b)
@@ -923,9 +917,7 @@ bool oTeam::compareResultNoSno(const oTeam &a, const oTeam &b)
       return cres != 0;
   }
 
-  return CompareString(LOCALE_USER_DEFAULT, 0,
-                       a.sName.c_str(), a.sName.length(),
-                       b.sName.c_str(), b.sName.length()) == CSTR_LESS_THAN;
+  return a.sName < b.sName;
 }
 
 
@@ -945,9 +937,7 @@ bool oTeam::compareSNO(const oTeam &a, const oTeam &b) {
     else return false;
   }
 
-  return CompareString(LOCALE_USER_DEFAULT, 0,
-                       a.sName.c_str(), a.sName.length(),
-                       b.sName.c_str(), b.sName.length()) == CSTR_LESS_THAN;
+  return a.sName < b.sName;
 }
 
 bool oTeam::isRunnerUsed(int rId) const {

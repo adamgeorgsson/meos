@@ -70,9 +70,7 @@ bool orderResultsInTime(const oEvent::ResultEvent &a,
     const wstring &na = a.r->getName();
     const wstring &nb = b.r->getName();
   
-    return CompareString(LOCALE_USER_DEFAULT, 0,
-                          na.c_str(), na.length(),
-                          nb.c_str(), nb.length()) == CSTR_LESS_THAN;
+    return na < nb;
   }
   return a.r->getId() < b.r->getId();
 }

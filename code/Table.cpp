@@ -290,10 +290,7 @@ bool Table::compareRow(int indexA, int indexB) const {
   if (a.intKey != b.intKey && (a.intKey != 0xFEFEFEFE && b.intKey != 0xFEFEFEFE))
     return a.intKey < b.intKey;
   else
-    return CompareString( LOCALE_USER_DEFAULT, 0, Data[indexA].key.c_str(), Data[indexA].key.length(),
-                                                  Data[indexB].key.c_str(), Data[indexB].key.length()) == CSTR_LESS_THAN;
-    //return Data[indexA].key < Data[indexB].key;
-    //return Data[indexA].key < Data[indexB].key;
+    return Data[indexA].key < Data[indexB].key;
 }
 
 void Table::sort(int col, bool forceDirection)

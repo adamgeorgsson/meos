@@ -2085,9 +2085,7 @@ bool oRunner::sortSplit(const oRunner &a, const oRunner &b)
       if (a.tempRT!=b.tempRT)
         return a.tempRT<b.tempRT;
     }
-    return CompareString(LOCALE_USER_DEFAULT, 0,
-                        a.tRealName.c_str(), a.tRealName.length(),
-                        b.tRealName.c_str(), b.tRealName.length()) == CSTR_LESS_THAN;
+    return a.tRealName < b.tRealName;
   }
 }
 
@@ -2107,9 +2105,7 @@ bool oRunner::operator<(const oRunner &c) const {
   if (!myClass || !cClass)
     return size_t(myClass) < size_t(cClass);
   else if (Class == cClass && Class->getClassStatus() != oClass::ClassStatus::Normal)
-    return CompareString(LOCALE_USER_DEFAULT, 0,
-                         tRealName.c_str(), tRealName.length(),
-                         c.tRealName.c_str(), c.tRealName.length()) == CSTR_LESS_THAN;
+    return tRealName < c.tRealName;
 
   if (oe->CurrentSortOrder == ClassStartTime || oe->CurrentSortOrder == ClubClassStartTime) {
     if (myClass->Id != cClass->Id) {
@@ -2174,9 +2170,7 @@ bool oRunner::operator<(const oRunner &c) const {
     else {
       if (stat == StatusOK) {
         if (Class->getNoTiming()) {
-          return CompareString(LOCALE_USER_DEFAULT, 0,
-                               tRealName.c_str(), tRealName.length(),
-                               c.tRealName.c_str(), c.tRealName.length()) == CSTR_LESS_THAN;
+          return tRealName < c.tRealName;
         }
         int s = getNumShortening();
         int cs = c.getNumShortening();
@@ -2214,9 +2208,7 @@ bool oRunner::operator<(const oRunner &c) const {
     else {
       if (stat == StatusOK) {
         if (Class->getNoTiming()) {
-          return CompareString(LOCALE_USER_DEFAULT, 0,
-                               tRealName.c_str(), tRealName.length(),
-                               c.tRealName.c_str(), c.tRealName.length()) == CSTR_LESS_THAN;
+          return tRealName < c.tRealName;
         }
         int s = getNumShortening();
         int cs = c.getNumShortening();
@@ -2256,9 +2248,7 @@ bool oRunner::operator<(const oRunner &c) const {
     else {
       if (stat == StatusOK) {
         if (Class->getNoTiming()) {
-          return CompareString(LOCALE_USER_DEFAULT, 0,
-                               tRealName.c_str(), tRealName.length(),
-                               c.tRealName.c_str(), c.tRealName.length()) == CSTR_LESS_THAN;
+          return tRealName < c.tRealName;
         }
         int s = getNumShortening();
         int cs = c.getNumShortening();
@@ -2273,9 +2263,7 @@ bool oRunner::operator<(const oRunner &c) const {
     }
   }
   else if (oe->CurrentSortOrder == SortByName) {
-    return CompareString(LOCALE_USER_DEFAULT, 0,
-                         tRealName.c_str(), tRealName.length(),
-                         c.tRealName.c_str(), c.tRealName.length()) == CSTR_LESS_THAN;
+    return tRealName < c.tRealName;
   }
   else if (oe->CurrentSortOrder == SortByLastName) {
     wstring a = getFamilyName();
@@ -2285,16 +2273,12 @@ bool oRunner::operator<(const oRunner &c) const {
     else if (b.empty() && !a.empty())
       return true;
     else if (a != b) {
-      return CompareString(LOCALE_USER_DEFAULT, 0,
-                           a.c_str(), a.length(),
-                           b.c_str(), b.length()) == CSTR_LESS_THAN;
+      return a < b;
     }
     a = getGivenName();
     b = c.getGivenName();
     if (a != b) {
-      return CompareString(LOCALE_USER_DEFAULT, 0,
-                           a.c_str(), a.length(),
-                           b.c_str(), b.length()) == CSTR_LESS_THAN;
+      return a < b;
     }
   }
   else if (oe->CurrentSortOrder == SortByFinishTime) {
@@ -2414,9 +2398,7 @@ bool oRunner::operator<(const oRunner &c) const {
         return s1 < s2;
       else if (s1 == StatusOK) {
         if (Class->getNoTiming()) {
-          return CompareString(LOCALE_USER_DEFAULT, 0,
-                               tRealName.c_str(), tRealName.length(),
-                               c.tRealName.c_str(), c.tRealName.length()) == CSTR_LESS_THAN;
+          return tRealName < c.tRealName;
         }
         int t = getTotalRunningTime(FinishTime, true, true);
         int ct = c.getTotalRunningTime(c.FinishTime, true, true);
@@ -2517,9 +2499,7 @@ bool oRunner::operator<(const oRunner &c) const {
     if (currentControlTime != c.currentControlTime)
       return currentControlTime < c.currentControlTime;
   }
-  return CompareString(LOCALE_USER_DEFAULT, 0,
-                       tRealName.c_str(), tRealName.length(),
-                       c.tRealName.c_str(), c.tRealName.length()) == CSTR_LESS_THAN;
+  return tRealName < c.tRealName;
 
 }
 
