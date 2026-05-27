@@ -305,8 +305,8 @@
         "Typecheck passes"
       ],
       "priority": 18,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "src/app/main.cpp opens meos.sqlite, calls createTables()+seedIfEmpty(), registers all API routes and XML export, sets up SPA static file serving, installs SIGINT/SIGTERM handlers, prints startup message, then calls server.listen(). No new CMake changes needed — meos_db is transitive via meos_net PUBLIC link."
     },
     {
       "id": "US-019",
