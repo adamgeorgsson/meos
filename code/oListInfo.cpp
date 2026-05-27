@@ -5185,7 +5185,7 @@ void oEvent::generateListInfoAux(const gdioutput& target, oListParam &par, oList
     }
     case EStdTeamStartListLeg: {
       if (li.lp.getLegNumberCoded() == 1000)
-        throw std::exception("Ogiltigt val av sträcka");
+        throw std::runtime_error("Ogiltigt val av sträcka");
 
       li.addHead(oPrintPost(lCmpName, makeDash(lang.tl(L"Startlista X - sträcka Y#%s#" + li.lp.getLegName(), true)), boldLarge, 0,0));
       li.addHead(oPrintPost(lCmpDate, L"", normalText, 0, 25));
@@ -5211,7 +5211,7 @@ void oEvent::generateListInfoAux(const gdioutput& target, oListParam &par, oList
     }
     case EStdIndMultiStartListLeg:
       if (li.lp.getLegNumberCoded() == 1000)
-        throw std::exception("Ogiltigt val av sträcka");
+        throw std::runtime_error("Ogiltigt val av sträcka");
 
       //sprintf_s(title, lang.tl("Startlista lopp %d - %%s").c_str(), li.lp.legNumber+1);
       ln=li.lp.getLegInfo(sampleClass);
@@ -5281,7 +5281,7 @@ void oEvent::generateListInfoAux(const gdioutput& target, oListParam &par, oList
 
     case EStdIndMultiResultListLegLARGE:
       if (li.lp.getLegNumberCoded() == 1000)
-        throw std::exception("Ogiltigt val av sträcka");
+        throw std::runtime_error("Ogiltigt val av sträcka");
 
       ln=li.lp.getLegInfo(sampleClass);
 

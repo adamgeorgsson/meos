@@ -16,11 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     Melin Software HB - software@melin.nu - www.melin.nu
-    Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
+    Eksoppsvï¿½gen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
 
 #include "StdAfx.h"
+#include <stdexcept>
 #include "meos_util.h"
 #include <vector>
 #include <cassert>
@@ -158,7 +159,7 @@ void Encoder92::decode92(const string& encodedString, vector<uint8_t>& bytesOut)
   string start = itos(size);
   int len = start.length();
   if (encodedString.size() < len || encodedString[len] != ':' || size<0)
-    throw std::exception("Invalid data");
+    throw std::runtime_error("Invalid data");
 
   int m13 = size % 13;
   int extra = m13 > 0 ? 13 - m13 : 0;
@@ -166,7 +167,7 @@ void Encoder92::decode92(const string& encodedString, vector<uint8_t>& bytesOut)
 
   int inDataSize = blocks * 16;
   if (encodedString.size() < len + 1 + inDataSize)
-    throw std::exception("Invalid data");
+    throw std::runtime_error("Invalid data");
 
   bytesOut.resize(size);
   auto outPtr = bytesOut.data();
@@ -183,7 +184,7 @@ void Encoder92::decode92(const string& encodedString, vector<uint8_t>& bytesOut)
     for (int j = 0; j < 16; j++) {
       int v = inPtr[j];
       if (v < 0 || v > 127 || !used[v])
-        throw std::exception("Invalid data");
+        throw std::runtime_error("Invalid data");
       datain[j] = reverse_table[inPtr[j]];
     }
     decode92(datain, outPtr);
@@ -195,7 +196,7 @@ void Encoder92::decode92(const string& encodedString, vector<uint8_t>& bytesOut)
     for (int j = 0; j < 16; j++) {
       int v = inPtr[j];
       if (v < 0 || v > 127 || !used[v])
-        throw std::exception("Invalid data");
+        throw std::runtime_error("Invalid data");
       datain[j] = reverse_table[inPtr[j]];
     }
     decode92(datain, dataout);

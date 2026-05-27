@@ -21,22 +21,23 @@
     Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
+#include <stdexcept>
 #include "meos_util.h"
 
-class meosException : public std::exception {
+class meosException : public std::runtime_error {
   wstring wideMessage;
   static const char *narrow(const wstring& msg);
 public:
-  meosException(const wstring &wmsg) : std::exception(narrow(wmsg)), wideMessage(wmsg) {
+  meosException(const wstring &wmsg) : std::runtime_error(narrow(wmsg)), wideMessage(wmsg) {
     
   }
-  meosException(const string &msg) : std::exception(msg.c_str()) {
+  meosException(const string &msg) : std::runtime_error(msg.c_str()) {
     string2Wide(msg, wideMessage);
   }
-  meosException(const char *msg) : std::exception(msg) {
+  meosException(const char *msg) : std::runtime_error(msg) {
     string2Wide(string(msg), wideMessage);
   }
-  meosException() : std::exception() {}
+  meosException() : std::runtime_error("") {}
 
   wstring wwhat() const{
     return wideMessage;

@@ -497,7 +497,7 @@ void xmlparser::endTag()
     if (!fOut().good())
       throw meosException("Writing to XML file failed.");
   }
-  else throw std::exception("BAD XML CODE");
+  else throw std::runtime_error("BAD XML CODE");
 }
 
 void xmlparser::openMemoryOutput(bool useCutMode) {
@@ -675,7 +675,7 @@ bool xmlparser::checkUTF(const char *ptr) const {
     utf = true;
   }
   else {
-    throw std::exception("Invalid XML file.");
+    throw std::runtime_error("Invalid XML file.");
   }
   return utf;
 }
@@ -753,13 +753,13 @@ bool xmlparser::processTag(char *start, char *end) {
       }
       else {
         snprintf(err, sizeof(err), "Unmatched tag '%s', expected '%s'.", tag, xd.tag);
-        throw std::exception(err);
+        throw std::runtime_error(err);
       }
     }
     else
     {
       snprintf(err, sizeof(err), "Unmatched tag '%s'.", tag);
-      throw std::exception(err);
+      throw std::runtime_error(err);
     }
   }
   else if (onlyAttrib) {
@@ -798,7 +798,7 @@ xmlobject xmlobject::getObject(const char *pname) const
   if (pname == 0)
     return *this;
   if (isnull())
-    throw std::exception("Null pointer exception");
+    throw std::runtime_error("Null pointer exception");
 
   vector<xmldata> &xmlinfo = parser->xmlinfo;
 
@@ -820,7 +820,7 @@ void xmlobject::getObjects(xmlList &obj) const
   obj.clear();
 
   if (isnull())
-    throw std::exception("Null pointer exception");
+    throw std::runtime_error("Null pointer exception");
 
   vector<xmldata> &xmlinfo = parser->xmlinfo;
   unsigned child = index+1;
@@ -837,7 +837,7 @@ void xmlobject::getObjects(const char *tag, xmlList &obj) const
   obj.clear();
 
   if (isnull())
-    throw std::exception("Null pointer exception");
+    throw std::runtime_error("Null pointer exception");
 
   vector<xmldata> &xmlinfo = parser->xmlinfo;
   unsigned child = index+1;
@@ -979,7 +979,7 @@ int xmlobject::getRelativeTime() const {
 void xmlparser::convertString(const char *in, char *out, int maxlen) const
 {
   if (in == nullptr)
-    throw std::exception("Null pointer exception");
+    throw std::runtime_error("Null pointer exception");
 
   if (!isUTF) {
     strncpy_s(out, maxlen, in, maxlen-1);
@@ -1005,7 +1005,7 @@ void xmlparser::convertString(const char *in, char *out, int maxlen) const
 void xmlparser::convertString(const char *in, wchar_t *out, int maxlen) const
 {
   if (in==0)
-    throw std::exception("Null pointer exception");
+    throw std::runtime_error("Null pointer exception");
 
   int len = strlen(in);
   len = min(min(len+1, maxlen), buff_pre_alloc-10);

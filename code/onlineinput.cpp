@@ -80,7 +80,7 @@ int OnlineInput::processListBox(gdioutput& gdi, ListBoxInfo& lbi) {
 
 int OnlineInput::processButton(gdioutput &gdi, ButtonInfo &bi) {
   if (oe == nullptr)
-    throw std::exception("Internal error");
+    throw std::runtime_error("Internal error");
 
   if (bi.id == "SaveMapping") {
     int ctrl = gdi.getTextNo("Code");

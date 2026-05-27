@@ -397,7 +397,7 @@ void oCard::insertPunchAfter(int pos, int type, int time)
 void oCard::deletePunch(pPunch pp)
 {
   if (pp == 0)
-    throw std::exception("Punch not found");
+    throw std::runtime_error("Punch not found");
   int k=0;
   oPunchList::iterator it;
 
@@ -672,7 +672,7 @@ void oCard::addTableRow(Table &table) const {
 }
 
 oDataContainer &oCard::getDataBuffers(pvoid &data, pvoid &olddata, pvectorstr &strData) const {
-  throw std::exception("Unsupported");
+  throw std::runtime_error("Unsupported");
 }
 
 int oCard::getSplitTime(int startTime, const pPunch punch) const {

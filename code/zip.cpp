@@ -90,7 +90,7 @@ int makedir (const wchar_t *newdir)
 
     wstring sub = buffer.substr(0, index);
     if ((mymkdir(sub.c_str()) == -1) && (errno == ENOENT)) {
-      throw std::exception("Error creating directories");
+      throw std::runtime_error("Error creating directories");
     }
     index++;
     if (hold == 0)
@@ -116,7 +116,7 @@ wstring do_extract_currentfile(unzFile uf, const wstring &baseDir, const char* p
   err = unzGetCurrentFileInfo64(uf,&file_info,filename_inzip,sizeof(filename_inzip),NULL,0,NULL,0);
 
   if (err!=UNZ_OK)
-    throw std::exception(zipError);
+    throw std::runtime_error(zipError);
 
   size_buf = WRITEBUFFERSIZE;
   vector<BYTE> byteBuff;
@@ -149,7 +149,7 @@ wstring do_extract_currentfile(unzFile uf, const wstring &baseDir, const char* p
     }
     err = unzOpenCurrentFilePassword(uf,password);
     if (err!=UNZ_OK)
-      throw std::exception(zipError);
+      throw std::runtime_error(zipError);
 
     fout = fopen64(write_filename.c_str(),L"wb");
 
@@ -171,11 +171,11 @@ wstring do_extract_currentfile(unzFile uf, const wstring &baseDir, const char* p
     do {
       err = unzReadCurrentFile(uf,buf,size_buf);
       if (err<0)
-        throw std::exception(zipError);
+        throw std::runtime_error(zipError);
 
       if (err>0)
         if (fwrite(buf,err,1,fout)!=1) {
-          throw std::exception("Error writing extracted file.");
+          throw std::runtime_error("Error writing extracted file.");
         }
     }
     while (err>0);
@@ -188,7 +188,7 @@ wstring do_extract_currentfile(unzFile uf, const wstring &baseDir, const char* p
 
     err = unzCloseCurrentFile (uf);
     if (err != UNZ_OK)
-      throw std::exception(zipError);
+      throw std::runtime_error(zipError);
    }
 
   return write_filename;
@@ -203,7 +203,7 @@ void do_extract(unzFile uf, const wchar_t *basePath, const char* password, vecto
 
   err = unzGetGlobalInfo64(uf,&gi);
   if (err != UNZ_OK)
-    throw std::exception(zipError);
+    throw std::runtime_error(zipError);
 
   for (i=0;i<gi.number_entry;i++) {
     wstring name = do_extract_currentfile(uf, basePath, password);
@@ -213,7 +213,7 @@ void do_extract(unzFile uf, const wchar_t *basePath, const char* password, vecto
     if ((i+1)<gi.number_entry) {
       err = unzGoToNextFile(uf);
       if (err != UNZ_OK) {
-        throw std::exception(zipError);
+        throw std::runtime_error(zipError);
         break;
       }
     }
@@ -230,7 +230,7 @@ void unzip(const wchar_t *wzipfilename, const char *password, vector<wstring> &e
   unzFile uf = unzOpen2_64(wzfn.c_str(),&ffunc);
 
   if (uf==NULL)
-    throw std::exception("Cannot open zip file");
+    throw std::runtime_error("Cannot open zip file");
 
   wstring base = getTempPath();
   wchar_t end = base[base.length()-1];
