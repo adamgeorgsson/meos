@@ -66,6 +66,15 @@ oTeam::oTeam(oEvent* poe, int id) : oAbstractRunner(poe, true) {
   StartNo = 0;
 }
 
+oTeam::~oTeam() {
+  for (pRunner r : Runners) {
+    if (r && r->tInTeam == this) {
+      r->tInTeam = nullptr;
+      r->tLeg = 0;
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // changedObject
 // ---------------------------------------------------------------------------
@@ -930,7 +939,14 @@ RunnerStatus oTeam::getLegStatus(int leg, bool computed, bool multidayTotal) con
         }
       }
     }
-    if (st == 0) return RunnerStatus(s == StatusOK ? 0 : s);
+    if (st == 0) {
+      // Runner exists but has no result yet (StatusUnknown).
+      // If the team has an explicit DNS/CANCEL and no prior leg produced a
+      // result, propagate the team status rather than returning Unknown.
+      if (s == StatusUnknown && (tStatus == StatusDNS || tStatus == StatusCANCEL))
+        return tStatus;
+      return RunnerStatus(s == StatusOK ? 0 : s);
+    }
     s = max(s, st);
   }
   if (s == StatusUnknown && tStatus == StatusDNS) return tStatus;
@@ -968,7 +984,14 @@ RunnerStatus oTeam::deduceComputedStatus() const {
         }
       }
     }
-    if (st == 0) return RunnerStatus(s == StatusOK ? 0 : s);
+    if (st == 0) {
+      // Runner exists but has no result yet (StatusUnknown).
+      // If the team has an explicit DNS/CANCEL and no prior leg produced a
+      // result, propagate the team status rather than returning Unknown.
+      if (s == StatusUnknown && (tStatus == StatusDNS || tStatus == StatusCANCEL))
+        return tStatus;
+      return RunnerStatus(s == StatusOK ? 0 : s);
+    }
     s = max(s, st);
   }
   if (s == StatusUnknown && tStatus == StatusDNS) return tStatus;

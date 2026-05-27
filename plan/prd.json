@@ -231,11 +231,8 @@
         "Tests pass"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": ""
-    },
-    {
-      "id": "US-003i1",
+      "passes": true,
+      "notes": "Bug fixed: getLegStatus/deduceComputedStatus now propagate DNS/CANCEL when runner exists with StatusUnknown. Added oTeam::~oTeam() to null tInTeam on runners. 27 tests added and passing."
       "title": "Domain — oEvent Core: Collections + Lifecycle",
       "description": "As a developer, I want oEvent.cpp core migrated so that entity collections, competition lifecycle, and lookup methods replace the skeleton stub.",
       "acceptanceCriteria": [

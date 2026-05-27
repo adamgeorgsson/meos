@@ -75,7 +75,7 @@ public:
   // Constructors / destructor
   explicit oTeam(oEvent* poe);
   oTeam(oEvent* poe, int id);
-  ~oTeam() override = default;
+  ~oTeam() override;
 
   // oBase virtuals
   std::wstring getInfo() const override { return sName; }
@@ -193,6 +193,7 @@ public:
   friend class oRunner;
   friend class oClass;
   friend class oEvent;
+  friend class RelayTestAccessor;
 
 private:
   mutable DataMap dataMap_;
