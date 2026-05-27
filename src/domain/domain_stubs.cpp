@@ -1,0 +1,79 @@
+// Stub implementations for domain entity placeholders.
+// Full implementations come in later migration stories.
+
+#include "oPunch.h"
+#include "oCourse.h"
+#include "oClass.h"
+#include "oRunner.h"
+#include "oCard.h"
+#include "oDataContainer.h"
+
+// oPunch stub DataContainer
+static oDataContainer& oPunchContainer() {
+  static oDataContainer dc(8);
+  return dc;
+}
+
+oDataContainer& oPunch::getDataBuffers(pvoid& data, pvoid& olddata,
+                                        pvectorstr& strData) const {
+  data = &dataMap_;
+  olddata = &oldDataMap_;
+  strData = nullptr;
+  return oPunchContainer();
+}
+
+// oCourse stub DataContainer
+static oDataContainer& oCourseContainer() {
+  static oDataContainer dc(8);
+  return dc;
+}
+
+oDataContainer& oCourse::getDataBuffers(pvoid& data, pvoid& olddata,
+                                         pvectorstr& strData) const {
+  data = &dataMap_;
+  olddata = &oldDataMap_;
+  strData = nullptr;
+  return oCourseContainer();
+}
+
+// oClass stub DataContainer
+static oDataContainer& oClassContainer() {
+  static oDataContainer dc(8);
+  return dc;
+}
+
+oDataContainer& oClass::getDataBuffers(pvoid& data, pvoid& olddata,
+                                        pvectorstr& strData) const {
+  data = &dataMap_;
+  olddata = &oldDataMap_;
+  strData = nullptr;
+  return oClassContainer();
+}
+
+// oRunner stub DataContainer
+static oDataContainer& oRunnerContainer() {
+  static oDataContainer dc(8);
+  return dc;
+}
+
+oDataContainer& oRunner::getDataBuffers(pvoid& data, pvoid& olddata,
+                                         pvectorstr& strData) const {
+  data = &dataMap_;
+  olddata = &oldDataMap_;
+  strData = nullptr;
+  return oRunnerContainer();
+}
+
+// oCard stub DataContainer
+static oDataContainer& oCardContainer() {
+  static oDataContainer dc(8);
+  return dc;
+}
+
+oDataContainer& oCard::getDataBuffers(pvoid& data, pvoid& olddata,
+                                       pvectorstr& strData) const {
+  data = &dataMap_;
+  olddata = &oldDataMap_;
+  strData = nullptr;
+  return oCardContainer();
+}

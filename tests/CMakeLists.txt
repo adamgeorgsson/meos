@@ -58,3 +58,7 @@ target_link_libraries(xml_export_test PRIVATE meos_net)
 # Domain oBase unit test
 meos_add_test(domain_obase_test domain_obase_test.cpp)
 target_link_libraries(domain_obase_test PRIVATE meos_domain)
+
+# Domain oControl unit test
+meos_add_test(domain_ocontrol_test domain_ocontrol_test.cpp)
+target_link_libraries(domain_ocontrol_test PRIVATE meos_domain)

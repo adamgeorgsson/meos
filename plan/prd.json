@@ -47,8 +47,8 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "oControl.h/cpp migrated to src/domain/ with DataMap pattern. SpecialPunch available via oPunch.h. Stubs added for oPunch, oCourse, oClass, oRunner, oCard, oFreePunch. Time utility shims (formatTimeMS, convertAbsoluteTimeMS, NOTIME, SubSecond, itow, makeDash) added to domain_header.h. oEvent stub extended with getRevision(), setupControlStatistics(), formatScore(), convertScore(), punchIndex. 28 unit tests pass."
     },
     {
       "id": "US-003b2",
