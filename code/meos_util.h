@@ -53,6 +53,7 @@ private:
   vector<std::wstring> wcache;
   size_t wix;
 public:
+  StringCache() : ix(0), wix(0) { cache.resize(256); wcache.resize(256); }
   static StringCache &getInstance();
 
   void init() {cache.resize(256); wcache.resize(256);}

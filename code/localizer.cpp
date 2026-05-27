@@ -28,6 +28,7 @@
 #include "random.h"
 #include "oFreeImport.h"
 #include "meos_util.h"
+#include <iostream>
 
 using namespace std;
 
@@ -141,9 +142,9 @@ const wstring &Localizer::LocalizerInternal::tl(const wstring &str) const {
 
 const wstring &LocalizerImpl::translate(const wstring &str, bool &found) {
   found = false;
-  static int i = 0;
+  thread_local static int i = 0;
   const int bsize = 17;
-  static wstring value[bsize];
+  thread_local static wstring value[bsize];
   int len = str.length();
 
   if (len==0)
@@ -270,7 +271,7 @@ const wstring &LocalizerImpl::translate(const wstring &str, bool &found) {
 
 void LocalizerImpl::addUnknown(const wstring& key) {
   if (unknown.emplace(key, L"").second) {
-    OutputDebugString((L"Missing resource: " + key).c_str());
+    std::cerr << narrow((L"Missing resource: " + key));
   }
 }
 

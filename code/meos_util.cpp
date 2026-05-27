@@ -35,8 +35,6 @@
 
 using namespace std;
 
-StringCache globalStringCache;
-
 namespace MeOSUtil {
   int useHourFormat = true;
 }
@@ -46,14 +44,9 @@ string convertSystemDateN(const std::tm &st);
 string convertSystemTimeOnlyN(const std::tm &st);
 extern int defaultCodePage;
 
-uint32_t mainThreadId = -1;
 StringCache &StringCache::getInstance() {
-  uint32_t id = GetCurrentThreadId();
-  if (mainThreadId == -1)
-    mainThreadId = id;
-  else if (mainThreadId != id)
-    throw std::runtime_error("Thread access error");
-  return globalStringCache;
+  thread_local static StringCache instance;
+  return instance;
 }
 
 string getLocalTimeN() {
