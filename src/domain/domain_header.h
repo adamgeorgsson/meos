@@ -64,6 +64,9 @@ using std::make_pair;
 // Sentinel value meaning "no time set"
 constexpr int NOTIME = -1;
 
+// Sentinel value for an uninitialized split time slot (evaluateCard internal use)
+constexpr int NOTATIME = 0x70000000;
+
 // Convert int to wstring
 inline wstring itow(int v) { return std::to_wstring(v); }
 

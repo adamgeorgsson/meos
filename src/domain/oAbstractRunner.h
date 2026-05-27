@@ -3,6 +3,9 @@
 #include "oBase.h"
 #include "oClub.h"
 #include "oClass.h"
+
+// Forward declaration for unit test access (see tests/domain_orunner_result_test.cpp).
+class RunnerResultTestAccessor;
 #include "domain_header.h"
 #include "common_enums.h"
 #include <vector>
@@ -63,6 +66,7 @@ enum SortOrder {
 // oAbstractRunner
 // -----------------------------------------------------------------------
 class oAbstractRunner : public oBase {
+  friend class RunnerResultTestAccessor;
 public:
   int tStartTime = 0;
 

@@ -35,6 +35,7 @@ public:
 };
 
 class oRunner final : public oAbstractRunner {
+  friend class RunnerResultTestAccessor;
 public:
   struct ResultData {
   private:

@@ -7,10 +7,12 @@ class oRunner;
 class oCourse;
 class oControl;
 struct SICard;
+class RunnerResultTestAccessor;
 
 using oPunchList = std::list<oPunch>;
 
 class oCard : public oBase {
+  friend class RunnerResultTestAccessor;
 protected:
   oPunchList   punches;
   int          cardNo     = 0;

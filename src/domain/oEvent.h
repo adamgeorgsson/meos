@@ -160,6 +160,7 @@ public:
     if (!create) return nullptr;
     controlList_.emplace_back(const_cast<oEvent*>(this), id);
     oControl* ctrl = &controlList_.back();
+    ctrl->set(id, id, L"");  // initialize control number so hasNumberUnchecked works
     controlIndex_[id] = ctrl;
     return ctrl;
   }
@@ -199,6 +200,9 @@ public:
                             bool markClassChanged, oFreePunch& punch);
 
   oRunner* getRunner(int /*id*/, int /*race*/) const { return nullptr; }
+
+  // Re-evaluate all runners in a class (stub: no-op in domain layer)
+  void reEvaluateAll(const std::vector<int>& /*classIds*/, bool /*sync*/) {}
 
   // -----------------------------------------------------------------------
   // oCard stubs

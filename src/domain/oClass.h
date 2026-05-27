@@ -210,6 +210,12 @@ public:
   oClass* getVirtualClass(int /*instance*/) const { return const_cast<oClass*>(this); }
   void clearCache(bool /*deep*/) {}
 
+  // Split analysis cache invalidation (called after evaluateCard changes times)
+  void clearSplitAnalysis() {}
+
+  // Maximum running time for status MAX computation (0 = no limit)
+  int getMaximumRunnerTime() const { return tMaxTime; }
+
   // Stub result-info store (cleared by setClubId, filled by result computation)
   struct ResultInfoItem {};
   mutable std::vector<ResultInfoItem> tResultInfo;

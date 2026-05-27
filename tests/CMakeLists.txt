@@ -94,3 +94,7 @@ target_link_libraries(domain_ofreepunch_test PRIVATE meos_domain)
 # Domain oRunner unit test
 meos_add_test(domain_orunner_test domain_orunner_test.cpp)
 target_link_libraries(domain_orunner_test PRIVATE meos_domain)
+
+# Domain oRunner result / evaluateCard test (US-003g2)
+meos_add_test(domain_orunner_result_test domain_orunner_result_test.cpp)
+target_link_libraries(domain_orunner_result_test PRIVATE meos_domain)

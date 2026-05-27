@@ -5,8 +5,10 @@
 
 class oEvent;
 class oClass;
+class RunnerResultTestAccessor;
 
 class oCourse : public oBase {
+  friend class RunnerResultTestAccessor;
 protected:
   vector<oControl*> controls;
   wstring name;

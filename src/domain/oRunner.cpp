@@ -1,5 +1,4 @@
 // oRunner.cpp — domain layer implementation of oRunner and oAbstractRunner.
-// UI, XML, and evaluateCard are excluded (deferred to later stories).
 
 #include "oRunner.h"
 #include "oTeam.h"
@@ -9,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
+#include <unordered_set>
 
 using namespace std;
 
@@ -1342,13 +1342,465 @@ void oRunner::correctRemove(pRunner r) {
 // -----------------------------------------------------------------------
 // oRunner: split/stat stubs (full impl in US-003g2)
 // -----------------------------------------------------------------------
-bool oRunner::evaluateCard(bool, vector<pair<int, pControl>>&, int, ChangeType) { return false; }
-void oRunner::addCard(pCard, vector<pair<int, pControl>>&) {}
+bool oRunner::evaluateCard(bool doApply, vector<pair<int, pControl>>& missingPunches,
+                            int addPunch, ChangeType changeType) {
+  // Reset bad status values
+  if (unsigned(status) >= 100u)
+    status = StatusUnknown;
+
+  pClass clz = getClassRef(true);
+  missingPunches.clear();
+  const int oldFT = FinishTime;
+  const RunnerStatus oldStatus = tStatus;
+
+  if (doApply) {
+    tStartTime = startTime;
+    tStatus    = status;
+    apply(changeType, nullptr);
+  }
+
+  // Reset card punch match state
+  if (Card) {
+    for (auto& p : Card->punches) {
+      p.tRogainingIndex          = -1;
+      p.anyRogainingMatchControlId = -1;
+      p.tRogainingPoints         = 0;
+      p.isUsed                   = false;
+      p.tIndex                   = -1;
+      p.tMatchControlId          = -1;
+      p.clearTimeAdjust();
+    }
+  }
+
+  bool inTeam = tInTeam != nullptr;
+  tProblemDescription.clear();
+  tReduction            = 0;
+  tRogainingPointsGross = 0;
+  tRogainingOvertime    = 0;
+
+  vector<SplitData> oldTimes;
+  swap(splitTimes, oldTimes);
+
+  if (!Card) {
+    if ((inTeam || !tUseStartPunch) && doApply)
+      apply(changeType, nullptr);
+    storeTimes();
+    normalizedSplitTimes.clear();
+    if (!oldTimes.empty() && clz)
+      clz->clearSplitAnalysis();
+    return false;
+  }
+
+  if (!clz)
+    return false;
+
+  if (clz->ignoreStartPunch() && tStartTime > 0)
+    tUseStartPunch = false;
+
+  const pCourse course = getCourse(true);
+
+  if (!course) {
+    // No-course mode: extract start/finish from card
+    for (auto& p : Card->punches) {
+      if (p.isStart() && tUseStartPunch)
+        tStartTime = p.getTimeInt();
+      else if (p.isFinish())
+        setFinishTime(p.getTimeInt());
+    }
+    if ((inTeam || !tUseStartPunch) && doApply)
+      apply(changeType, nullptr);
+    storeTimes();
+
+    int maxTimeStatus = 0;
+    if (FinishTime <= 0) {
+      tStatus = StatusDNF;
+    } else {
+      int mt = clz->getMaximumRunnerTime();
+      if (mt > 0)
+        maxTimeStatus = (getRunningTime(false) > mt) ? 1 : 2;
+      else
+        maxTimeStatus = 2;
+
+      if (tStatus == StatusMAX && maxTimeStatus == 2)
+        tStatus = StatusUnknown;
+    }
+    if (payBeforeResult(false))
+      tStatus = StatusDQ;
+    else if (tStatus == StatusUnknown || tStatus == StatusCANCEL ||
+             tStatus == StatusDNS    || tStatus == StatusMAX)
+      tStatus = (maxTimeStatus == 1) ? StatusMAX : StatusOK;
+    return false;
+  }
+
+  // -----------------------------------------------------------------------
+  // Full course-matching mode
+  // -----------------------------------------------------------------------
+  int startPunchCode  = course->getStartPunchType();
+  int finishPunchCode = course->getFinishPunchType();
+  bool hasRogaining   = course->hasRogaining();
+
+  // Build rogaining map: control-code → (controlIndex, points)
+  map<int, pair<int,int>> rogainingMap;
+  unordered_set<int> requiredRG;
+  for (int k = 0; k < course->nControls(); k++) {
+    pControl ctrl = course->getControl(k);
+    if (ctrl && ctrl->isRogaining(hasRogaining)) {
+      int pts = ctrl->getRogainingPoints();
+      vector<int> nums;
+      ctrl->getNumbers(nums);
+      for (int num : nums)
+        rogainingMap[num] = {k, pts};
+      if (ctrl->getStatus() == oControl::ControlStatus::StatusRogainingRequired)
+        requiredRG.insert(k);
+    }
+  }
+
+  // Find and apply start punch
+  bool clearSplitAnalysis = false;
+  for (auto& p : Card->punches) {
+    if (p.type == startPunchCode) {
+      if (tUseStartPunch && p.getAdjustedTime() != tStartTime) {
+        p.clearTimeAdjust();
+        int newST = p.getAdjustedTime();
+        if (newST != tStartTime)
+          clearSplitAnalysis = true;
+        tStartTime = newST;
+      }
+      break;
+    }
+  }
+
+  // Build punchCount / expectedPunchCount for multi-occurrence detection
+  map<int,int> punchCount;
+  map<int,int> expectedPunchCount;
+  map<int,int> controlToBase;
+
+  auto addBaseControl = [&](int code, int base) -> int {
+    auto res = controlToBase.emplace(code, base);
+    if (res.second)
+      return base;
+    if (base != code && base != res.first->second)
+      res.first->second = -1;
+    return res.first->second;
+  };
+
+  auto getBaseControl = [&](int code) -> int {
+    auto it = controlToBase.find(code);
+    return it != controlToBase.end() ? it->second : -1;
+  };
+
+  for (int k = 0; k < course->nControls(); k++) {
+    pControl ctrl = course->getControl(k);
+    if (ctrl && !ctrl->isRogaining(hasRogaining)) {
+      vector<int> nums;
+      ctrl->getNumbers(nums);
+      if (ctrl->getStatus() == oControl::ControlStatus::StatusMultiple) {
+        for (int num : nums)
+          ++expectedPunchCount[addBaseControl(num, num)];
+      } else {
+        constexpr int LargeCode = 1000000;
+        int bc = LargeCode;
+        for (int num : nums)
+          bc = min(bc, addBaseControl(num, nums.empty() ? num : nums[0]));
+        if (bc > 0 && bc < LargeCode)
+          ++expectedPunchCount[bc];
+      }
+    }
+  }
+
+  for (auto& p : Card->punches) {
+    if (p.type >= 10 && p.type <= 1024) {
+      int bc = getBaseControl(p.type);
+      if (bc > 0)
+        ++punchCount[bc];
+    }
+  }
+
+  // Initialize split times with NOTATIME sentinel
+  splitTimes.resize(course->nControls(),
+                    SplitData(NOTATIME, SplitData::SplitStatus::Missing));
+
+  auto p_it = Card->punches.begin();
+  int k = 0;
+
+  for (k = 0; k < course->nControls(); k++) {
+    // Skip start/finish/check punches
+    while (p_it != Card->punches.end() &&
+           (p_it->isCheck() || p_it->isFinish() || p_it->isStart())) {
+      p_it->clearTimeAdjust();
+      ++p_it;
+    }
+    if (p_it == Card->punches.end())
+      break;
+
+    auto tp_it = p_it;
+    pControl ctrl = course->getControl(k);
+    int skippedPunches = 0;
+
+    if (ctrl) {
+      int timeAdjustCtrl = ctrl->getTimeAdjust();
+      ctrl->startCheckControl();
+
+      if (ctrl->getStatus() == oControl::ControlStatus::StatusBad    ||
+          ctrl->getStatus() == oControl::ControlStatus::StatusOptional ||
+          ctrl->getStatus() == oControl::ControlStatus::StatusBadNoTiming) {
+        if (tp_it != Card->punches.end() && ctrl->hasNumberUnchecked(tp_it->type)) {
+          tp_it->isUsed         = true;
+          tp_it->setTimeAdjust(timeAdjustCtrl);
+          tp_it->tMatchControlId = ctrl->getId();
+          tp_it->tIndex          = k;
+          splitTimes[k].setPunchTime(tp_it->getAdjustedTime());
+          ++tp_it;
+          p_it = tp_it;
+        }
+      } else {
+        while (!ctrl->controlCompleted(hasRogaining) && tp_it != Card->punches.end()) {
+          if (ctrl->hasNumberUnchecked(tp_it->type)) {
+            if (skippedPunches > 0 &&
+                ctrl->getStatus() == oControl::ControlStatus::StatusOK) {
+              int bc = getBaseControl(tp_it->type);
+              if (bc != -1 && expectedPunchCount[bc] > 1 &&
+                  punchCount[bc] < expectedPunchCount[bc]) {
+                int savedCode = tp_it->type;
+                ctrl->uncheckNumber(savedCode);
+                tp_it = Card->punches.end();
+                break;
+              }
+            }
+            tp_it->isUsed          = true;
+            tp_it->setTimeAdjust(timeAdjustCtrl);
+            tp_it->tMatchControlId  = ctrl->getId();
+            tp_it->tIndex           = k;
+            if (ctrl->controlCompleted(hasRogaining))
+              splitTimes[k].setPunchTime(tp_it->getAdjustedTime());
+            ++tp_it;
+            p_it = tp_it;
+          } else {
+            skippedPunches++;
+            tp_it->isUsed = false;
+            ++tp_it;
+          }
+        }
+      }
+
+      if (ctrl->controlCompleted(hasRogaining) &&
+          splitTimes[k].getTime(false) == NOTATIME)
+        splitTimes[k].setPunched();
+    } else {
+      splitTimes[k].setNotPunched();
+    }
+
+    if (ctrl && !ctrl->controlCompleted(hasRogaining))
+      ctrl->addUncheckedPunches(missingPunches, hasRogaining);
+  }
+
+  // Remaining controls get their missing punches added
+  while (k < course->nControls()) {
+    pControl ctrl = course->getControl(k);
+    if (ctrl) {
+      ctrl->startCheckControl();
+      ctrl->addUncheckedPunches(missingPunches, hasRogaining);
+    }
+    k++;
+  }
+
+  // Mark remaining card punches as unused
+  while (p_it != Card->punches.end()) {
+    p_it->isUsed      = false;
+    p_it->tIndex      = -1;
+    p_it->clearTimeAdjust();
+    ++p_it;
+  }
+
+  bool OK = missingPunches.empty();
+
+  // Rogaining
+  tRogaining.clear();
+  tRogainingPoints = 0;
+  int time_limit   = 0;
+
+  if (!rogainingMap.empty()) {
+    time_limit = course->getMaximumRogainingTime();
+    bool countAllControls = (course->getDCI().getInt("NoLatePoints") == 0);
+
+    unordered_set<int> visitedControls;
+    for (auto& p : Card->punches) {
+      auto it = rogainingMap.find(p.type);
+      if (it != rogainingMap.end()) {
+        int ctrlIdx = it->second.first;
+        int pts     = it->second.second;
+        pControl rc = course->getControl(ctrlIdx);
+        if (!rc) continue;
+        p.anyRogainingMatchControlId = rc->getId();
+        p.setTimeAdjust(rc->getTimeAdjust());
+        if (visitedControls.insert(ctrlIdx).second) {
+          requiredRG.erase(ctrlIdx);
+          p.isUsed          = true;
+          p.tRogainingIndex = ctrlIdx;
+          p.tMatchControlId = p.anyRogainingMatchControlId;
+          p.tRogainingPoints = pts;
+          tRogaining.push_back({rc, p.getAdjustedTime()});
+          splitTimes[ctrlIdx].setPunchTime(p.getAdjustedTime());
+
+          int rtHere = p.getAdjustedTime() - tStartTime;
+          if (countAllControls || rtHere <= 0 || time_limit <= 0 || rtHere <= time_limit)
+            tRogainingPoints += pts;
+        }
+      }
+    }
+
+    for (int mpIdx : requiredRG) {
+      pControl rc = course->getControl(mpIdx);
+      if (rc)
+        missingPunches.emplace_back(rc->getFirstNumber(), rc);
+    }
+
+    OK = missingPunches.empty();
+    tRogainingPoints = max(0, tRogainingPoints + getPointAdjustment());
+
+    int point_limit = course->getMinimumRogainingPoints();
+    if (point_limit > 0 && tRogainingPoints < point_limit) {
+      tProblemDescription = L"X points missing.#" + itow(point_limit - tRogainingPoints);
+      OK = false;
+    }
+
+    for (int ki = 0; ki < course->nControls(); ki++) {
+      pControl ctrl = course->getControl(ki);
+      if (ctrl && ctrl->isRogaining(hasRogaining))
+        if (!visitedControls.count(ki))
+          splitTimes[ki].setNotPunched();
+    }
+  }
+
+  // Determine max-time status
+  int maxTimeStatus = 0;
+  // (FinishTime set from card below, so maxTimeStatus is finalized after)
+
+  if ((tStatus == StatusMAX && maxTimeStatus == 2) ||
+       tStatus == StatusOutOfCompetition ||
+       tStatus == StatusNoTiming)
+    tStatus = StatusUnknown;
+
+  if (payBeforeResult(false))
+    tStatus = StatusDQ;
+  else if (OK && (tStatus == StatusUnknown || tStatus == StatusDNS ||
+                  tStatus == StatusCANCEL  || tStatus == StatusMP  ||
+                  tStatus == StatusOK      || tStatus == StatusDNF))
+    tStatus = StatusOK;
+  else
+    tStatus = RunnerStatus(max(int(StatusMP), int(tStatus)));
+
+  // Find finish punch
+  auto backIter = Card->punches.rbegin();
+  if (finishPunchCode != oPunch::PunchFinish) {
+    while (backIter != Card->punches.rend()) {
+      if (backIter->type == finishPunchCode)
+        break;
+      ++backIter;
+    }
+  }
+
+  if (backIter != Card->punches.rend() && backIter->type == finishPunchCode) {
+    FinishTime = backIter->getTimeInt();
+    if (finishPunchCode == oPunch::PunchFinish)
+      backIter->tMatchControlId = oPunch::PunchFinish;
+  } else if (FinishTime <= 0) {
+    tStatus     = RunnerStatus(max(int(StatusDNF), int(tStatus)));
+    tProblemDescription = L"Finish time missing.";
+    FinishTime  = 0;
+  }
+
+  // Finalize max-time status now that FinishTime is known
+  if (clz && FinishTime > 0) {
+    int mt = clz->getMaximumRunnerTime();
+    if (mt > 0)
+      maxTimeStatus = (getRunningTime(false) > mt) ? 1 : 2;
+    else
+      maxTimeStatus = 2;
+  }
+
+  if (tStatus == StatusOK && maxTimeStatus == 1)
+    tStatus = StatusMAX;
+
+  if (!missingPunches.empty()) {
+    tProblemDescription = L"Missing punches: X#" + itow(missingPunches[0].first);
+    for (unsigned j = 1; j < 3 && j < missingPunches.size(); j++)
+      tProblemDescription += L", " + itow(missingPunches[j].first);
+    if (missingPunches.size() > 3) tProblemDescription += L"...";
+    else tProblemDescription += L".";
+  }
+
+  if (tStatus == StatusOK) {
+    if (hasFlag(TransferFlags::FlagOutsideCompetition))
+      tStatus = StatusOutOfCompetition;
+    else if (hasFlag(TransferFlags::FlagNoTiming))
+      tStatus = StatusNoTiming;
+    else if (clz && clz->getNoTiming())
+      tStatus = StatusNoTiming;
+  }
+
+  doAdjustTimes(course);
+  tRogainingPointsGross = tRogainingPoints;
+
+  if (oldStatus != tStatus || oldFT != FinishTime)
+    clearSplitAnalysis = true;
+
+  if (oldFT != FinishTime)
+    updateChanged(changeType);
+
+  if ((inTeam || !tUseStartPunch) && doApply)
+    apply(changeType, nullptr);
+
+  if (tCachedRunningTime != FinishTime - tStartTime) {
+    tCachedRunningTime = FinishTime - tStartTime;
+    clearSplitAnalysis = true;
+  }
+
+  if (time_limit > 0) {
+    int rt = getRunningTime(false);
+    if (rt > 0) {
+      int overTime = rt - time_limit;
+      if (overTime > 0) {
+        tRogainingOvertime = overTime;
+        tReduction         = course->calculateReduction(overTime);
+        tProblemDescription = L"Time penalty: X points.#" + itow(tReduction);
+        tRogainingPoints    = max(0, tRogainingPoints - tReduction);
+      }
+    }
+  }
+
+  // Cache invalidation
+  bool doClear = (splitTimes.size() != oldTimes.size() || clearSplitAnalysis);
+  for (size_t ki = 0; !doClear && ki < oldTimes.size(); ki++) {
+    if (splitTimes[ki].getTime(false) != oldTimes[ki].getTime(false))
+      doClear = true;
+  }
+  if (doClear) {
+    normalizedSplitTimes.clear();
+    if (clz) clz->clearSplitAnalysis();
+  }
+
+  if (doApply)
+    storeTimes();
+
+  if (clz && changeType == ChangeType::Update && getRunningTime(false) > 0)
+    oe->reEvaluateAll({clz->getId()}, true);
+
+  return true;
+}
+
+void oRunner::addCard(pCard /*card*/, vector<pair<int, pControl>>& /*missingPunches*/) {}
 
 void oRunner::setupRunnerStatistics() const {}
-bool oRunner::storeTimes() { return false; }
-bool oRunner::storeTimesAux(pClass) { return false; }
-void oRunner::doAdjustTimes(pCourse) {}
+
+bool oRunner::storeTimes() { return storeTimesAux(Class); }
+
+bool oRunner::storeTimesAux(pClass /*targetClass*/) { return false; }
+
+void oRunner::doAdjustTimes(pCourse /*course*/) {
+  // Control-level time adjustments are already applied via oPunch::setTimeAdjust
+  // during evaluateCard. Full adapted-course adjustment deferred to oEvent migration.
+}
 
 const vector<SplitData>& oRunner::getSplitTimes(bool /*normalized*/) const { return splitTimes; }
 void oRunner::getSplitAnalysis(vector<int>& v) const { v.clear(); }
