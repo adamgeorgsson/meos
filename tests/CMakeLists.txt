@@ -9,3 +9,7 @@ endmacro()
 
 # Smoke test
 meos_add_test(smoke_test smoke_test.cpp)
+
+# Seed test
+meos_add_test(seed_test seed_test.cpp)
+target_link_libraries(seed_test PRIVATE meos_db)

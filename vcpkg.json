@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "builtin-baseline": "67f167b2f7c170f83688919c90edcd896239330e",
   "dependencies": [
-    "gtest"
+    "gtest",
+    "sqlite3"
   ]
 }
