@@ -322,8 +322,8 @@
         "Typecheck passes"
       ],
       "priority": 19,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added VITE_USE_BACKEND check in main.tsx: when set, MSW worker is skipped so requests go to the real backend via the Vite proxy. When not set (default), MSW starts as before. vite-env.d.ts augmented with ImportMetaEnv interface for type safety. All 274 tests pass."
     }
   ]
 }
