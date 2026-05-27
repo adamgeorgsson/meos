@@ -106,3 +106,7 @@ target_link_libraries(domain_oteam_test PRIVATE meos_domain)
 # Domain oTeam relay leg computation test (US-003h2)
 meos_add_test(domain_oteam_relay_test domain_oteam_relay_test.cpp)
 target_link_libraries(domain_oteam_relay_test PRIVATE meos_domain)
+
+# Domain oEvent collections + lifecycle test (US-003i1)
+meos_add_test(domain_oevent_test domain_oevent_test.cpp)
+target_link_libraries(domain_oevent_test PRIVATE meos_domain)

@@ -228,10 +228,9 @@ TEST(oClub, Remove_SetsRemovedFlag) {
 
 TEST(oClub, AssignInvoiceNumber_Reset) {
   oEvent oe;
-  oClub a(&oe, 1); a.setName(L"Alpha");
-  oClub b(&oe, 2); b.setName(L"Beta");
-  oClub cc(&oe, 3); cc.setName(L"Gamma");
-  oe.Clubs = {&a, &b, &cc};
+  oClub& a  = *oe.addClub(1); a.setName(L"Alpha");
+  oClub& b  = *oe.addClub(2); b.setName(L"Beta");
+  oClub& cc = *oe.addClub(3); cc.setName(L"Gamma");
 
   oClub::assignInvoiceNumber(oe, true); // reset=true → assign from 100
 
@@ -251,9 +250,8 @@ TEST(oClub, AssignInvoiceNumber_Reset) {
 
 TEST(oClub, AssignInvoiceNumber_NoReset_OnlyUnassigned) {
   oEvent oe;
-  oClub a(&oe, 1); a.setName(L"Alpha");
-  oClub b(&oe, 2); b.setName(L"Beta");
-  oe.Clubs = {&a, &b};
+  oClub& a = *oe.addClub(1); a.setName(L"Alpha");
+  oClub& b = *oe.addClub(2); b.setName(L"Beta");
 
   // Pre-assign a an invoice number
   a.getDI().setInt("InvoiceNo", 200);
@@ -267,9 +265,8 @@ TEST(oClub, AssignInvoiceNumber_NoReset_OnlyUnassigned) {
 
 TEST(oClub, AssignInvoiceNumber_AllZero_ActsLikeReset) {
   oEvent oe;
-  oClub a(&oe, 1); a.setName(L"Alpha");
-  oClub b(&oe, 2); b.setName(L"Beta");
-  oe.Clubs = {&a, &b};
+  oClub& a = *oe.addClub(1); a.setName(L"Alpha");
+  oClub& b = *oe.addClub(2); b.setName(L"Beta");
 
   oClub::assignInvoiceNumber(oe, false); // all zero → behaves like reset
 
@@ -283,9 +280,8 @@ TEST(oClub, AssignInvoiceNumber_AllZero_ActsLikeReset) {
 
 TEST(oClub, GetFirstInvoiceNumber_ReturnsMin) {
   oEvent oe;
-  oClub a(&oe, 1); a.setName(L"Alpha");
-  oClub b(&oe, 2); b.setName(L"Beta");
-  oe.Clubs = {&a, &b};
+  oClub& a = *oe.addClub(1); a.setName(L"Alpha");
+  oClub& b = *oe.addClub(2); b.setName(L"Beta");
 
   a.getDI().setInt("InvoiceNo", 150);
   b.getDI().setInt("InvoiceNo", 142);
@@ -295,8 +291,7 @@ TEST(oClub, GetFirstInvoiceNumber_ReturnsMin) {
 
 TEST(oClub, GetFirstInvoiceNumber_NoAssigned_ReturnsZero) {
   oEvent oe;
-  oClub a(&oe, 1); a.setName(L"Alpha");
-  oe.Clubs = {&a};
+  oClub& a = *oe.addClub(1); a.setName(L"Alpha");
   EXPECT_EQ(0, oClub::getFirstInvoiceNumber(oe));
 }
 

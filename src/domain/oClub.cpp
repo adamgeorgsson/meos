@@ -210,7 +210,10 @@ bool oClub::canRemove() const {
 // -----------------------------------------------------------------------
 
 void oClub::assignInvoiceNumber(oEvent& oe, bool reset) {
-  std::sort(oe.Clubs.begin(), oe.Clubs.end(),
+  // Build a sorted pointer vector for stable iteration order.
+  std::vector<oClub*> sorted;
+  for (auto& c : oe.Clubs) sorted.push_back(&c);
+  std::sort(sorted.begin(), sorted.end(),
             [](const oClub* a, const oClub* b) { return *a < *b; });
 
   int numberStored = oe.getPropertyInt("FirstInvoice", 100);
@@ -218,7 +221,7 @@ void oClub::assignInvoiceNumber(oEvent& oe, bool reset) {
 
   if (!reset) {
     int maxInvoice = 0;
-    for (auto* c : oe.Clubs) {
+    for (auto* c : sorted) {
       if (c->isRemoved()) continue;
       int no = c->getDCI().getInt("InvoiceNo");
       maxInvoice = std::max(maxInvoice, no);
@@ -227,7 +230,7 @@ void oClub::assignInvoiceNumber(oEvent& oe, bool reset) {
     else reset = true;
   }
 
-  for (auto* c : oe.Clubs) {
+  for (auto* c : sorted) {
     if (c->isRemoved()) continue;
     if (reset || c->getDCI().getInt("InvoiceNo") == 0) {
       c->getDI().setInt("InvoiceNo", number++);
@@ -240,9 +243,9 @@ void oClub::assignInvoiceNumber(oEvent& oe, bool reset) {
 
 int oClub::getFirstInvoiceNumber(oEvent& oe) {
   int number = 0;
-  for (auto* c : oe.Clubs) {
-    if (c->isRemoved()) continue;
-    int no = c->getDCI().getInt("InvoiceNo");
+  for (auto& c : oe.Clubs) {
+    if (c.isRemoved()) continue;
+    int no = c.getDCI().getInt("InvoiceNo");
     if (no > 0) number = (number == 0) ? no : std::min(number, no);
   }
   return number;
