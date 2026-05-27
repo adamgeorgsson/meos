@@ -31,8 +31,6 @@
 #include "gdioutput.h"
 #include "oDataContainer.h"
 
-#include "TabAuto.h"
-
 #include "meosexception.h"
 #include "meos_util.h"
 #include "MeosSQL.h"
@@ -44,6 +42,8 @@
 
 extern Image image;
 
+bool isThreadReconnecting();
+
 bool oEvent::connectToServer()
 {
   if (isThreadReconnecting())
@@ -54,16 +54,15 @@ bool oEvent::connectToServer()
 
 void oEvent::startReconnectDaemon()
 {
-  if (isThreadReconnecting() || TabAuto::hasActiveReconnectionMachine())
+  if (isThreadReconnecting() || (cbHasReconnectionMachine && cbHasReconnectionMachine()))
     return;
 
   string err;
   sqlConnection->getErrorMessage(err);
 
-  MySQLReconnect msqlr(lang.tl("warning:dbproblem#" + err));
-  msqlr.interval=5;
   hasPendingDBConnection = true;
-  TabAuto::tabAutoAddMachinge(msqlr);
+  if (cbStartReconnectMachine)
+    cbStartReconnectMachine(lang.tl("warning:dbproblem#" + err), 5);
 
   gdibase.setDBErrorState(false);
   gdibase.setWindowTitle(oe->getTitleName());
