@@ -70,12 +70,12 @@ void oClub::loadNameMap() {
 
   if (!fileExists(path) && exePath[0]) {
     path = exePath;
-    path += L"\\clubnamemap.csv";
+    path += L"/clubnamemap.csv";
   }
 
 #ifdef _DEBUG
   if (!fileExists(path))
-    path = L".\\..\\Lists\\clubnamemap.csv";
+    path = L"./../Lists/clubnamemap.csv";
 #endif
 
   bool good = false;

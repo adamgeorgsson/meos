@@ -3832,7 +3832,7 @@ bool oEvent::enumerateCompetitions(const wchar_t *file, const wchar_t *filetype)
   wcscpy_s(dir, MAX_PATH, file);
 
   if (dir[wcslen(file)-1]!='\\')
-    wcscat_s(dir, MAX_PATH, L"\\");
+    wcscat_s(dir, MAX_PATH, L"/");
 
   wcscpy_s(FullPath, MAX_PATH, dir);
 
@@ -4061,7 +4061,7 @@ bool oEvent::enumerateBackups(const wstring &file, const wstring &filetype, int 
   wcscpy_s(dir, MAX_PATH, file.c_str());
 
   if (dir[file.length()-1]!='\\')//WCS
-    wcscat_s(dir, MAX_PATH, L"\\");
+    wcscat_s(dir, MAX_PATH, L"/");
 
   wcscpy_s(FullPath, MAX_PATH, dir);
   wcscat_s(dir, MAX_PATH, filetype.c_str());
@@ -7342,7 +7342,7 @@ const CardSystem& oEvent::getCardSystem() const {
 
 #ifdef _DEBUG
     if (!fileExists(path))
-      path = L".\\..\\Lists\\sportident.cardsystem";
+      path = L"./../Lists/sportident.cardsystem";
 #endif
     cardSystem->load(path);
   }
