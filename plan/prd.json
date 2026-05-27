@@ -154,8 +154,8 @@
         "Typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "oCard.h/cpp migrated to src/domain/ with full implementation. SICard.h created in src/util/ (portable, uint32_t-based). formatDate shim added to domain_header.h. domain_stubs.cpp cleaned of oCard stub. oEvent stub extended with getFreeCardId/sqlCards. 37 unit tests pass."
     },
     {
       "id": "US-003f2",

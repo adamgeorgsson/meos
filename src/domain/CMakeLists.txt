@@ -7,6 +7,7 @@ add_library(meos_domain STATIC
   oClub.cpp
   oCourse.cpp
   oClass.cpp
+  oCard.cpp
   classconfiginfo.cpp
   qualification_final.cpp
   domain_stubs.cpp

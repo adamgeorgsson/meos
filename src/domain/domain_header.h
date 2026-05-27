@@ -150,6 +150,16 @@ inline wstring formatTimeMS(int ms, bool relative) {
   return formatTimeMS(ms, relative, SubSecond::Off);
 }
 
+// Format an integer date (YYYYMMDD) as "YYYY-MM-DD"
+inline wstring formatDate(int m, bool /*useIsoFormat*/) {
+  wchar_t bf[24];
+  if (m > 0 && m < 30000101)
+    swprintf(bf, 24, L"%d-%02d-%02d", m / (100 * 100), (m / 100) % 100, m % 100);
+  else
+    bf[0] = L'-', bf[1] = 0;
+  return bf;
+}
+
 // Split a wstring by a wide delimiter string into a vector
 inline void splitW(const wstring& str, const wstring& delim, vector<wstring>& out) {
   out.clear();

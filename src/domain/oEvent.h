@@ -140,4 +140,12 @@ public:
 
   // Allocate a fresh class ID (stub: auto-increment from 1).
   int getFreeClassId() const { return ++qFreeClassId; }
+
+  // -----------------------------------------------------------------------
+  // oCard stubs
+  // -----------------------------------------------------------------------
+  mutable int qFreeCardId = 0;
+  mutable SqlState sqlCards;
+
+  int getFreeCardId() const { return ++qFreeCardId; }
 };

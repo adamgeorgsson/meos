@@ -82,3 +82,7 @@ target_link_libraries(domain_classconfiginfo_qf_test PRIVATE meos_domain)
 # Domain oClass unit test
 meos_add_test(domain_oclass_test domain_oclass_test.cpp)
 target_link_libraries(domain_oclass_test PRIVATE meos_domain)
+
+# Domain oCard unit test
+meos_add_test(domain_ocard_test domain_ocard_test.cpp)
+target_link_libraries(domain_ocard_test PRIVATE meos_domain meos_util)
