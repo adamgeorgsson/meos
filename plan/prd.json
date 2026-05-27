@@ -169,8 +169,8 @@
         "Typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "oFreePunch.h/cpp migrated to src/domain/ with DataMap pattern inherited from oPunch. changedObject() sets oe->sqlPunches.changed. rehashPunches fully ported. oEvent stub extended with PunchIndexType, freePunches, punchIndex, getControlIdFromPunch stub. 30 unit tests pass."
     },
     {
       "id": "US-003g1",

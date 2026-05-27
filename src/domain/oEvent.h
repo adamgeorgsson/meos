@@ -6,6 +6,7 @@
 #include <vector>
 #include "domain_header.h"
 #include "oControl.h"
+#include "oFreePunch.h"
 
 class oBase;
 class oClub;
@@ -60,8 +61,8 @@ public:
     try { return std::stoi(s); } catch (...) { return 0; }
   }
 
-  // Punch-code index (cleared when control numbers change). Stub.
-  struct PunchIndex { void clear() {} } punchIndex;
+  // Punch-code index (cleared when control numbers change). Stub used by oControl.
+  // Full implementation lives in oFreePunch stubs section below.
 
   // -----------------------------------------------------------------------
   // oPunch stubs
@@ -140,6 +141,29 @@ public:
 
   // Allocate a fresh class ID (stub: auto-increment from 1).
   int getFreeClassId() const { return ++qFreeClassId; }
+
+  // -----------------------------------------------------------------------
+  // oFreePunch stubs
+  // -----------------------------------------------------------------------
+  using PunchIndexType    = std::multimap<int, oFreePunch*>;
+  using PunchConstIterator = PunchIndexType::const_iterator;
+  using oFreePunchList    = std::list<oFreePunch>;
+
+  mutable oFreePunchList freePunches;
+  mutable std::map<int, PunchIndexType> punchIndex;
+  mutable int qFreePunchId = 0;
+  mutable SqlState sqlPunches;
+
+  int getFreePunchId() const { return ++qFreePunchId; }
+
+  void insertIntoPunchHash(int /*card*/, int /*code*/, int /*time*/) {}
+  void removeFromPunchHash(int /*card*/, int /*code*/, int /*time*/) {}
+
+  // Declared here; defined in oFreePunch.cpp (needs full oFreePunch type).
+  int getControlIdFromPunch(int time, int type, int card,
+                            bool markClassChanged, oFreePunch& punch);
+
+  oRunner* getRunner(int /*id*/, int /*race*/) const { return nullptr; }
 
   // -----------------------------------------------------------------------
   // oCard stubs
