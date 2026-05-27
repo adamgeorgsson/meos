@@ -124,8 +124,8 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "classconfiginfo.h/cpp and qualification_final.h/cpp migrated to src/domain/. oClass::isRogaining()/hasCoursePool() added. wtoi/splitW/2-arg formatTimeMS added to domain_header.h. Runner-computation and XML/GDI methods excluded (deferred). 18 unit tests pass."
     },
     {
       "id": "US-003e3",

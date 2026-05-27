@@ -138,3 +138,28 @@ inline int convertAbsoluteTimeHMS(const wstring& m, int /*daysZeroTime*/) {
 // Empty wstring sentinel (mirrors legacy _EmptyWString)
 inline const wstring& _emptyWStringRef() { static const wstring s; return s; }
 #define _EmptyWString _emptyWStringRef()
+
+// Convert wide-char string to int (mirrors meos_util::wtoi)
+inline int wtoi(const wchar_t* s) {
+  if (!s || !*s) return 0;
+  return (int)std::wcstol(s, nullptr, 10);
+}
+
+// 2-arg formatTimeMS overload (relative=false means absolute display)
+inline wstring formatTimeMS(int ms, bool relative) {
+  return formatTimeMS(ms, relative, SubSecond::Off);
+}
+
+// Split a wstring by a wide delimiter string into a vector
+inline void splitW(const wstring& str, const wstring& delim, vector<wstring>& out) {
+  out.clear();
+  if (str.empty()) return;
+  size_t start = 0;
+  size_t dlen  = delim.size();
+  while (true) {
+    size_t pos = str.find(delim, start);
+    out.push_back(str.substr(start, pos == wstring::npos ? wstring::npos : pos - start));
+    if (pos == wstring::npos) break;
+    start = pos + dlen;
+  }
+}

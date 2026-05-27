@@ -201,6 +201,9 @@ public:
   // ── Misc ──────────────────────────────────────────────────────────────
   bool isQualificationFinalBaseClass() const { return false; }
   bool isQualificationFinalClass() const { return false; }
+  bool hasCoursePool() const { return getDCI().getInt("HasPool") != 0; }
+  bool isRogaining() const;
+  std::string getResultModuleTag() const { return ""; }
   bool isTeamClass() const;
 
   // leg-method coding/importing (used in XML serialization)

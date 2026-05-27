@@ -656,6 +656,16 @@ bool oClass::isTeamClass() const {
   return ns > 0 && getNumDistinctRunners() > 1;
 }
 
+bool oClass::isRogaining() const {
+  // Simplified: check if the assigned course has rogaining time
+  if (Course && Course->getMaximumRogainingTime() > 0)
+    return true;
+  if (!MultiCourse.empty() && !MultiCourse[0].empty() &&
+      MultiCourse[0][0] && MultiCourse[0][0]->getMaximumRogainingTime() > 0)
+    return true;
+  return false;
+}
+
 // ── oLegInfo methods ─────────────────────────────────────────────────────────
 
 string oLegInfo::codeLegMethod() const {
