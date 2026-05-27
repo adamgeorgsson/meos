@@ -287,8 +287,8 @@
         "Typecheck passes"
       ],
       "priority": 17,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added serveStaticFiles(static_dir) to HttpServer. Registers catch-all GET '.*' handler after API routes: serves real files with correct MIME type, falls back to index.html for SPA routing. Default dir: src/ui/web/dist."
     },
     {
       "id": "US-018",
