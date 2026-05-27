@@ -218,6 +218,8 @@
     <ClCompile Include="oPunch.cpp" />
     <ClCompile Include="oReport.cpp" />
     <ClCompile Include="oRunner.cpp" />
+    <ClCompile Include="oRunnerData.cpp" />
+    <ClCompile Include="oRunnerResult.cpp" />
     <ClCompile Include="oTeam.cpp" />
     <ClCompile Include="oTeamEvent.cpp" />
     <ClCompile Include="parser.cpp" />
@@ -316,6 +318,7 @@
     <ClInclude Include="oPunch.h" />
     <ClInclude Include="oAbstractRunner.h" />
     <ClInclude Include="oRunner.h" />
+    <ClInclude Include="oRunnerInternal.h" />
     <ClInclude Include="ospeaker.h" />
     <ClInclude Include="oTeam.h" />
     <ClInclude Include="parser.h" />
