@@ -1,11 +1,15 @@
 #pragma once
 
+#include <list>
+#include <map>
 #include <string>
 #include <vector>
 #include "domain_header.h"
+#include "oControl.h"
 
 class oBase;
 class oClub;
+class oCourse;
 
 // Minimal stub oEvent — provides just enough interface for oBase, oDataContainer,
 // oPunch, oControl, and oClub. Full competition management logic lives in the legacy
@@ -20,6 +24,17 @@ public:
   // Simplified invoice date store (avoids pulling in full DataContainer on oEvent).
   mutable std::wstring eventInvoiceDate_;
   mutable int qFreeClubId_ = 0;
+
+  // Control store — backing storage for getControl() / getFreeCourseId().
+  mutable std::list<oControl> controlList_;
+  mutable std::map<int, oControl*> controlIndex_;
+  mutable int qFreeCourseId_ = 0;
+
+  // Dirty flags set by changedObject() of course/control entities.
+  bool globalModification = false;
+  int tCalcNumMapsDataRevision = -1;
+  struct SqlState { bool changed = false; };
+  SqlState sqlCourses;
 
   bool isClient() const { return false; }
   bool hasDBConnection() const { return false; }
@@ -92,4 +107,23 @@ public:
   // Property accessors used by assignInvoiceNumber (stub: always return default).
   int getPropertyInt(const char* /*name*/, int def) const { return def; }
   void setProperty(const char* /*name*/, int /*val*/) {}
+
+  // -----------------------------------------------------------------------
+  // oCourse stubs
+  // -----------------------------------------------------------------------
+
+  // Find or optionally create a control by id.
+  oControl* getControl(int id, bool create = false,
+                       bool /*includeVirtual*/ = false) const {
+    auto it = controlIndex_.find(id);
+    if (it != controlIndex_.end()) return it->second;
+    if (!create) return nullptr;
+    controlList_.emplace_back(const_cast<oEvent*>(this), id);
+    oControl* ctrl = &controlList_.back();
+    controlIndex_[id] = ctrl;
+    return ctrl;
+  }
+
+  // Allocate a fresh course ID (stub: auto-increment from 1).
+  int getFreeCourseId() const { return ++qFreeCourseId_; }
 };

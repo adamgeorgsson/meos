@@ -93,8 +93,8 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "oCourse.h/cpp migrated to src/domain/ with DataMap pattern. oEvent stub extended with getControl(id,create,includeVirtual) and getFreeCourseId(). domain_stubs.cpp cleaned of oCourse stub. 65 unit tests pass."
     },
     {
       "id": "US-003e1",
