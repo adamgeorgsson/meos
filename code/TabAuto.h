@@ -24,6 +24,7 @@
 #include "TabBase.h"
 #include "gdioutput.h"
 #include <string>
+#include <thread>
 #include "oListInfo.h"
 #include "importformats.h"
 
@@ -250,7 +251,7 @@ protected:
   wstring error;
   wstring timeError;
   wstring timeReconnect;
-  HANDLE hThread;
+  std::thread hThread;
   bool toRemove = false;
 
 public:
@@ -268,6 +269,11 @@ public:
   bool removeMe() const final {
     return toRemove;
   }
+
+  // User-defined copy constructor: hThread is not copied (std::thread is not copyable)
+  MySQLReconnect(const MySQLReconnect& other)
+    : AutoMachine(other), error(other.error), timeError(other.timeError),
+      timeReconnect(other.timeReconnect), toRemove(other.toRemove) {}
 
   MySQLReconnect(const wstring &error);
   virtual ~MySQLReconnect();

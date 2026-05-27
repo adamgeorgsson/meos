@@ -5,6 +5,9 @@
 
 #include <set>
 #include <vector>
+#include <mutex>
+#include <thread>
+#include <atomic>
 #include "oPunch.h"
 
 /************************************************************************
@@ -125,7 +128,9 @@ struct SI_StationData {
 struct SI_StationInfo
 {
   SI_StationInfo();
-  HANDLE ThreadHandle;
+  SI_StationInfo(const SI_StationInfo& other);
+  SI_StationInfo& operator=(const SI_StationInfo& other);
+  std::thread ThreadHandle;
   wstring ComPort;
   HANDLE hComm;
   COMMTIMEOUTS TimeOuts;
@@ -163,7 +168,7 @@ protected:
   bool readSI6Block(HANDLE hComm, BYTE *data);
   bool readSystemData(SI_StationInfo *si, int retry=2);
   bool readSystemDataV2(SI_StationInfo &si);
-  CRITICAL_SECTION SyncObj;
+  std::mutex SyncObj;
 
   int readByte_delay(BYTE &byte,  HANDLE hComm);
   int readBytes_delay(BYTE *byte, DWORD buffSize, DWORD len,  HANDLE hComm);
@@ -208,6 +213,7 @@ protected:
 
   volatile int tcpPortOpen;
   volatile size_t serverSocket;
+  std::atomic<bool> tcpMonitorStarted{false};
 
   bool MonitorTEST(SI_StationInfo &si);
   bool MonitorSI(SI_StationInfo &si);
@@ -276,6 +282,6 @@ public:
   void resetPunchMap();
 
   virtual ~SportIdent();
-  friend void start_si_thread(void *ptr);
+  friend void start_si_thread(SportIdent *ptr);
 
 };

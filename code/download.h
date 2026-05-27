@@ -33,6 +33,7 @@
 #endif // _MSC_VER > 1000
 
 #include <vector>
+#include <atomic>
 typedef HANDLE HINTERNET;
 
 class dwException : public std::exception {
@@ -46,7 +47,7 @@ class ProgressWindow;
 
 class Download {
 private:
-  volatile uintptr_t hThread;
+  std::atomic<bool> threadRunning{false};
   volatile bool doExit;
   //HWND hProgress;
 
@@ -83,8 +84,6 @@ public:
 
 protected:
   bool doDownload();
-
-  friend void SUThread(void *ptr);
 
 };
 
