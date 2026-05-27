@@ -27,6 +27,7 @@
 #include "socket.h"
 #include "meosexception.h"
 #include <iostream>
+#include <chrono>
 
 //#define MEOS_DIRECT_PORT 21338
 
@@ -48,7 +49,7 @@ DirectSocket::~DirectSocket() {
     sendSocket = -1;
   }
 
-  Sleep(1000);
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   shutDown = true;
 }
 

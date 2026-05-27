@@ -43,6 +43,8 @@
 #include <io.h>
 #include "csvparser.h"
 #include <ctime>
+#include <chrono>
+#include <thread>
 
 int CompetitionCB(gdioutput *gdi, GuiEventType type, BaseInfo* data);
 
@@ -405,7 +407,7 @@ void TabCompetition::createNewCmp(gdioutput& gdi, bool useExisting) {
   gdi.addString("", fontMediumPlus, "Skapar tävling...");
   gdi.refresh();
   gdi.setWaitCursor(true);
-  Sleep(400);
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
   oe->updateTabs(true, false);
   gdi.setWaitCursor(false);
   loadPage(gdi);
