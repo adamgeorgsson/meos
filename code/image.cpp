@@ -28,6 +28,7 @@
 #include <Wincodec.h>
 #include <fstream>
 #include "meosexception.h"
+#include <cstdint>
 
 FILE _iob[] = { *stdin, *stdout, *stderr };
 
@@ -75,7 +76,7 @@ vector<uint8_t> Image::loadResourceToMemory(LPCTSTR lpName, LPCTSTR lpType)  {
     return result;
 
   // load the resource
-  DWORD dwResourceSize = SizeofResource(NULL, hrsrc);
+  uint32_t dwResourceSize = SizeofResource(NULL, hrsrc);
   HGLOBAL hglbImage = LoadResource(NULL, hrsrc);
   if (hglbImage == NULL)
     return result;

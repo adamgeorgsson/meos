@@ -30,6 +30,7 @@
 #include "meos_util.h"
 #include "socket.h"
 #include "meosexception.h"
+#include <cstdint>
 
 const int SYNC_FACTOR = 4; 
 
@@ -136,7 +137,7 @@ void AutoTask::interfaceTimeout(const vector<gdioutput *> &windows) {
   lock = false;
 }
 
-void AutoTask::addSynchTime(DWORD tick) {
+void AutoTask::addSynchTime(uint32_t tick) {
   if (tick > 1000 * 60)
     return; // Ignore extreme times
 
@@ -146,7 +147,7 @@ void AutoTask::addSynchTime(DWORD tick) {
   synchQueue.push_back(tick);
 }
 
-DWORD AutoTask::getAvgSynchTime() {
+uint32_t AutoTask::getAvgSynchTime() {
 #ifdef NODELAY
   return 0;
 #else
@@ -165,10 +166,10 @@ DWORD AutoTask::getAvgSynchTime() {
 
 void AutoTask::synchronize(const vector<gdioutput *> &windows) {
   uint64_t tic = GetTickCount64();
-  DWORD avg = getAvgSynchTime();
+  uint32_t avg = getAvgSynchTime();
   //OutputDebugString(("AVG Update Time: " + itos(avg)).c_str());
   if (tic > lastSynchTime) {
-    DWORD since = tic - lastSynchTime;
+    uint32_t since = tic - lastSynchTime;
     if (since < avg * SYNC_FACTOR) {
       //OutputDebugString((" skipped: " + itos(since) + "\n").c_str());
       return;
@@ -204,10 +205,10 @@ void AutoTask::synchronize(const vector<gdioutput *> &windows) {
 
 void AutoTask::advancePunchInformation(const vector<gdioutput *> &windows) {
   uint64_t tic = GetTickCount64();
-  DWORD avg = getAvgSynchTime();
+  uint32_t avg = getAvgSynchTime();
   //OutputDebugString(("Direct Update Time: " + itos(avg)).c_str());
   if (tic > lastSynchTime) {
-    DWORD since = tic-lastSynchTime;
+    uint32_t since = tic-lastSynchTime;
     if (since < avg * SYNC_FACTOR) {
       //OutputDebugString((" skipped: " + itos(since) + "\n").c_str());
       return;
@@ -216,8 +217,8 @@ void AutoTask::advancePunchInformation(const vector<gdioutput *> &windows) {
   else
     lastSynchTime = tic;
 
-  DWORD since = tic - lastTriedSynchTime;
-  if (since > DWORD(synchBaseTime*4)) { // Synchronize all instead.
+  uint32_t since = tic - lastTriedSynchTime;
+  if (since > uint32_t(synchBaseTime*4)) { // Synchronize all instead.
     synchronize(windows);
     return;
   }
@@ -238,7 +239,7 @@ bool AutoTask::synchronizeImpl(const vector<gdioutput *> &windows) {
     return false;
   lock = true;
 
-  DWORD d=0;
+  uint32_t d=0;
   bool doSync = false;
   bool doSyncPunch = false;
   TabAuto *tabAuto = dynamic_cast<TabAuto *>(gdi.getTabs().get(TAutoTab));
@@ -312,7 +313,7 @@ bool AutoTask::synchronizeImpl(const vector<gdioutput *> &windows) {
 }
 
 bool AutoTask::advancePunchInformationImpl(const vector<gdioutput *> &windows) {
-  DWORD d=0;
+  uint32_t d=0;
   bool doSync = false;
   bool doSyncPunch = false;
 

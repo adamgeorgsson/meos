@@ -627,6 +627,7 @@ public:
   void autoRefresh(bool flag) { manualUpdate = !flag; }
 
   bool getData(const string& id, DWORD& data) const;
+  bool getData(const string& id, uint32_t& data) const;
   bool hasData(const char* id) const;
 
   int getItemDataByName(const char* id, const char* name) const;

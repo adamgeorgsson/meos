@@ -52,6 +52,7 @@
 #include "download.h"
 #include "meos_util.h"
 #include "toolbar.h"
+#include <cstdint>
 
 const wchar_t *szToolClass = L"MeOSToolClass";
 
@@ -60,7 +61,7 @@ LRESULT CALLBACK ToolProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 #define BASE_ID 1013
 
 
-const DWORD buttonStyles = BTNS_AUTOSIZE;
+const uint32_t buttonStyles = BTNS_AUTOSIZE;
 const int bitmapSize = 24;
 
 Toolbar::Toolbar(gdioutput &gdi_par) : gdi(gdi_par)
@@ -255,7 +256,7 @@ void Toolbar::createToolbar(const string &id, const wstring &title)
   SendMessage(hwndToolbar, TB_AUTOSIZE, 0, 0);
 
   ShowWindow(hwndFloater, SW_SHOW);
-  ShowWindow(hwndToolbar, TRUE);
+  ShowWindow(hwndToolbar, true);
 }
 
 LRESULT CALLBACK ToolProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)

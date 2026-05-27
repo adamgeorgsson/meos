@@ -3788,6 +3788,20 @@ bool gdioutput::getData(const string &id, DWORD &data) const
   return false;
 }
 
+bool gdioutput::getData(const string &id, uint32_t &data) const
+{
+  list<DataStore>::const_iterator it;
+  for(it=DataInfo.begin(); it != DataInfo.end(); ++it){
+    if (it->id==id){
+      data=uint32_t(size_t(it->data));
+      return true;
+    }
+  }
+
+  data=0;
+  return false;
+}
+
 void gdioutput::setData(const string &id, const string &data) {
   for (auto &it : DataInfo) {
     if (it.id == id) {
