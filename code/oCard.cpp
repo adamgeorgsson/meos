@@ -26,6 +26,7 @@
 
 #include "StdAfx.h"
 #include "oCard.h"
+#include "oDataContainer.h"
 #include "oEvent.h"
 #include "gdioutput.h"
 #include "Table.h"

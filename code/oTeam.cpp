@@ -22,6 +22,7 @@
 
 #include "StdAfx.h"
 #include "meos_util.h"
+#include "oDataContainer.h"
 #include "oEvent.h"
 #include <algorithm>
 #include "Table.h"

@@ -22,8 +22,7 @@ Eksoppsvägen 16, SE-75646 UPPSALA, Sweden
 
 ************************************************************************/
 
-#include "StdAfx.h"
-
+#include <string>
 #include <vector>
 #include <map>
 #include <set>

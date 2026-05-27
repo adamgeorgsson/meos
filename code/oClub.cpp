@@ -26,6 +26,7 @@
 
 #include "StdAfx.h"
 #include "oClub.h"
+#include "oDataContainer.h"
 #include "meos_util.h"
 
 #include "oEvent.h"

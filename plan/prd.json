@@ -44,8 +44,8 @@
         "Legacy MSBuild build of `code/` passes"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Removed #include StdAfx.h from oBase.h, toolbar.h, qualification_final.h. Added <string>/<utility> to oBase.h, <string> to qualification_final.h. Added #include oDataContainer.h directly to oBase.cpp, oCard.cpp, oClub.cpp, oControl.cpp, oCourse.cpp, oTeam.cpp, oPunch.cpp, oRunnerData.cpp, MeosSQL.cpp. Verified all other criteria already satisfied."
     },
     {
       "id": "US-004",

@@ -26,6 +26,7 @@
 
 #include "StdAfx.h"
 #include "oCourse.h"
+#include "oDataContainer.h"
 #include "oEvent.h"
 #include "SportIdent.h"
 #include <limits>

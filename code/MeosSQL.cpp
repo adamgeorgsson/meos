@@ -22,12 +22,10 @@
 
 
 #include "StdAfx.h"
-
 #include <cassert>
 #include <typeinfo>
-
 #include "MeosSQL.h"
-
+#include "oDataContainer.h"
 #include "oRunner.h"
 #include "oEvent.h"
 #include "meos_util.h"

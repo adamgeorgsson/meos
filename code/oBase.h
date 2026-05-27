@@ -26,8 +26,9 @@
 ************************************************************************/
 
 #include "TimeStamp.h"
-#include "StdAfx.h"
 #include <stdexcept>
+#include <string>
+#include <utility>
 #include <vector>
 #include <memory>
 

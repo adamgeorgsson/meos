@@ -26,6 +26,7 @@
 
 #include "StdAfx.h"
 #include "oPunch.h"
+#include "oDataContainer.h"
 #include "oEvent.h"
 #include "meos_util.h"
 #include "localizer.h"

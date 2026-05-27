@@ -27,6 +27,7 @@
 #include "StdAfx.h"
 #include "meos.h"
 #include "oBase.h"
+#include "oDataContainer.h"
 #include "oCard.h"
 #include "meos_util.h"
 

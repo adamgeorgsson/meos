@@ -27,7 +27,7 @@
 #include "StdAfx.h"
 #include <algorithm>
 
-#include "oControl.h"
+#include "oDataContainer.h"
 #include "oEvent.h"
 #include "gdioutput.h"
 #include "meos_util.h"
