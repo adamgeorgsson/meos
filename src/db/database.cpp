@@ -163,6 +163,108 @@ void Database::createTables() {
   )");
 }
 
+// ---- Migration system -------------------------------------------------------
+
+void Database::applyMigrations(const std::vector<Migration>& migrations) {
+  exec(R"(
+    CREATE TABLE IF NOT EXISTS _migrations (
+      version     INTEGER PRIMARY KEY,
+      description TEXT    NOT NULL,
+      applied_at  TEXT    NOT NULL
+    )
+  )");
+
+  int current = schemaVersion();
+
+  for (const auto& m : migrations) {
+    if (m.version <= current) continue;
+
+    exec("BEGIN TRANSACTION");
+    try {
+      exec(m.sql);
+
+      // Record the applied migration using a prepared statement to safely
+      // bind string parameters.
+      sqlite3_stmt* raw = nullptr;
+      int rc = sqlite3_prepare_v2(
+          db_,
+          "INSERT INTO _migrations (version, description, applied_at) "
+          "VALUES (?, ?, datetime('now'))",
+          -1, &raw, nullptr);
+      if (rc != SQLITE_OK) {
+        exec("ROLLBACK");
+        throw std::runtime_error(std::string("Prepare failed: ") +
+                                 sqlite3_errmsg(db_));
+      }
+      sqlite3_bind_int(raw, 1, m.version);
+      sqlite3_bind_text(raw, 2, m.description.c_str(), -1, SQLITE_TRANSIENT);
+      rc = sqlite3_step(raw);
+      sqlite3_finalize(raw);
+      if (rc != SQLITE_DONE) {
+        exec("ROLLBACK");
+        throw std::runtime_error("Failed to record migration " +
+                                 std::to_string(m.version));
+      }
+      exec("COMMIT");
+    } catch (...) {
+      // exec("ROLLBACK") may itself throw if the transaction was already
+      // aborted; ignore that secondary error.
+      char* errMsg = nullptr;
+      sqlite3_exec(db_, "ROLLBACK", nullptr, nullptr, &errMsg);
+      sqlite3_free(errMsg);
+      throw;
+    }
+  }
+}
+
+int Database::schemaVersion() const {
+  // Return 0 if the tracking table does not yet exist.
+  sqlite3_stmt* check = nullptr;
+  int rc = sqlite3_prepare_v2(
+      db_,
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='_migrations'",
+      -1, &check, nullptr);
+  if (rc != SQLITE_OK) return 0;
+  bool exists = sqlite3_step(check) == SQLITE_ROW;
+  sqlite3_finalize(check);
+  if (!exists) return 0;
+
+  sqlite3_stmt* stmt = nullptr;
+  rc = sqlite3_prepare_v2(db_, "SELECT MAX(version) FROM _migrations", -1,
+                           &stmt, nullptr);
+  if (rc != SQLITE_OK) return 0;
+  int ver = 0;
+  if (sqlite3_step(stmt) == SQLITE_ROW &&
+      sqlite3_column_type(stmt, 0) != SQLITE_NULL) {
+    ver = sqlite3_column_int(stmt, 0);
+  }
+  sqlite3_finalize(stmt);
+  return ver;
+}
+
+// V1: core tables required to store runners and clubs.
+std::vector<Migration> Database::v1Migrations() {
+  return {
+      {1, "Initial schema: runners and clubs",
+       R"(
+         CREATE TABLE IF NOT EXISTS clubs (
+           id      INTEGER PRIMARY KEY,
+           name    TEXT    NOT NULL,
+           country TEXT
+         );
+         CREATE TABLE IF NOT EXISTS runners (
+           id          INTEGER PRIMARY KEY,
+           name        TEXT    NOT NULL,
+           club_id     INTEGER,
+           class_id    INTEGER,
+           start_time  TEXT,
+           card_number INTEGER,
+           status      TEXT,
+           FOREIGN KEY (club_id) REFERENCES clubs(id)
+         );
+       )"}};
+}
+
 // Helper for sqlite3_prepare/step/finalize
 namespace {
 

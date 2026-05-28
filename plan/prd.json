@@ -330,8 +330,8 @@
         "Tests pass"
       ],
       "priority": 21,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Migration struct + applyMigrations() + schemaVersion() + v1Migrations() added to Database class. _migrations tracking table created on first use. Each migration applied atomically in BEGIN/COMMIT; failed migrations rolled back. V1 creates clubs + runners tables. 12 unit tests pass."
     },
     {
       "id": "US-004b",

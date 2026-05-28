@@ -11,6 +11,13 @@ struct sqlite3;
 
 namespace meos::db {
 
+// A versioned database schema migration.
+struct Migration {
+  int version;
+  std::string description;
+  std::string sql;  // DDL to execute (no transaction wrappers)
+};
+
 class Database {
  public:
   explicit Database(const std::string& path);
@@ -19,7 +26,20 @@ class Database {
   Database(const Database&) = delete;
   Database& operator=(const Database&) = delete;
 
+  // Legacy: create all tables in one shot (no migration tracking).
   void createTables();
+
+  // Apply pending migrations atomically. Creates the _migrations tracking
+  // table on first use. Each migration is wrapped in its own transaction;
+  // on failure the transaction is rolled back and the exception re-thrown,
+  // leaving _migrations at the last good version.
+  void applyMigrations(const std::vector<Migration>& migrations);
+
+  // Return the highest applied migration version, or 0 if none.
+  int schemaVersion() const;
+
+  // Canonical V1 migration: runners and clubs tables.
+  static std::vector<Migration> v1Migrations();
 
   std::vector<domain::Club> getAllClubs();
   std::optional<domain::Club> getClubById(int id);

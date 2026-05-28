@@ -1,5 +1,6 @@
 find_package(GTest REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
 
 # Macro for standardized test registration
 macro(meos_add_test TEST_NAME)
@@ -122,3 +123,7 @@ target_link_libraries(domain_generalresult_test PRIVATE meos_domain)
 # Domain MetaList + oListInfo + Result Tests (US-003j2)
 meos_add_test(domain_result_tests domain_result_tests.cpp)
 target_link_libraries(domain_result_tests PRIVATE meos_domain)
+
+# DB migration system unit test (US-004a)
+meos_add_test(db_migration_test db_migration_test.cpp)
+target_link_libraries(db_migration_test PRIVATE meos_db unofficial::sqlite3::sqlite3)
