@@ -171,3 +171,9 @@ target_link_libraries(util_csvparser_test PRIVATE meos_util)
 # Util TimeStamp + timeconstants unit test (US-013c)
 meos_add_test(util_timestamp_test util_timestamp_test.cpp)
 target_link_libraries(util_timestamp_test PRIVATE meos_util)
+
+# Util localizer unit test (US-013d)
+meos_add_test(util_localizer_test util_localizer_test.cpp)
+target_link_libraries(util_localizer_test PRIVATE meos_util)
+target_compile_definitions(util_localizer_test PRIVATE
+    RESOURCES_DIR="${CMAKE_SOURCE_DIR}/resources")

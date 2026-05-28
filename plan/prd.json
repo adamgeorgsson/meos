@@ -618,8 +618,8 @@
         "Tests pass"
       ],
       "priority": 37,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "localizer.h/cpp migrated to src/util/ with std::ifstream-based loading. oWordList stubbed. addLangResource takes file path. thread_local rotating buffer in translate(). 11 .lng files copied to resources/lang/. 17 unit tests pass."
     },
     {
       "id": "US-014a",
