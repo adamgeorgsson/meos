@@ -155,3 +155,7 @@ target_link_libraries(db_events_teams_test PRIVATE meos_db unofficial::sqlite3::
 # Util string conversions + exceptions unit test (US-013a1)
 meos_add_test(util_string_test util_string_test.cpp)
 target_link_libraries(util_string_test PRIVATE meos_util)
+
+# Util file ops + HLS + version functions unit test (US-013a2)
+meos_add_test(util_file_ops_test util_file_ops_test.cpp)
+target_link_libraries(util_file_ops_test PRIVATE meos_util)

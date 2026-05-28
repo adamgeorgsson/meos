@@ -565,8 +565,8 @@
         "Tests pass"
       ],
       "priority": 34,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "hls.h/cpp (portable uint16_t/uint8_t, makeRGB helpers), meos_version.h/cpp, file_util.h/cpp (std::filesystem, meos_memicmp wrapper) added to src/util/. 20 unit tests pass (38 total)."
     },
     {
       "id": "US-013b",
