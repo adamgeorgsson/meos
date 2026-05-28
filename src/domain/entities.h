@@ -83,4 +83,21 @@ struct StartListEntry {
   std::optional<int> bib;
 };
 
+// SI card readout — punches serialized as punch_string (not oData blob).
+struct Card {
+  int id;
+  std::optional<int> runnerId;  // NULL if unassigned
+  int cardNumber;               // SI card number
+  std::string punchString;      // serialized via getPunchString()
+};
+
+// A free punch not yet assigned to a card/runner result.
+struct FreePunch {
+  int id;
+  int code;         // control code punched
+  int punchTime;    // time in tenths-of-second units
+  std::optional<int> runnerId;
+  std::optional<int> cardNumber;
+};
+
 }  // namespace meos::domain

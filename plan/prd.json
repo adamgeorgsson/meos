@@ -365,8 +365,8 @@
         "Tests pass"
       ],
       "priority": 23,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "V3 migration creates classes (course_id FK), cards (punch_string TEXT, runner_id FK), free_punches (runner_id FK). CRUD added for classes, runners (write methods), cards, free_punches. bindOptFk treats 0 as NULL. 30 unit tests pass."
     },
     {
       "id": "US-004d",

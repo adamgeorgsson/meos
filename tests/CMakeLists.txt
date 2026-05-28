@@ -131,3 +131,7 @@ target_link_libraries(db_migration_test PRIVATE meos_db unofficial::sqlite3::sql
 # DB simple-entity CRUD unit test (US-004b)
 meos_add_test(db_simple_entities_test db_simple_entities_test.cpp)
 target_link_libraries(db_simple_entities_test PRIVATE meos_db unofficial::sqlite3::sqlite3)
+
+# DB complex-entity CRUD unit test (US-004c)
+meos_add_test(db_complex_entities_test db_complex_entities_test.cpp)
+target_link_libraries(db_complex_entities_test PRIVATE meos_db unofficial::sqlite3::sqlite3)

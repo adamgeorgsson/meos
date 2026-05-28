@@ -45,6 +45,10 @@ class Database {
   // control IDs; controls have an odata BLOB column for DataContainer fields).
   static std::vector<Migration> v2Migrations();
 
+  // V3 migration: classes, cards, and free_punches tables (complex entities
+  // with FK relationships). Runners already exist from V1 but gain CRUD here.
+  static std::vector<Migration> v3Migrations();
+
   // CRUD — Clubs
   int insertClub(const domain::Club& c);   // returns last_insert_rowid
   void updateClub(const domain::Club& c);
@@ -60,6 +64,26 @@ class Database {
   void updateCourse(const domain::Course& c);
   void deleteCourse(int id);
 
+  // CRUD — Classes
+  int insertClass(const domain::Class& c);
+  void updateClass(const domain::Class& c);
+  void deleteClass(int id);
+
+  // CRUD — Runners
+  int insertRunner(const domain::Runner& r);
+  void updateRunner(const domain::Runner& r);
+  void deleteRunner(int id);
+
+  // CRUD — Cards (punches stored as punch_string TEXT)
+  int insertCard(const domain::Card& c);
+  void updateCard(const domain::Card& c);
+  void deleteCard(int id);
+
+  // CRUD — Free Punches
+  int insertFreePunch(const domain::FreePunch& fp);
+  void updateFreePunch(const domain::FreePunch& fp);
+  void deleteFreePunch(int id);
+
   std::vector<domain::Club> getAllClubs();
   std::optional<domain::Club> getClubById(int id);
 
@@ -74,6 +98,12 @@ class Database {
 
   std::vector<domain::Runner> getAllRunners();
   std::optional<domain::Runner> getRunnerById(int id);
+
+  std::vector<domain::Card> getAllCards();
+  std::optional<domain::Card> getCardById(int id);
+
+  std::vector<domain::FreePunch> getAllFreePunches();
+  std::optional<domain::FreePunch> getFreePunchById(int id);
 
   std::vector<domain::Team> getAllTeams();
   std::optional<domain::Team> getTeamById(int id);

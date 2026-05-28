@@ -813,4 +813,262 @@ void Database::deleteCourse(int id) {
     throw std::runtime_error("deleteCourse failed");
 }
 
+// ---- V3 Migration -----------------------------------------------------------
+
+// Helper: bind an optional int FK; 0 is treated as "not set" → NULL.
+namespace {
+
+void bindOptFk(sqlite3_stmt* s, int col, std::optional<int> val) {
+  if (!val.has_value() || *val == 0)
+    sqlite3_bind_null(s, col);
+  else
+    sqlite3_bind_int(s, col, *val);
+}
+
+void bindOptInt(sqlite3_stmt* s, int col, std::optional<int> val) {
+  if (!val.has_value())
+    sqlite3_bind_null(s, col);
+  else
+    sqlite3_bind_int(s, col, *val);
+}
+
+void bindOptText(sqlite3_stmt* s, int col, std::optional<std::string> val) {
+  if (!val.has_value())
+    sqlite3_bind_null(s, col);
+  else
+    sqlite3_bind_text(s, col, val->c_str(), -1, SQLITE_TRANSIENT);
+}
+
+}  // namespace
+
+// V3: classes, cards, free_punches. Cards store punches as a TEXT punch_string.
+std::vector<Migration> Database::v3Migrations() {
+  return {
+      {3, "Schema V3: classes, cards, and free_punches",
+       R"(
+         CREATE TABLE IF NOT EXISTS classes (
+           id           INTEGER PRIMARY KEY,
+           name         TEXT    NOT NULL,
+           course_id    INTEGER,
+           start_method TEXT,
+           FOREIGN KEY (course_id) REFERENCES courses(id)
+         );
+         CREATE TABLE IF NOT EXISTS cards (
+           id           INTEGER PRIMARY KEY,
+           runner_id    INTEGER,
+           card_number  INTEGER NOT NULL,
+           punch_string TEXT,
+           FOREIGN KEY (runner_id) REFERENCES runners(id)
+         );
+         CREATE TABLE IF NOT EXISTS free_punches (
+           id          INTEGER PRIMARY KEY,
+           code        INTEGER NOT NULL,
+           punch_time  INTEGER NOT NULL,
+           runner_id   INTEGER,
+           card_number INTEGER,
+           FOREIGN KEY (runner_id) REFERENCES runners(id)
+         );
+       )"}};
+}
+
+// ---- CRUD — Classes ---------------------------------------------------------
+
+int Database::insertClass(const domain::Class& c) {
+  auto stmt = prepare(db_,
+    "INSERT INTO classes (name, course_id, start_method) VALUES (?, ?, ?)");
+  sqlite3_bind_text(stmt.get(), 1, c.name.c_str(), -1, SQLITE_TRANSIENT);
+  bindOptFk(stmt.get(), 2, c.courseId);
+  bindOptText(stmt.get(), 3, c.startMethod);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("insertClass failed");
+  return static_cast<int>(sqlite3_last_insert_rowid(db_));
+}
+
+void Database::updateClass(const domain::Class& c) {
+  auto stmt = prepare(db_,
+    "UPDATE classes SET name=?, course_id=?, start_method=? WHERE id=?");
+  sqlite3_bind_text(stmt.get(), 1, c.name.c_str(), -1, SQLITE_TRANSIENT);
+  bindOptFk(stmt.get(), 2, c.courseId);
+  bindOptText(stmt.get(), 3, c.startMethod);
+  sqlite3_bind_int(stmt.get(), 4, c.id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("updateClass failed");
+}
+
+void Database::deleteClass(int id) {
+  auto stmt = prepare(db_, "DELETE FROM classes WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("deleteClass failed");
+}
+
+// ---- CRUD — Runners (insert/update/delete — read already existed) -----------
+
+int Database::insertRunner(const domain::Runner& r) {
+  auto stmt = prepare(db_,
+    "INSERT INTO runners (name, club_id, class_id, start_time, card_number, status)"
+    " VALUES (?, ?, ?, ?, ?, ?)");
+  sqlite3_bind_text(stmt.get(), 1, r.name.c_str(), -1, SQLITE_TRANSIENT);
+  bindOptFk(stmt.get(), 2, r.clubId);
+  bindOptFk(stmt.get(), 3, r.classId);
+  bindOptText(stmt.get(), 4, r.startTime);
+  bindOptInt(stmt.get(), 5, r.cardNumber);
+  bindOptText(stmt.get(), 6, r.status);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("insertRunner failed");
+  return static_cast<int>(sqlite3_last_insert_rowid(db_));
+}
+
+void Database::updateRunner(const domain::Runner& r) {
+  auto stmt = prepare(db_,
+    "UPDATE runners SET name=?, club_id=?, class_id=?, start_time=?,"
+    " card_number=?, status=? WHERE id=?");
+  sqlite3_bind_text(stmt.get(), 1, r.name.c_str(), -1, SQLITE_TRANSIENT);
+  bindOptFk(stmt.get(), 2, r.clubId);
+  bindOptFk(stmt.get(), 3, r.classId);
+  bindOptText(stmt.get(), 4, r.startTime);
+  bindOptInt(stmt.get(), 5, r.cardNumber);
+  bindOptText(stmt.get(), 6, r.status);
+  sqlite3_bind_int(stmt.get(), 7, r.id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("updateRunner failed");
+}
+
+void Database::deleteRunner(int id) {
+  auto stmt = prepare(db_, "DELETE FROM runners WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("deleteRunner failed");
+}
+
+// ---- CRUD — Cards -----------------------------------------------------------
+
+int Database::insertCard(const domain::Card& c) {
+  auto stmt = prepare(db_,
+    "INSERT INTO cards (runner_id, card_number, punch_string) VALUES (?, ?, ?)");
+  bindOptFk(stmt.get(), 1, c.runnerId);
+  sqlite3_bind_int(stmt.get(), 2, c.cardNumber);
+  sqlite3_bind_text(stmt.get(), 3, c.punchString.c_str(), -1, SQLITE_TRANSIENT);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("insertCard failed");
+  return static_cast<int>(sqlite3_last_insert_rowid(db_));
+}
+
+void Database::updateCard(const domain::Card& c) {
+  auto stmt = prepare(db_,
+    "UPDATE cards SET runner_id=?, card_number=?, punch_string=? WHERE id=?");
+  bindOptFk(stmt.get(), 1, c.runnerId);
+  sqlite3_bind_int(stmt.get(), 2, c.cardNumber);
+  sqlite3_bind_text(stmt.get(), 3, c.punchString.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int(stmt.get(), 4, c.id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("updateCard failed");
+}
+
+void Database::deleteCard(int id) {
+  auto stmt = prepare(db_, "DELETE FROM cards WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("deleteCard failed");
+}
+
+std::vector<domain::Card> Database::getAllCards() {
+  auto stmt = prepare(db_,
+    "SELECT id, runner_id, card_number, punch_string FROM cards");
+  std::vector<domain::Card> result;
+  while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    domain::Card c;
+    c.id = sqlite3_column_int(stmt.get(), 0);
+    c.runnerId = optInt(stmt.get(), 1);
+    c.cardNumber = sqlite3_column_int(stmt.get(), 2);
+    const char* ps = reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 3));
+    c.punchString = ps ? ps : "";
+    result.push_back(std::move(c));
+  }
+  return result;
+}
+
+std::optional<domain::Card> Database::getCardById(int id) {
+  auto stmt = prepare(db_,
+    "SELECT id, runner_id, card_number, punch_string FROM cards WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    domain::Card c;
+    c.id = sqlite3_column_int(stmt.get(), 0);
+    c.runnerId = optInt(stmt.get(), 1);
+    c.cardNumber = sqlite3_column_int(stmt.get(), 2);
+    const char* ps = reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 3));
+    c.punchString = ps ? ps : "";
+    return c;
+  }
+  return std::nullopt;
+}
+
+// ---- CRUD — Free Punches ----------------------------------------------------
+
+int Database::insertFreePunch(const domain::FreePunch& fp) {
+  auto stmt = prepare(db_,
+    "INSERT INTO free_punches (code, punch_time, runner_id, card_number)"
+    " VALUES (?, ?, ?, ?)");
+  sqlite3_bind_int(stmt.get(), 1, fp.code);
+  sqlite3_bind_int(stmt.get(), 2, fp.punchTime);
+  bindOptFk(stmt.get(), 3, fp.runnerId);
+  bindOptInt(stmt.get(), 4, fp.cardNumber);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("insertFreePunch failed");
+  return static_cast<int>(sqlite3_last_insert_rowid(db_));
+}
+
+void Database::updateFreePunch(const domain::FreePunch& fp) {
+  auto stmt = prepare(db_,
+    "UPDATE free_punches SET code=?, punch_time=?, runner_id=?, card_number=?"
+    " WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, fp.code);
+  sqlite3_bind_int(stmt.get(), 2, fp.punchTime);
+  bindOptFk(stmt.get(), 3, fp.runnerId);
+  bindOptInt(stmt.get(), 4, fp.cardNumber);
+  sqlite3_bind_int(stmt.get(), 5, fp.id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("updateFreePunch failed");
+}
+
+void Database::deleteFreePunch(int id) {
+  auto stmt = prepare(db_, "DELETE FROM free_punches WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("deleteFreePunch failed");
+}
+
+std::vector<domain::FreePunch> Database::getAllFreePunches() {
+  auto stmt = prepare(db_,
+    "SELECT id, code, punch_time, runner_id, card_number FROM free_punches");
+  std::vector<domain::FreePunch> result;
+  while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    domain::FreePunch fp;
+    fp.id = sqlite3_column_int(stmt.get(), 0);
+    fp.code = sqlite3_column_int(stmt.get(), 1);
+    fp.punchTime = sqlite3_column_int(stmt.get(), 2);
+    fp.runnerId = optInt(stmt.get(), 3);
+    fp.cardNumber = optInt(stmt.get(), 4);
+    result.push_back(std::move(fp));
+  }
+  return result;
+}
+
+std::optional<domain::FreePunch> Database::getFreePunchById(int id) {
+  auto stmt = prepare(db_,
+    "SELECT id, code, punch_time, runner_id, card_number FROM free_punches WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    domain::FreePunch fp;
+    fp.id = sqlite3_column_int(stmt.get(), 0);
+    fp.code = sqlite3_column_int(stmt.get(), 1);
+    fp.punchTime = sqlite3_column_int(stmt.get(), 2);
+    fp.runnerId = optInt(stmt.get(), 3);
+    fp.cardNumber = optInt(stmt.get(), 4);
+    return fp;
+  }
+  return std::nullopt;
+}
+
 }  // namespace meos::db
