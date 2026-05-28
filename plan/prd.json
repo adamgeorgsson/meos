@@ -402,8 +402,8 @@
         "Tests pass"
       ],
       "priority": 25,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "api_utils.h created with makeError, parsePathId, requireString, requireInt. set_error_handler added to HttpServer (JSON 404, does not overwrite handler-set bodies). api_framework_test.cpp with 17 tests covering error envelope, CORS, OPTIONS preflight, API versioning, regex path params, input validation. All 34 tests pass."
     },
     {
       "id": "US-005b",

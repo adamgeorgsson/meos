@@ -1,4 +1,5 @@
 #include "http_server.h"
+#include "api_utils.h"
 
 #include <fstream>
 #include <iterator>
@@ -20,6 +21,19 @@ HttpServer::HttpServer(int port) : port_(port) {
                 return httplib::Server::HandlerResponse::Handled;
             }
             return httplib::Server::HandlerResponse::Unhandled;
+        });
+
+    // Error handler: only fires when no route matched. Returns a JSON 404
+    // envelope that matches the API's makeError format, WITHOUT overwriting
+    // any body that a matched handler already set (httplib never calls the
+    // error handler after a successful handler dispatch).
+    svr_.set_error_handler(
+        [](const httplib::Request&, httplib::Response& res) {
+            if (res.body.empty()) {
+                res.set_content(
+                    makeError(res.status, "Not found").dump(),
+                    "application/json");
+            }
         });
 }
 

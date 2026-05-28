@@ -1,4 +1,5 @@
 #include "api.h"
+#include "api_utils.h"
 
 #include <nlohmann/json.hpp>
 
@@ -17,10 +18,6 @@ json clubToJson(const meos::domain::Club& c) {
     j["name"] = c.name;
     if (c.country) j["country"] = *c.country;
     return j;
-}
-
-json makeError(int status, const std::string& message) {
-    return json{{"message", message}, {"status", status}};
 }
 
 }  // namespace

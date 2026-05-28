@@ -9,6 +9,10 @@ macro(meos_add_test TEST_NAME)
   add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endmacro()
 
+# API framework unit test (US-005a)
+meos_add_test(api_framework_test api_framework_test.cpp)
+target_link_libraries(api_framework_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
 # Smoke test
 meos_add_test(smoke_test smoke_test.cpp)
 
