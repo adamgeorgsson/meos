@@ -492,8 +492,8 @@
         "Tests pass"
       ],
       "priority": 30,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "serveStaticFiles refactored to use set_mount_point + SPA catch-all. Gzip enabled via cpp-httplib zlib vcpkg feature (CPPHTTPLIB_ZLIB_SUPPORT). React build integrated in CMakeLists.txt via add_custom_target(build_react) + add_dependencies(meos build_react), skipped gracefully if npm is missing. Default static_dir changed to 'web'. All 36 tests pass."
     },
     {
       "id": "US-012",

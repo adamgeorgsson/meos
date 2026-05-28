@@ -7,6 +7,7 @@
 namespace meos::net {
 
 HttpServer::HttpServer(int port) : port_(port) {
+
     // CORS: add Access-Control-Allow-Origin to every response.
     // For OPTIONS on /api/*, return 204 with full preflight headers.
     svr_.set_pre_routing_handler(
@@ -46,39 +47,16 @@ void HttpServer::stop() {
 }
 
 void HttpServer::serveStaticFiles(const std::string& static_dir) {
+    // Mount static files; cpp-httplib handles content types and gzip
+    // (CPPHTTPLIB_ZLIB_SUPPORT) automatically.
+    svr_.set_mount_point("/", static_dir);
+
+    // SPA fallback: non-API paths that don't match a real file get index.html.
+    // set_mount_point is checked before route handlers for GET, so this
+    // catch-all only fires when the file does not exist in static_dir.
     svr_.Get(".*", [static_dir](const httplib::Request& req, httplib::Response& res) {
-        // Determine MIME type from file extension (C++17 compatible).
-        auto endsWith = [](const std::string& s, const std::string& suffix) -> bool {
-            return s.size() >= suffix.size() &&
-                   s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
-        };
-        auto mimeType = [&](const std::string& path) -> std::string {
-            if (endsWith(path, ".html"))                         return "text/html";
-            if (endsWith(path, ".js") || endsWith(path, ".mjs")) return "application/javascript";
-            if (endsWith(path, ".css"))                          return "text/css";
-            if (endsWith(path, ".png"))                          return "image/png";
-            if (endsWith(path, ".jpg") || endsWith(path, ".jpeg")) return "image/jpeg";
-            if (endsWith(path, ".svg"))                          return "image/svg+xml";
-            if (endsWith(path, ".ico"))                          return "image/x-icon";
-            if (endsWith(path, ".json"))                         return "application/json";
-            if (endsWith(path, ".woff"))                         return "font/woff";
-            if (endsWith(path, ".woff2"))                        return "font/woff2";
-            return "application/octet-stream";
-        };
+        if (req.path.rfind("/api/", 0) == 0) return;  // let API 404s stay JSON
 
-        std::string req_path = req.path;
-        if (req_path == "/") req_path = "/index.html";
-
-        std::string file_path = static_dir + req_path;
-        std::ifstream f(file_path, std::ios::binary);
-        if (f) {
-            std::string content((std::istreambuf_iterator<char>(f)),
-                                std::istreambuf_iterator<char>());
-            res.set_content(content, mimeType(req_path));
-            return;
-        }
-
-        // SPA fallback: any path not matching a real file gets index.html.
         std::ifstream idx(static_dir + "/index.html", std::ios::binary);
         if (idx) {
             std::string content((std::istreambuf_iterator<char>(idx)),

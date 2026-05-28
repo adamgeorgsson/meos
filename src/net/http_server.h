@@ -15,11 +15,11 @@ public:
     // Returns the underlying server for route registration.
     httplib::Server& server() { return svr_; }
 
-    // Registers a catch-all GET handler that serves static files from
-    // static_dir.  If the requested file does not exist (and the path does not
-    // start with /api/), index.html is returned (SPA fallback).
+    // Mounts static_dir at "/" using set_mount_point (with gzip via
+    // CPPHTTPLIB_ZLIB_SUPPORT) and registers a catch-all GET handler for the
+    // SPA fallback (non-API paths without a matching file get index.html).
     // Call this AFTER registering all API routes so the catch-all is last.
-    void serveStaticFiles(const std::string& static_dir = "src/ui/web/dist");
+    void serveStaticFiles(const std::string& static_dir = "web");
 
     // Starts listening (blocks until stop() is called).
     void listen();

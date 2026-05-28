@@ -16,9 +16,11 @@ Source code for the MeOS project (www.melin.nu/meos)
 
 ```bash
 export VCPKG_ROOT=~/vcpkg  # adjust to your vcpkg installation
-cmake --preset default     # Configure (Debug)
-cmake --build --preset default
+cmake --preset default     # Configure (Debug) — also installs npm build dependency
+cmake --build --preset default  # Builds C++ and runs React production build (if npm is available)
 ```
+
+The CMake build automatically runs `npm run build` in `src/ui/web/` (if npm is found) and places the output in `src/ui/web/dist/`. The C++ server serves files from the `web/` directory at runtime; copy (or symlink) `src/ui/web/dist/` to `web/` next to the executable.
 
 ### Test
 

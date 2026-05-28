@@ -38,3 +38,17 @@ add_subdirectory(src/app)
 # Testing
 enable_testing()
 add_subdirectory(tests)
+
+# React frontend build integration (skipped gracefully if npm is not available)
+find_program(NPM_EXECUTABLE npm)
+if(NPM_EXECUTABLE)
+    set(REACT_SRC_DIR "${CMAKE_SOURCE_DIR}/src/ui/web")
+    add_custom_target(build_react
+        COMMAND ${NPM_EXECUTABLE} run build
+        WORKING_DIRECTORY ${REACT_SRC_DIR}
+        COMMENT "Building React frontend"
+    )
+    add_dependencies(meos build_react)
+else()
+    message(STATUS "npm not found -- skipping React frontend build")
+endif()

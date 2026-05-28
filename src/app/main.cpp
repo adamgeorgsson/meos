@@ -36,7 +36,7 @@ int main() {
     meos::net::registerResultsRoutes(svr, db);
     meos::net::registerStartListRoutes(svr, db);
     meos::net::registerXmlExportRoutes(svr, db);
-    server.serveStaticFiles("src/ui/web/dist");
+    server.serveStaticFiles("web");
 
     std::cout << "MeOS server listening on http://localhost:2009\n";
     server.listen();

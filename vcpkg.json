@@ -5,7 +5,7 @@
   "dependencies": [
     "gtest",
     "sqlite3",
-    "cpp-httplib",
+    { "name": "cpp-httplib", "features": ["zlib"] },
     "nlohmann-json"
   ]
 }
