@@ -548,8 +548,8 @@
         "Tests pass"
       ],
       "priority": 33,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "meosexception.h and meos_util.h/cpp created in src/util/. string2Wide, wide2String, widen, narrow, toUTF8, fromUTF8 in namespace meos::util with CP-1252 table for 0x80-0x9F and manual UTF-8 codec. meosException/meosCancel in global namespace with wwhat(). domain_header.h updated to include meosexception.h. 27 unit tests pass."
     },
     {
       "id": "US-013a2",

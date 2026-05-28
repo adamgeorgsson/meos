@@ -151,3 +151,7 @@ target_link_libraries(db_complex_entities_test PRIVATE meos_db unofficial::sqlit
 # DB events + teams unit/integration test (US-004d)
 meos_add_test(db_events_teams_test db_events_teams_test.cpp)
 target_link_libraries(db_events_teams_test PRIVATE meos_db unofficial::sqlite3::sqlite3)
+
+# Util string conversions + exceptions unit test (US-013a1)
+meos_add_test(util_string_test util_string_test.cpp)
+target_link_libraries(util_string_test PRIVATE meos_util)
