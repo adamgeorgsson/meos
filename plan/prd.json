@@ -529,8 +529,8 @@
         "Typecheck passes"
       ],
       "priority": 32,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "MeosApp class created in src/app/app.h + app.cpp. run(argc, argv) parses --port (default 8080), --db (default meos.sqlite), --web-root (default web). Applies V1-V4 migrations, registers all API route groups (including cards), serves React SPA. main.cpp is a 4-line delegator. Clean shutdown on Enter keypress via background thread + cin.get(). All 36 tests pass."
     },
     {
       "id": "US-013a1",
