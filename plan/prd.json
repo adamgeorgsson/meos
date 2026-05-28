@@ -475,8 +475,8 @@
         "Tests pass"
       ],
       "priority": 29,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "POST /api/v1/cards stores card readout with auto-link to runner by cardNumber; POST /api/v1/runners/{id}/status allows manual status changes (ok/dns/dnf/dq/mp/nc/inactive). GET /api/v1/results and GET /api/v1/startlist already existed. cards and free_punches tables added to createTables(). 13 new integration tests (7 cards + 6 runner status). All 36 tests pass."
     },
     {
       "id": "US-011",

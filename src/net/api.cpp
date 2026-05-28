@@ -440,6 +440,45 @@ void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db) {
                    db.deleteRunner(id);
                    res.status = 204;
                });
+
+    // POST /api/v1/runners/{id}/status — manual status override
+    svr.Post(R"(/api/v1/runners/(\d+)/status)",
+             [&db](const httplib::Request& req, httplib::Response& res) {
+                 try {
+                     int id = std::stoi(req.matches[1]);
+                     auto runner = db.getRunnerById(id);
+                     if (!runner) {
+                         res.status = 404;
+                         res.set_content(makeError(404, "Not found").dump(), "application/json");
+                         return;
+                     }
+                     auto body = json::parse(req.body);
+                     if (!body.contains("status") || !body["status"].is_string()) {
+                         res.status = 400;
+                         res.set_content(makeError(400, "Missing required field: status").dump(),
+                                         "application/json");
+                         return;
+                     }
+                     std::string newStatus = body["status"].get<std::string>();
+                     static const std::vector<std::string> kValid = {
+                         "ok", "dns", "dnf", "dq", "mp", "nc", "inactive"};
+                     if (std::find(kValid.begin(), kValid.end(), newStatus) == kValid.end()) {
+                         res.status = 400;
+                         res.set_content(
+                             makeError(400, "Invalid status value").dump(), "application/json");
+                         return;
+                     }
+                     runner->status = newStatus;
+                     db.updateRunner(*runner);
+                     res.set_content(runnerToJson(*runner).dump(), "application/json");
+                 } catch (const std::invalid_argument& e) {
+                     res.status = 400;
+                     res.set_content(makeError(400, e.what()).dump(), "application/json");
+                 } catch (...) {
+                     res.status = 500;
+                     res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                 }
+             });
 }
 
 namespace {
@@ -718,6 +757,102 @@ void registerStartListRoutes(httplib::Server& svr, meos::db::Database& db) {
                                     "application/json");
                 }
             });
+}
+
+namespace {
+
+// Serialize a list of {code, time} punches to the oPunch appendCodeString format.
+// Format per punch: "code-seconds.tenths;" (timeConstSecond = 10)
+std::string serializePunches(const json& punches) {
+    std::string result;
+    result.reserve(punches.size() * 16);
+    for (const auto& p : punches) {
+        int code = p.value("code", 0);
+        int time = p.value("time", -1);  // tenths of seconds; -1 = no time
+        char buf[32];
+        if (time >= 0)
+            snprintf(buf, sizeof(buf), "%d-%d.%d;", code, time / 10, time % 10);
+        else
+            snprintf(buf, sizeof(buf), "%d--0.0;", code);
+        result += buf;
+    }
+    return result;
+}
+
+json cardToJson(const meos::domain::Card& c) {
+    json j;
+    j["id"]          = c.id;
+    j["cardNumber"]  = c.cardNumber;
+    j["punchString"] = c.punchString;
+    if (c.runnerId) j["runnerId"] = *c.runnerId;
+    return j;
+}
+
+}  // namespace
+
+void registerCardsRoutes(httplib::Server& svr, meos::db::Database& db) {
+    svr.Get("/api/v1/cards",
+            [&db](const httplib::Request&, httplib::Response& res) {
+                auto cards = db.getAllCards();
+                json arr = json::array();
+                for (const auto& c : cards) arr.push_back(cardToJson(c));
+                res.set_content(arr.dump(), "application/json");
+            });
+
+    svr.Get(R"(/api/v1/cards/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                int id = std::stoi(req.matches[1]);
+                auto card = db.getCardById(id);
+                if (!card) {
+                    res.status = 404;
+                    res.set_content(makeError(404, "Not found").dump(), "application/json");
+                } else {
+                    res.set_content(cardToJson(*card).dump(), "application/json");
+                }
+            });
+
+    // POST /api/v1/cards — card readout: store punches and link to runner by card number.
+    // Body: { "cardNumber": int, "punches": [ {"code": int, "time": int}, ... ] }
+    // If a runner with matching cardNumber exists, the card is linked (runnerId set).
+    svr.Post("/api/v1/cards",
+             [&db](const httplib::Request& req, httplib::Response& res) {
+                 try {
+                     auto body = json::parse(req.body);
+                     if (!body.contains("cardNumber") ||
+                         !body["cardNumber"].is_number_integer()) {
+                         res.status = 400;
+                         res.set_content(
+                             makeError(400, "Missing required field: cardNumber").dump(),
+                             "application/json");
+                         return;
+                     }
+                     meos::domain::Card card;
+                     card.id         = 0;
+                     card.cardNumber = body["cardNumber"].get<int>();
+
+                     // Serialize punch array if provided
+                     if (body.contains("punches") && body["punches"].is_array())
+                         card.punchString = serializePunches(body["punches"]);
+
+                     // Auto-link to runner with matching card number
+                     for (const auto& runner : db.getAllRunners()) {
+                         if (runner.cardNumber && *runner.cardNumber == card.cardNumber) {
+                             card.runnerId = runner.id;
+                             break;
+                         }
+                     }
+
+                     card.id = db.insertCard(card);
+                     res.status = 201;
+                     res.set_content(cardToJson(card).dump(), "application/json");
+                 } catch (const std::invalid_argument& e) {
+                     res.status = 400;
+                     res.set_content(makeError(400, e.what()).dump(), "application/json");
+                 } catch (...) {
+                     res.status = 500;
+                     res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                 }
+             });
 }
 
 namespace {

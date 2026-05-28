@@ -173,6 +173,27 @@ void Database::createTables() {
       FOREIGN KEY (class_id) REFERENCES classes(id)
     )
   )");
+
+  exec(R"(
+    CREATE TABLE IF NOT EXISTS cards (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      runner_id    INTEGER,
+      card_number  INTEGER NOT NULL,
+      punch_string TEXT,
+      FOREIGN KEY (runner_id) REFERENCES runners(id)
+    )
+  )");
+
+  exec(R"(
+    CREATE TABLE IF NOT EXISTS free_punches (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      code        INTEGER NOT NULL,
+      punch_time  INTEGER NOT NULL,
+      runner_id   INTEGER,
+      card_number INTEGER,
+      FOREIGN KEY (runner_id) REFERENCES runners(id)
+    )
+  )");
 }
 
 // ---- Migration system -------------------------------------------------------

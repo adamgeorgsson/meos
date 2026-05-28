@@ -23,6 +23,7 @@ void registerClassesRoutes(httplib::Server& svr, meos::db::Database& db);
 // Registers full CRUD for /api/v1/runners and /api/v1/runners/{id}.
 // GET supports filtering (?name=, ?clubId=, ?classId=) and pagination (?page=, ?pageSize=).
 // Response envelope for GET list: {data, total, page, pageSize}.
+// POST /api/v1/runners/{id}/status allows manual status changes (ok/dns/dnf/dq/mp/nc/inactive).
 void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db);
 
 // Registers full CRUD for /api/v1/teams and /api/v1/teams/{id}.
@@ -37,7 +38,12 @@ void registerCompetitionsRoutes(httplib::Server& svr, meos::db::Database& db);
 void registerResultsRoutes(httplib::Server& svr, meos::db::Database& db);
 
 // Registers GET /api/v1/startlist and GET /api/v1/startlist/{id} on svr.
+// Entries are sorted by classId then startTime.
 void registerStartListRoutes(httplib::Server& svr, meos::db::Database& db);
+
+// Registers GET and POST /api/v1/cards and GET /api/v1/cards/{id}.
+// POST stores a card readout and auto-links it to a runner by cardNumber.
+void registerCardsRoutes(httplib::Server& svr, meos::db::Database& db);
 
 // Registers IOF 3.0 XML export endpoints:
 //   GET /api/v1/results/export/xml   -> ResultList XML

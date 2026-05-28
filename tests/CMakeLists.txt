@@ -56,6 +56,14 @@ target_link_libraries(results_api_test PRIVATE meos_net nlohmann_json::nlohmann_
 meos_add_test(startlist_api_test startlist_api_test.cpp)
 target_link_libraries(startlist_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
 
+# Cards API integration test (US-006)
+meos_add_test(cards_api_test cards_api_test.cpp)
+target_link_libraries(cards_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
+# Runner status API integration test (US-006)
+meos_add_test(runner_status_api_test runner_status_api_test.cpp)
+target_link_libraries(runner_status_api_test PRIVATE meos_net nlohmann_json::nlohmann_json)
+
 # XML export integration test
 meos_add_test(xml_export_test xml_export_test.cpp)
 target_link_libraries(xml_export_test PRIVATE meos_net)
