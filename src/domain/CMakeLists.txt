@@ -18,6 +18,7 @@ add_library(meos_domain STATIC
   oEventDraw.cpp
   domain_stubs.cpp
   generalresult.cpp
+  metalist.cpp
 )
 target_include_directories(meos_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(meos_domain PUBLIC meos_util)

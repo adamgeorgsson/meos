@@ -118,3 +118,7 @@ target_link_libraries(domain_oevent_integration_test PRIVATE meos_domain)
 # Domain GeneralResult scoring engine (US-003j1)
 meos_add_test(domain_generalresult_test domain_generalresult_test.cpp)
 target_link_libraries(domain_generalresult_test PRIVATE meos_domain)
+
+# Domain MetaList + oListInfo + Result Tests (US-003j2)
+meos_add_test(domain_result_tests domain_result_tests.cpp)
+target_link_libraries(domain_result_tests PRIVATE meos_domain)
