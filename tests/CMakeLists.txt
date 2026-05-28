@@ -189,3 +189,7 @@ target_link_libraries(io_csv_import_test PRIVATE meos_io meos_domain meos_util)
 # CSV export + round-trip unit test (US-014b2)
 meos_add_test(io_csv_export_test io_csv_export_test.cpp)
 target_link_libraries(io_csv_export_test PRIVATE meos_io meos_domain meos_util)
+
+# HTML template engine unit test (US-014c)
+meos_add_test(io_html_template_test io_html_template_test.cpp)
+target_link_libraries(io_html_template_test PRIVATE meos_io meos_util)

@@ -688,8 +688,8 @@
         "Tests pass"
       ],
       "priority": 41,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Clean-room HtmlTemplate class in src/io/. read(istream&) parses @MEOS EXPORT TEMPLATE header, tag@name, description, % comments, @USETABLE, and @HEAD/@OUTERPAGE/@INNERPAGE/@SEPARATOR/@END sections. substitute() is single-pass, longest-match-first. generate() emits HEAD+outer pages+inner columns+separators+END with @TITLE/@CONTENTS/@PAGE/@NUMPAGE/@NUMCOL/@MEOS/@TIME. generateFile() uses meos::util::toUTF8(fileName) for Linux. 23 unit tests pass."
     },
     {
       "id": "US-014d",
