@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <ctime>
 #include <cwchar>
 #include <limits>
 #include <list>
@@ -44,6 +45,16 @@ inline int _i64toa_s(int64_t val, char* buf, size_t bufSize, int radix) {
   else
     snprintf(buf, bufSize, "%lld", static_cast<long long>(val));
   return 0;
+}
+
+// Cross-platform localtime: fills tm from t using the thread-safe variant.
+inline void meos_localtime(std::tm& tm, const std::time_t& t) {
+  localtime_r(&t, &tm);
+}
+#else
+// On Windows, use the safe localtime_s variant.
+inline void meos_localtime(std::tm& tm, const std::time_t& t) {
+  localtime_s(&tm, &t);
 }
 #endif
 

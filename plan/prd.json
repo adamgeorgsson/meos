@@ -312,8 +312,8 @@
         "Tests pass"
       ],
       "priority": 20,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "runner_status.h created (extracted RunnerStatus enum from oAbstractRunner.h). oSpeakerObject.h created as proper domain class (no GDI). oAbstractRunner.h updated to include both. meos_localtime shim added to domain_header.h. #ifdef _WIN32 removed from oEvent.cpp. All 29 tests pass."
     },
     {
       "id": "US-004a",

@@ -52,11 +52,7 @@ void oEvent::newCompetition(const std::wstring& name) {
   // Set ZeroTime to the current local hour (matches legacy behaviour).
   std::time_t now = std::time(nullptr);
   std::tm tm{};
-#ifdef _WIN32
-  localtime_s(&tm, &now);
-#else
-  localtime_r(&now, &tm);
-#endif
+  meos_localtime(tm, now);
   ZeroTime = tm.tm_hour * timeConstHour;
 
   Name = name;
