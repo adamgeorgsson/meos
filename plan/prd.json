@@ -654,8 +654,8 @@
         "Tests pass"
       ],
       "priority": 39,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "CsvImporter class created in src/io/ extending csvparser. importOE_CSV and importOS_CSV implemented. getClubCreate/getClassCreate real implementations added to oEvent. convertAbsoluteTime static inline added. Row safe-accessor pattern. 21 unit tests pass."
     },
     {
       "id": "US-014b2",

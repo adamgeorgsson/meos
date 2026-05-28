@@ -163,3 +163,53 @@ oRunner* oEvent::getRunnerByCardNo(int cardNo, int /*time*/,
   }
   return nullptr;
 }
+
+// ---------------------------------------------------------------------------
+// Club helpers
+// ---------------------------------------------------------------------------
+
+pClub oEvent::getClub(const std::wstring& name) const {
+  for (auto& c : Clubs) {
+    if (!c.isRemoved() && c.getName() == name)
+      return const_cast<oClub*>(&c);
+  }
+  return nullptr;
+}
+
+pClub oEvent::getClubCreate(int id, const std::wstring& name) {
+  if (id > 0) {
+    auto it = clubByIdIndex.find(id);
+    if (it != clubByIdIndex.end() && !it->second->isRemoved())
+      return it->second;
+  }
+  if (!name.empty()) {
+    for (auto& c : Clubs) {
+      if (!c.isRemoved() && c.getName() == name)
+        return &c;
+    }
+  }
+  oClub* club = addClub(id);
+  club->setName(name);
+  return club;
+}
+
+// ---------------------------------------------------------------------------
+// Class helpers
+// ---------------------------------------------------------------------------
+
+oClass* oEvent::getClassCreate(int id, const std::wstring& name) {
+  if (id > 0) {
+    auto it = classByIdIndex.find(id);
+    if (it != classByIdIndex.end() && !it->second->isRemoved())
+      return it->second;
+  }
+  if (!name.empty()) {
+    for (auto& c : Classes) {
+      if (!c.isRemoved() && c.getName() == name)
+        return &c;
+    }
+  }
+  oClass* cls = addClass(id);
+  cls->setName(name, false);
+  return cls;
+}

@@ -181,3 +181,7 @@ target_compile_definitions(util_localizer_test PRIVATE
 # IOF 3.0 XML import/export unit test (US-014a)
 meos_add_test(io_iof_xml_test io_iof_xml_test.cpp)
 target_link_libraries(io_iof_xml_test PRIVATE meos_io meos_util)
+
+# CSV import unit test (US-014b1)
+meos_add_test(io_csv_import_test io_csv_import_test.cpp)
+target_link_libraries(io_csv_import_test PRIVATE meos_io meos_domain meos_util)

@@ -197,8 +197,15 @@ public:
     auto it = clubByIdIndex.find(id);
     return it != clubByIdIndex.end() ? it->second : nullptr;
   }
-  pClub getClub(const std::wstring& /*name*/) const { return nullptr; }
-  pClub getClubCreate(int /*id*/, const std::wstring& /*name*/) const { return nullptr; }
+  pClub getClub(const std::wstring& name) const;
+  pClub getClubCreate(int id, const std::wstring& name);
+
+  oClass* getClassCreate(int id, const std::wstring& name);
+
+  /** Convert HH:MM:SS absolute-time string to tenths-of-second. */
+  static int convertAbsoluteTime(const std::wstring& s) {
+    return convertAbsoluteTimeHMS(s, 0);
+  }
 
   oCard* getCard(int id) const {
     auto it = cardByIdIndex.find(id);
