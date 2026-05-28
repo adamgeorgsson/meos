@@ -177,3 +177,7 @@ meos_add_test(util_localizer_test util_localizer_test.cpp)
 target_link_libraries(util_localizer_test PRIVATE meos_util)
 target_compile_definitions(util_localizer_test PRIVATE
     RESOURCES_DIR="${CMAKE_SOURCE_DIR}/resources")
+
+# IOF 3.0 XML import/export unit test (US-014a)
+meos_add_test(io_iof_xml_test io_iof_xml_test.cpp)
+target_link_libraries(io_iof_xml_test PRIVATE meos_io meos_util)

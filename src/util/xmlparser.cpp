@@ -203,8 +203,11 @@ xmlobject::~xmlobject()
 
 
 const string &xmlparser::encodeXML(const wstring &input) {
-  string utf8 = meos::util::toUTF8(input);
-  return ::encodeXML(utf8);
+  // Use a static buffer so the returned reference is never dangling
+  // (the free-function encodeXML may return its `in` parameter by ref).
+  static string utf8buf;
+  utf8buf = meos::util::toUTF8(input);
+  return ::encodeXML(utf8buf);
 }
 
 const string &xmlparser::encodeXML(const string &input) {
