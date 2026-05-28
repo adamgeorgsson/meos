@@ -382,8 +382,8 @@
         "Tests pass"
       ],
       "priority": 24,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "V4 migration creates events (single-row upsert, id=1) and teams/team_members tables. Event struct added to entities.h. saveEvent (INSERT OR REPLACE) + getEvent added. insertTeam/updateTeam/deleteTeam with join-table membership management. createTables() updated with events table. File-based round-trip test passes. All 33 tests pass."
     },
     {
       "id": "US-005a",

@@ -135,3 +135,7 @@ target_link_libraries(db_simple_entities_test PRIVATE meos_db unofficial::sqlite
 # DB complex-entity CRUD unit test (US-004c)
 meos_add_test(db_complex_entities_test db_complex_entities_test.cpp)
 target_link_libraries(db_complex_entities_test PRIVATE meos_db unofficial::sqlite3::sqlite3)
+
+# DB events + teams unit/integration test (US-004d)
+meos_add_test(db_events_teams_test db_events_teams_test.cpp)
+target_link_libraries(db_events_teams_test PRIVATE meos_db unofficial::sqlite3::sqlite3)

@@ -15,6 +15,15 @@ struct Competition {
   std::optional<std::string> description;
 };
 
+// Single-row event metadata for the active competition.
+// Persisted via INSERT OR REPLACE with id=1 (upsert semantics).
+struct Event {
+  std::string name;
+  std::string date;           // YYYY-MM-DD
+  int zeroTime = 0;           // competition zero time (seconds since midnight)
+  std::optional<std::string> properties;  // serialized key=value settings
+};
+
 struct Club {
   int id;
   std::string name;

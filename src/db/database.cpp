@@ -36,6 +36,16 @@ void Database::exec(const std::string& sql) {
 
 void Database::createTables() {
   exec(R"(
+    CREATE TABLE IF NOT EXISTS events (
+      id         INTEGER PRIMARY KEY DEFAULT 1,
+      name       TEXT    NOT NULL DEFAULT '',
+      date       TEXT    NOT NULL DEFAULT '',
+      zero_time  INTEGER NOT NULL DEFAULT 0,
+      properties TEXT
+    )
+  )");
+
+  exec(R"(
     CREATE TABLE IF NOT EXISTS competitions (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
@@ -339,6 +349,28 @@ std::vector<int> parseControls(const std::string& s) {
   return result;
 }
 
+// Bind helpers shared by all CRUD write methods.
+void bindOptFk(sqlite3_stmt* s, int col, std::optional<int> val) {
+  if (!val.has_value() || *val == 0)
+    sqlite3_bind_null(s, col);
+  else
+    sqlite3_bind_int(s, col, *val);
+}
+
+void bindOptInt(sqlite3_stmt* s, int col, std::optional<int> val) {
+  if (!val.has_value())
+    sqlite3_bind_null(s, col);
+  else
+    sqlite3_bind_int(s, col, *val);
+}
+
+void bindOptText(sqlite3_stmt* s, int col, std::optional<std::string> val) {
+  if (!val.has_value())
+    sqlite3_bind_null(s, col);
+  else
+    sqlite3_bind_text(s, col, val->c_str(), -1, SQLITE_TRANSIENT);
+}
+
 }  // namespace
 
 // --- Clubs ---
@@ -566,6 +598,97 @@ std::optional<domain::Team> Database::getTeamById(int id) {
     return t;
   }
   return std::nullopt;
+}
+
+// --- Event (single-row upsert) -----------------------------------------------
+
+void Database::saveEvent(const domain::Event& e) {
+  auto stmt = prepare(db_,
+    "INSERT OR REPLACE INTO events (id, name, date, zero_time, properties)"
+    " VALUES (1, ?, ?, ?, ?)");
+  sqlite3_bind_text(stmt.get(), 1, e.name.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(stmt.get(), 2, e.date.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int(stmt.get(), 3, e.zeroTime);
+  if (e.properties)
+    sqlite3_bind_text(stmt.get(), 4, e.properties->c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(stmt.get(), 4);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("saveEvent failed");
+}
+
+std::optional<domain::Event> Database::getEvent() const {
+  sqlite3_stmt* raw = nullptr;
+  int rc = sqlite3_prepare_v2(
+      db_,
+      "SELECT name, date, zero_time, properties FROM events WHERE id=1",
+      -1, &raw, nullptr);
+  if (rc != SQLITE_OK) return std::nullopt;
+  StmtPtr stmt(raw);
+  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    domain::Event e;
+    e.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 0));
+    e.date = reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 1));
+    e.zeroTime = sqlite3_column_int(stmt.get(), 2);
+    e.properties = optText(stmt.get(), 3);
+    return e;
+  }
+  return std::nullopt;
+}
+
+// ---- CRUD — Teams -----------------------------------------------------------
+
+int Database::insertTeam(const domain::Team& t) {
+  auto stmt = prepare(db_,
+    "INSERT INTO teams (name, club_id, class_id) VALUES (?, ?, ?)");
+  sqlite3_bind_text(stmt.get(), 1, t.name.c_str(), -1, SQLITE_TRANSIENT);
+  bindOptFk(stmt.get(), 2, t.clubId);
+  bindOptFk(stmt.get(), 3, t.classId);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("insertTeam failed");
+  int teamId = static_cast<int>(sqlite3_last_insert_rowid(db_));
+  for (int runnerId : t.members) {
+    auto mstmt = prepare(db_,
+      "INSERT INTO team_members (team_id, runner_id) VALUES (?, ?)");
+    sqlite3_bind_int(mstmt.get(), 1, teamId);
+    sqlite3_bind_int(mstmt.get(), 2, runnerId);
+    if (sqlite3_step(mstmt.get()) != SQLITE_DONE)
+      throw std::runtime_error("insertTeam: team_members insert failed");
+  }
+  return teamId;
+}
+
+void Database::updateTeam(const domain::Team& t) {
+  auto stmt = prepare(db_,
+    "UPDATE teams SET name=?, club_id=?, class_id=? WHERE id=?");
+  sqlite3_bind_text(stmt.get(), 1, t.name.c_str(), -1, SQLITE_TRANSIENT);
+  bindOptFk(stmt.get(), 2, t.clubId);
+  bindOptFk(stmt.get(), 3, t.classId);
+  sqlite3_bind_int(stmt.get(), 4, t.id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("updateTeam failed");
+  // Replace membership rows
+  auto del = prepare(db_, "DELETE FROM team_members WHERE team_id=?");
+  sqlite3_bind_int(del.get(), 1, t.id);
+  sqlite3_step(del.get());
+  for (int runnerId : t.members) {
+    auto mstmt = prepare(db_,
+      "INSERT INTO team_members (team_id, runner_id) VALUES (?, ?)");
+    sqlite3_bind_int(mstmt.get(), 1, t.id);
+    sqlite3_bind_int(mstmt.get(), 2, runnerId);
+    if (sqlite3_step(mstmt.get()) != SQLITE_DONE)
+      throw std::runtime_error("updateTeam: team_members insert failed");
+  }
+}
+
+void Database::deleteTeam(int id) {
+  auto del = prepare(db_, "DELETE FROM team_members WHERE team_id=?");
+  sqlite3_bind_int(del.get(), 1, id);
+  sqlite3_step(del.get());
+  auto stmt = prepare(db_, "DELETE FROM teams WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("deleteTeam failed");
 }
 
 // --- Competitions ---
@@ -815,32 +938,6 @@ void Database::deleteCourse(int id) {
 
 // ---- V3 Migration -----------------------------------------------------------
 
-// Helper: bind an optional int FK; 0 is treated as "not set" → NULL.
-namespace {
-
-void bindOptFk(sqlite3_stmt* s, int col, std::optional<int> val) {
-  if (!val.has_value() || *val == 0)
-    sqlite3_bind_null(s, col);
-  else
-    sqlite3_bind_int(s, col, *val);
-}
-
-void bindOptInt(sqlite3_stmt* s, int col, std::optional<int> val) {
-  if (!val.has_value())
-    sqlite3_bind_null(s, col);
-  else
-    sqlite3_bind_int(s, col, *val);
-}
-
-void bindOptText(sqlite3_stmt* s, int col, std::optional<std::string> val) {
-  if (!val.has_value())
-    sqlite3_bind_null(s, col);
-  else
-    sqlite3_bind_text(s, col, val->c_str(), -1, SQLITE_TRANSIENT);
-}
-
-}  // namespace
-
 // V3: classes, cards, free_punches. Cards store punches as a TEXT punch_string.
 std::vector<Migration> Database::v3Migrations() {
   return {
@@ -868,6 +965,37 @@ std::vector<Migration> Database::v3Migrations() {
            card_number INTEGER,
            FOREIGN KEY (runner_id) REFERENCES runners(id)
          );
+       )"}};
+}
+
+// V4: events (single-row competition metadata) and teams with member join table.
+std::vector<Migration> Database::v4Migrations() {
+  return {
+      {4, "Schema V4: events and teams",
+       R"(
+        CREATE TABLE IF NOT EXISTS events (
+          id         INTEGER PRIMARY KEY DEFAULT 1,
+          name       TEXT    NOT NULL DEFAULT '',
+          date       TEXT    NOT NULL DEFAULT '',
+          zero_time  INTEGER NOT NULL DEFAULT 0,
+          properties TEXT
+        );
+        CREATE TABLE IF NOT EXISTS teams (
+          id       INTEGER PRIMARY KEY,
+          name     TEXT    NOT NULL,
+          club_id  INTEGER,
+          class_id INTEGER,
+          FOREIGN KEY (club_id)  REFERENCES clubs(id),
+          FOREIGN KEY (class_id) REFERENCES classes(id)
+        );
+        CREATE TABLE IF NOT EXISTS team_members (
+          team_id   INTEGER NOT NULL,
+          runner_id INTEGER NOT NULL,
+          leg       INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (team_id)   REFERENCES teams(id),
+          FOREIGN KEY (runner_id) REFERENCES runners(id),
+          PRIMARY KEY (team_id, runner_id)
+        );
        )"}};
 }
 

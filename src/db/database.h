@@ -49,6 +49,18 @@ class Database {
   // with FK relationships). Runners already exist from V1 but gain CRUD here.
   static std::vector<Migration> v3Migrations();
 
+  // V4 migration: events (single-row competition metadata) and teams tables.
+  static std::vector<Migration> v4Migrations();
+
+  // CRUD — Teams (runner membership stored via team_members join table)
+  int insertTeam(const domain::Team& t);
+  void updateTeam(const domain::Team& t);
+  void deleteTeam(int id);
+
+  // Event upsert — single-row INSERT OR REPLACE with id=1.
+  void saveEvent(const domain::Event& e);
+  std::optional<domain::Event> getEvent() const;
+
   // CRUD — Clubs
   int insertClub(const domain::Club& c);   // returns last_insert_rowid
   void updateClub(const domain::Club& c);
