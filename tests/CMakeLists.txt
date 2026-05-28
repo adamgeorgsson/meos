@@ -167,3 +167,7 @@ target_link_libraries(util_xmlparser_test PRIVATE meos_util)
 # Util CSV parser unit test (US-013b)
 meos_add_test(util_csvparser_test util_csvparser_test.cpp)
 target_link_libraries(util_csvparser_test PRIVATE meos_util)
+
+# Util TimeStamp + timeconstants unit test (US-013c)
+meos_add_test(util_timestamp_test util_timestamp_test.cpp)
+target_link_libraries(util_timestamp_test PRIVATE meos_util)

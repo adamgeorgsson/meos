@@ -599,8 +599,8 @@
         "Tests pass"
       ],
       "priority": 36,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "timeconstants.hpp, TimeStamp.h/cpp migrated to src/util/. meos_localtime_now inline + getThisYear() added to time_util.h/cpp. getStamp() clamps year to [2009,thisYear]. getStamp(sql) resizes to actual digits written. 22 unit tests pass."
     },
     {
       "id": "US-013d",

@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+// meos_localtime_now is defined inline in time_util.h
+
 namespace meos::util {
 
 std::string formatTimeHMS(int seconds) {
@@ -19,7 +21,6 @@ std::string formatTimeHMS(int seconds) {
 }
 
 int parseTimeHMS(const std::string& hms) {
-  // Find the two colons
   auto c1 = hms.find(':');
   auto c2 = hms.find(':', c1 + 1);
   if (c1 == std::string::npos || c2 == std::string::npos || hms.find(':', c2 + 1) != std::string::npos) {
@@ -38,6 +39,16 @@ int parseTimeHMS(const std::string& hms) {
   int m = std::stoi(ms);
   int s = std::stoi(ss);
   return h * 3600 + m * 60 + s;
+}
+
+int getThisYear() {
+  static int thisYear = 0;
+  if (thisYear == 0) {
+    std::tm st = {};
+    meos_localtime_now(&st);
+    thisYear = st.tm_year + 1900;
+  }
+  return thisYear;
 }
 
 }  // namespace meos::util

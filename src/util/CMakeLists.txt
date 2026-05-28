@@ -1,6 +1,7 @@
 add_library(meos_util STATIC
     string_util.cpp
     time_util.cpp
+    TimeStamp.cpp
     meos_util.cpp
     hls.cpp
     meos_version.cpp
