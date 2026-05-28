@@ -670,8 +670,8 @@
         "Tests pass"
       ],
       "priority": 40,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "CsvExporter class created in src/io/csv_export.h/cpp extending csvparser. exportOE_CSV writes OE-format CSV (46 fixed columns, UTF-8 BOM). Times via formatTimeHMS(t/timeConstSecond) for round-trip with convertAbsoluteTimeHMS. splitName() helper for Surname/Firstname split. statusToOE() reverse mapping. 17 unit tests pass (7 export + 10 round-trip)."
     },
     {
       "id": "US-014c",
