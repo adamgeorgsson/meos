@@ -508,8 +508,8 @@
         "Typecheck passes"
       ],
       "priority": 31,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All Win32 GUI code already removed in prior domain migration stories. No Tab*.cpp/h or gdioutput.* files exist in src/. No windows.h/commctrl.h includes, no RECT/HWND/CreateWindow usage. Only #ifndef _WIN32 guard in domain_header.h (the intended cross-platform shim). All 36 tests pass on Linux."
     },
     {
       "id": "US-016",
