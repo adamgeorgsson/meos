@@ -185,3 +185,29 @@ void oEvent::calculateTeamResults(const std::set<int>& classIds,
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// getTeams — collect non-removed teams, optionally filtered by classId.
+// ---------------------------------------------------------------------------
+
+void oEvent::getTeams(int classId, std::vector<pTeam>& out, bool /*removeVacant*/) const {
+  out.clear();
+  for (auto& t : Teams) {
+    if (t.isRemoved()) continue;
+    if (classId != 0 && t.getClassId(true) != classId) continue;
+    out.push_back(const_cast<oTeam*>(&t));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// calculateTeamResults(vector<pTeam>&, ResultType) — vector overload used by
+// GeneralResult modules.
+// ---------------------------------------------------------------------------
+
+void oEvent::calculateTeamResults(std::vector<pTeam>& teams, ResultType resultType) const {
+  if (teams.empty()) return;
+  std::set<int> classIds;
+  for (pTeam t : teams)
+    classIds.insert(t->getClassId(true));
+  calculateTeamResults(classIds, resultType);
+}

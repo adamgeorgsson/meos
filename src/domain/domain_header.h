@@ -164,6 +164,23 @@ inline wstring formatDate(int m, bool /*useIsoFormat*/) {
   return bf;
 }
 
+// Convert int to narrow string (replaces legacy itos from meos_util)
+inline string itos(int v) { return std::to_string(v); }
+
+// Portable exception class matching legacy meosException interface
+#include <stdexcept>
+class meosException : public std::runtime_error {
+  std::wstring wideMessage;
+public:
+  meosException(const std::wstring& wmsg)
+    : std::runtime_error(std::string(wmsg.begin(), wmsg.end())),
+      wideMessage(wmsg) {}
+  meosException(const std::string& msg)  : std::runtime_error(msg.c_str()) {}
+  meosException(const char* msg)         : std::runtime_error(msg) {}
+  meosException()                        : std::runtime_error("") {}
+  const std::wstring& wwhat() const { return wideMessage; }
+};
+
 // Compare two bib strings: shorter wins; equal length uses polynomial hash ordering
 inline bool compareBib(const wstring& b1, const wstring& b2) {
   int l1 = (int)b1.length();

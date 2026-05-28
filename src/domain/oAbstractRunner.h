@@ -8,6 +8,7 @@
 class RunnerResultTestAccessor;
 #include "domain_header.h"
 #include "common_enums.h"
+#include <array>
 #include <vector>
 #include <utility>
 #include <string>
@@ -16,6 +17,7 @@ class oEvent;
 class oTeam;
 class oRunner;
 class oSpeakerObject;
+class GeneralResult;
 
 typedef oTeam* pTeam;
 typedef const oTeam* cTeam;
@@ -30,6 +32,25 @@ enum RunnerStatus {
   StatusMP = 3, StatusDNF = 4, StatusDQ = 5, StatusMAX = 6, StatusNoTiming = 2,
   StatusUnknown = 0, StatusNotCompeting = 99
 };
+
+// Order map: lower = better ranking. Initialized at compile time.
+// Index is the RunnerStatus enum value (0..99).
+inline constexpr std::array<int, 100> RunnerStatusOrderMap = []() {
+  std::array<int, 100> m{};
+  for (auto& v : m) v = 11; // default: lowest rank
+  m[StatusOK]              = 0;
+  m[StatusNoTiming]        = 1;
+  m[StatusOutOfCompetition]= 2;
+  m[StatusMAX]             = 3;
+  m[StatusMP]              = 4;
+  m[StatusDNF]             = 5;
+  m[StatusDQ]              = 6;
+  m[StatusCANCEL]          = 7;
+  m[StatusDNS]             = 8;
+  m[StatusUnknown]         = 9;
+  m[StatusNotCompeting]    = 10;
+  return m;
+}();
 
 enum class DynamicRunnerStatus {
   StatusInactive,
@@ -161,6 +182,7 @@ public:
 
     friend class oAbstractRunner;
     friend class oEvent;
+    friend class GeneralResult;
     TempResult(RunnerStatus statusIn, int startTime, int runningTime, int points);
   };
 

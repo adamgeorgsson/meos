@@ -103,6 +103,11 @@ public:
   int getRogainingReduction(bool computed) const override;
   int getRogainingOvertime(bool computed) const override;
   int getRogainingPointsGross(bool computed) const override;
+
+  // Patrol rogaining helpers (used by result modules)
+  int getRogainingPatrolPoints(bool /*computed*/) const { return 0; }
+  int getRogainingPatrolReduction() const { return 0; }
+  int getRogainingPatrolOvertime() const { return 0; }
   RunnerStatus getStatusComputed(bool allowUpdate) const final;
   DynamicRunnerStatus getDynamicStatus() const final;
   int getPlace(bool allowUpdate = true) const override { return getLegPlace(-1, false, allowUpdate); }

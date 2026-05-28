@@ -316,6 +316,20 @@ public:
    */
   void drawStartList(const std::vector<ClassDrawSpecification>& spec);
 
+  /** Fill out with all non-removed teams, optionally filtered by class id (0=all). */
+  void getTeams(int classId, std::vector<pTeam>& out, bool removeVacant) const;
+
+  // Computer-time helpers for dynamic result modules
+  void updateComputerTime(bool /*forceUpdate*/) const {}
+  int  getComputerTime() const { return 0; }
+  int  getMaximalTime() const { return 0; }
+
+  /**
+   * Assign tPlace for each team in the given list within their class.
+   * Overload used by GeneralResult modules.
+   */
+  void calculateTeamResults(std::vector<pTeam>& teams, ResultType resultType) const;
+
   // -----------------------------------------------------------------------
   // Miscellaneous stubs
   // -----------------------------------------------------------------------
