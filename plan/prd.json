@@ -419,8 +419,8 @@
         "Tests pass"
       ],
       "priority": 26,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "registerClubsRoutes and registerControlsRoutes already implemented in src/net/api.cpp. clubs_api_test (4 tests, port 18007) and controls_api_test (4 tests, port 18008) registered in tests/CMakeLists.txt. All 34 tests pass."
     },
     {
       "id": "US-005c",
