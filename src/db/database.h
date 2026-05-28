@@ -41,6 +41,25 @@ class Database {
   // Canonical V1 migration: runners and clubs tables.
   static std::vector<Migration> v1Migrations();
 
+  // V2 migration: controls and courses tables (courses use semicolon-separated
+  // control IDs; controls have an odata BLOB column for DataContainer fields).
+  static std::vector<Migration> v2Migrations();
+
+  // CRUD — Clubs
+  int insertClub(const domain::Club& c);   // returns last_insert_rowid
+  void updateClub(const domain::Club& c);
+  void deleteClub(int id);
+
+  // CRUD — Controls
+  int insertControl(const domain::Control& c);
+  void updateControl(const domain::Control& c);
+  void deleteControl(int id);
+
+  // CRUD — Courses (controls stored as semicolon-separated IDs in TEXT column)
+  int insertCourse(const domain::Course& c);
+  void updateCourse(const domain::Course& c);
+  void deleteCourse(int id);
+
   std::vector<domain::Club> getAllClubs();
   std::optional<domain::Club> getClubById(int id);
 

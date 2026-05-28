@@ -347,8 +347,8 @@
         "Tests pass"
       ],
       "priority": 22,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "v2Migrations() adds controls + courses (controls TEXT semicolon format). CRUD insert/update/delete for clubs, controls, courses. createTables() updated with controls TEXT. getAllCourses/getCourseById updated to use TEXT column with join-table fallback. seed.cpp populates controls TEXT. 26 unit tests pass."
     },
     {
       "id": "US-004c",

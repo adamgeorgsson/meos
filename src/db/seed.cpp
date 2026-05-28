@@ -66,14 +66,14 @@ void seedIfEmpty(Database& db) {
     (7, 900, 'Finish', 'finish')
   )");
 
-  // Courses
+  // Courses (with controls TEXT for semicolon-separated control IDs)
   exec(handle, R"(
-    INSERT INTO courses (id, name, length) VALUES
-    (1, 'Long', 12500),
-    (2, 'Medium', 7800),
-    (3, 'Short', 4200),
-    (4, 'Very Short', 2100),
-    (5, 'Ultra Long', 18000)
+    INSERT INTO courses (id, name, length, controls) VALUES
+    (1, 'Long',       12500, '6;1;2;3;4;5;7'),
+    (2, 'Medium',      7800, '6;2;3;5;7'),
+    (3, 'Short',       4200, '6;3;5;7'),
+    (4, 'Very Short',  2100, '6;5;7'),
+    (5, 'Ultra Long', 18000, '6;1;2;3;4;5;1;2;7')
   )");
 
   // Course controls (ordered)

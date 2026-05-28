@@ -1,6 +1,7 @@
 #include "database.h"
 
 #include <sqlite3.h>
+#include <sstream>
 #include <stdexcept>
 
 namespace meos::db {
@@ -66,7 +67,8 @@ void Database::createTables() {
     CREATE TABLE IF NOT EXISTS courses (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
-      length INTEGER
+      length INTEGER,
+      controls TEXT
     )
   )");
 
@@ -265,6 +267,29 @@ std::vector<Migration> Database::v1Migrations() {
        )"}};
 }
 
+// V2: controls and courses. Courses store their control sequence as a
+// semicolon-separated list of control IDs in the `controls` TEXT column.
+// Controls carry an `odata` BLOB column for DataContainer persistence.
+std::vector<Migration> Database::v2Migrations() {
+  return {
+      {2, "Schema V2: controls and courses",
+       R"(
+         CREATE TABLE IF NOT EXISTS controls (
+           id          INTEGER PRIMARY KEY,
+           code        INTEGER NOT NULL,
+           description TEXT,
+           type        TEXT,
+           odata       BLOB
+         );
+         CREATE TABLE IF NOT EXISTS courses (
+           id       INTEGER PRIMARY KEY,
+           name     TEXT    NOT NULL,
+           length   INTEGER,
+           controls TEXT
+         );
+       )"}};
+}
+
 // Helper for sqlite3_prepare/step/finalize
 namespace {
 
@@ -290,6 +315,28 @@ std::optional<std::string> optText(sqlite3_stmt* s, int col) {
 std::optional<int> optInt(sqlite3_stmt* s, int col) {
   if (sqlite3_column_type(s, col) == SQLITE_NULL) return std::nullopt;
   return sqlite3_column_int(s, col);
+}
+
+// Serialize/deserialize course control IDs as semicolon-separated string
+// (matches legacy MeOS storage format).
+std::string joinControls(const std::vector<int>& ids) {
+  std::string result;
+  for (size_t i = 0; i < ids.size(); ++i) {
+    if (i > 0) result += ';';
+    result += std::to_string(ids[i]);
+  }
+  return result;
+}
+
+std::vector<int> parseControls(const std::string& s) {
+  std::vector<int> result;
+  if (s.empty()) return result;
+  std::istringstream ss(s);
+  std::string token;
+  while (std::getline(ss, token, ';')) {
+    if (!token.empty()) result.push_back(std::stoi(token));
+  }
+  return result;
 }
 
 }  // namespace
@@ -354,41 +401,56 @@ std::optional<domain::Control> Database::getControlById(int id) {
 
 // --- Courses ---
 
+// Read the controls column as semicolon-separated text (V2 migration schema).
+// Falls back to the course_controls join table (legacy createTables() schema)
+// when the `controls` TEXT column is absent from the row result.
+static std::vector<int> readCourseControls(sqlite3* db, int courseId,
+                                            sqlite3_stmt* row, int col) {
+  if (sqlite3_column_type(row, col) != SQLITE_NULL) {
+    const char* raw =
+        reinterpret_cast<const char*>(sqlite3_column_text(row, col));
+    return parseControls(raw ? raw : "");
+  }
+  // Fallback: join-table schema from createTables()
+  std::vector<int> ids;
+  sqlite3_stmt* craw = nullptr;
+  int rc = sqlite3_prepare_v2(
+      db,
+      "SELECT control_id FROM course_controls WHERE course_id=? ORDER BY sort_order",
+      -1, &craw, nullptr);
+  if (rc != SQLITE_OK) return ids;
+  StmtPtr cstmt(craw);
+  sqlite3_bind_int(cstmt.get(), 1, courseId);
+  while (sqlite3_step(cstmt.get()) == SQLITE_ROW) {
+    ids.push_back(sqlite3_column_int(cstmt.get(), 0));
+  }
+  return ids;
+}
+
 std::vector<domain::Course> Database::getAllCourses() {
-  auto stmt = prepare(db_, "SELECT id, name, length FROM courses");
+  auto stmt = prepare(db_, "SELECT id, name, length, controls FROM courses");
   std::vector<domain::Course> courses;
   while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
     domain::Course c;
     c.id = sqlite3_column_int(stmt.get(), 0);
     c.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 1));
     c.length = optInt(stmt.get(), 2);
+    c.controls = readCourseControls(db_, c.id, stmt.get(), 3);
     courses.push_back(std::move(c));
-  }
-  for (auto& course : courses) {
-    auto cstmt = prepare(db_,
-      "SELECT control_id FROM course_controls WHERE course_id=? ORDER BY sort_order");
-    sqlite3_bind_int(cstmt.get(), 1, course.id);
-    while (sqlite3_step(cstmt.get()) == SQLITE_ROW) {
-      course.controls.push_back(sqlite3_column_int(cstmt.get(), 0));
-    }
   }
   return courses;
 }
 
 std::optional<domain::Course> Database::getCourseById(int id) {
-  auto stmt = prepare(db_, "SELECT id, name, length FROM courses WHERE id=?");
+  auto stmt =
+      prepare(db_, "SELECT id, name, length, controls FROM courses WHERE id=?");
   sqlite3_bind_int(stmt.get(), 1, id);
   if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
     domain::Course c;
     c.id = sqlite3_column_int(stmt.get(), 0);
     c.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 1));
     c.length = optInt(stmt.get(), 2);
-    auto cstmt = prepare(db_,
-      "SELECT control_id FROM course_controls WHERE course_id=? ORDER BY sort_order");
-    sqlite3_bind_int(cstmt.get(), 1, c.id);
-    while (sqlite3_step(cstmt.get()) == SQLITE_ROW) {
-      c.controls.push_back(sqlite3_column_int(cstmt.get(), 0));
-    }
+    c.controls = readCourseControls(db_, c.id, stmt.get(), 3);
     return c;
   }
   return std::nullopt;
@@ -630,6 +692,125 @@ std::optional<domain::StartListEntry> Database::getStartListEntryById(int id) {
     return e;
   }
   return std::nullopt;
+}
+
+// ---- CRUD — Clubs -----------------------------------------------------------
+
+int Database::insertClub(const domain::Club& c) {
+  auto stmt = prepare(db_,
+    "INSERT INTO clubs (name, country) VALUES (?, ?)");
+  sqlite3_bind_text(stmt.get(), 1, c.name.c_str(), -1, SQLITE_TRANSIENT);
+  if (c.country)
+    sqlite3_bind_text(stmt.get(), 2, c.country->c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(stmt.get(), 2);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("insertClub failed");
+  return static_cast<int>(sqlite3_last_insert_rowid(db_));
+}
+
+void Database::updateClub(const domain::Club& c) {
+  auto stmt = prepare(db_,
+    "UPDATE clubs SET name=?, country=? WHERE id=?");
+  sqlite3_bind_text(stmt.get(), 1, c.name.c_str(), -1, SQLITE_TRANSIENT);
+  if (c.country)
+    sqlite3_bind_text(stmt.get(), 2, c.country->c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(stmt.get(), 2);
+  sqlite3_bind_int(stmt.get(), 3, c.id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("updateClub failed");
+}
+
+void Database::deleteClub(int id) {
+  auto stmt = prepare(db_, "DELETE FROM clubs WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("deleteClub failed");
+}
+
+// ---- CRUD — Controls --------------------------------------------------------
+
+int Database::insertControl(const domain::Control& c) {
+  auto stmt = prepare(db_,
+    "INSERT INTO controls (code, description, type) VALUES (?, ?, ?)");
+  sqlite3_bind_int(stmt.get(), 1, c.code);
+  if (c.description)
+    sqlite3_bind_text(stmt.get(), 2, c.description->c_str(), -1,
+                      SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(stmt.get(), 2);
+  if (c.type)
+    sqlite3_bind_text(stmt.get(), 3, c.type->c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(stmt.get(), 3);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("insertControl failed");
+  return static_cast<int>(sqlite3_last_insert_rowid(db_));
+}
+
+void Database::updateControl(const domain::Control& c) {
+  auto stmt = prepare(db_,
+    "UPDATE controls SET code=?, description=?, type=? WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, c.code);
+  if (c.description)
+    sqlite3_bind_text(stmt.get(), 2, c.description->c_str(), -1,
+                      SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(stmt.get(), 2);
+  if (c.type)
+    sqlite3_bind_text(stmt.get(), 3, c.type->c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(stmt.get(), 3);
+  sqlite3_bind_int(stmt.get(), 4, c.id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("updateControl failed");
+}
+
+void Database::deleteControl(int id) {
+  auto stmt = prepare(db_, "DELETE FROM controls WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("deleteControl failed");
+}
+
+// ---- CRUD — Courses ---------------------------------------------------------
+
+int Database::insertCourse(const domain::Course& c) {
+  auto stmt = prepare(db_,
+    "INSERT INTO courses (name, length, controls) VALUES (?, ?, ?)");
+  sqlite3_bind_text(stmt.get(), 1, c.name.c_str(), -1, SQLITE_TRANSIENT);
+  if (c.length)
+    sqlite3_bind_int(stmt.get(), 2, *c.length);
+  else
+    sqlite3_bind_null(stmt.get(), 2);
+  std::string ctrlText = joinControls(c.controls);
+  sqlite3_bind_text(stmt.get(), 3, ctrlText.c_str(), -1, SQLITE_TRANSIENT);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("insertCourse failed");
+  return static_cast<int>(sqlite3_last_insert_rowid(db_));
+}
+
+void Database::updateCourse(const domain::Course& c) {
+  auto stmt = prepare(db_,
+    "UPDATE courses SET name=?, length=?, controls=? WHERE id=?");
+  sqlite3_bind_text(stmt.get(), 1, c.name.c_str(), -1, SQLITE_TRANSIENT);
+  if (c.length)
+    sqlite3_bind_int(stmt.get(), 2, *c.length);
+  else
+    sqlite3_bind_null(stmt.get(), 2);
+  std::string ctrlText = joinControls(c.controls);
+  sqlite3_bind_text(stmt.get(), 3, ctrlText.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int(stmt.get(), 4, c.id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("updateCourse failed");
+}
+
+void Database::deleteCourse(int id) {
+  auto stmt = prepare(db_, "DELETE FROM courses WHERE id=?");
+  sqlite3_bind_int(stmt.get(), 1, id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("deleteCourse failed");
 }
 
 }  // namespace meos::db
