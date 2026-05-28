@@ -120,6 +120,9 @@ class Database {
   std::vector<domain::Team> getAllTeams();
   std::optional<domain::Team> getTeamById(int id);
 
+  // Competition upsert — inserts or updates the row with the given id.
+  void upsertCompetition(const domain::Competition& c);
+
   std::vector<domain::Competition> getAllCompetitions();
   std::optional<domain::Competition> getCompetitionById(int id);
 

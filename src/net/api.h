@@ -20,13 +20,17 @@ void registerCoursesRoutes(httplib::Server& svr, meos::db::Database& db);
 // courseId: 0 in PUT/POST clears the course assignment.
 void registerClassesRoutes(httplib::Server& svr, meos::db::Database& db);
 
-// Registers GET /api/v1/runners and GET /api/v1/runners/{id} on svr.
+// Registers full CRUD for /api/v1/runners and /api/v1/runners/{id}.
+// GET supports filtering (?name=, ?clubId=, ?classId=) and pagination (?page=, ?pageSize=).
+// Response envelope for GET list: {data, total, page, pageSize}.
 void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db);
 
-// Registers GET /api/v1/teams and GET /api/v1/teams/{id} on svr.
+// Registers full CRUD for /api/v1/teams and /api/v1/teams/{id}.
+// GET supports filtering (?name=, ?clubId=, ?classId=) and pagination (?page=, ?pageSize=).
+// Response envelope for GET list: {data, total, page, pageSize}.
 void registerTeamsRoutes(httplib::Server& svr, meos::db::Database& db);
 
-// Registers GET /api/v1/competitions on svr (returns singleton competition object).
+// Registers GET and PUT /api/v1/competitions for singleton competition metadata.
 void registerCompetitionsRoutes(httplib::Server& svr, meos::db::Database& db);
 
 // Registers GET /api/v1/results and GET /api/v1/results/{id} on svr.

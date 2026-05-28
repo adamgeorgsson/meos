@@ -455,8 +455,8 @@
         "Tests pass"
       ],
       "priority": 28,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Full CRUD + filtering + pagination for runners and teams; PUT for competitions. GET list returns {data,total,page,pageSize} envelope. Filtering by name/clubId/classId. upsertCompetition added to db. All 34 tests pass."
     },
     {
       "id": "US-006",

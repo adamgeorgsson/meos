@@ -304,12 +304,52 @@ json runnerToJson(const meos::domain::Runner& r) {
 }  // namespace
 
 void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db) {
+    // GET /api/v1/runners  — supports ?name=, ?clubId=, ?classId=, ?page=, ?pageSize=
     svr.Get("/api/v1/runners",
-            [&db](const httplib::Request&, httplib::Response& res) {
+            [&db](const httplib::Request& req, httplib::Response& res) {
                 auto runners = db.getAllRunners();
-                json arr = json::array();
-                for (const auto& r : runners) arr.push_back(runnerToJson(r));
-                res.set_content(arr.dump(), "application/json");
+
+                // Filtering
+                std::string nameFilter   = req.get_param_value("name");
+                std::string clubFilter   = req.get_param_value("clubId");
+                std::string classFilter  = req.get_param_value("classId");
+
+                std::vector<meos::domain::Runner> filtered;
+                for (const auto& r : runners) {
+                    if (!nameFilter.empty() &&
+                        r.name.find(nameFilter) == std::string::npos) continue;
+                    if (!clubFilter.empty()) {
+                        int cid = std::stoi(clubFilter);
+                        if (!r.clubId || *r.clubId != cid) continue;
+                    }
+                    if (!classFilter.empty()) {
+                        int cid = std::stoi(classFilter);
+                        if (!r.classId || *r.classId != cid) continue;
+                    }
+                    filtered.push_back(r);
+                }
+
+                int total    = static_cast<int>(filtered.size());
+                int pageSize = 20;
+                int page     = 1;
+                if (!req.get_param_value("pageSize").empty())
+                    pageSize = std::max(1, std::stoi(req.get_param_value("pageSize")));
+                if (!req.get_param_value("page").empty())
+                    page = std::max(1, std::stoi(req.get_param_value("page")));
+
+                int start = (page - 1) * pageSize;
+                int end   = std::min(start + pageSize, total);
+
+                json data = json::array();
+                for (int i = start; i < end; ++i)
+                    data.push_back(runnerToJson(filtered[i]));
+
+                json j;
+                j["data"]     = data;
+                j["total"]    = total;
+                j["page"]     = page;
+                j["pageSize"] = pageSize;
+                res.set_content(j.dump(), "application/json");
             });
 
     svr.Get(R"(/api/v1/runners/(\d+))",
@@ -325,6 +365,81 @@ void registerRunnersRoutes(httplib::Server& svr, meos::db::Database& db) {
                                     "application/json");
                 }
             });
+
+    svr.Post("/api/v1/runners",
+             [&db](const httplib::Request& req, httplib::Response& res) {
+                 try {
+                     auto body = json::parse(req.body);
+                     meos::domain::Runner r;
+                     r.id = 0;
+                     r.name = requireString(body, "name");
+                     if (body.contains("clubId") && body["clubId"].is_number_integer())
+                         r.clubId = body["clubId"].get<int>();
+                     if (body.contains("classId") && body["classId"].is_number_integer())
+                         r.classId = body["classId"].get<int>();
+                     if (body.contains("startTime") && body["startTime"].is_string())
+                         r.startTime = body["startTime"].get<std::string>();
+                     if (body.contains("cardNumber") && body["cardNumber"].is_number_integer())
+                         r.cardNumber = body["cardNumber"].get<int>();
+                     if (body.contains("status") && body["status"].is_string())
+                         r.status = body["status"].get<std::string>();
+                     r.id = db.insertRunner(r);
+                     res.status = 201;
+                     res.set_content(runnerToJson(r).dump(), "application/json");
+                 } catch (const std::invalid_argument& e) {
+                     res.status = 400;
+                     res.set_content(makeError(400, e.what()).dump(), "application/json");
+                 } catch (...) {
+                     res.status = 500;
+                     res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                 }
+             });
+
+    svr.Put(R"(/api/v1/runners/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                try {
+                    int id = std::stoi(req.matches[1]);
+                    if (!db.getRunnerById(id)) {
+                        res.status = 404;
+                        res.set_content(makeError(404, "Not found").dump(), "application/json");
+                        return;
+                    }
+                    auto body = json::parse(req.body);
+                    meos::domain::Runner r;
+                    r.id = id;
+                    r.name = requireString(body, "name");
+                    if (body.contains("clubId") && body["clubId"].is_number_integer())
+                        r.clubId = body["clubId"].get<int>();
+                    if (body.contains("classId") && body["classId"].is_number_integer())
+                        r.classId = body["classId"].get<int>();
+                    if (body.contains("startTime") && body["startTime"].is_string())
+                        r.startTime = body["startTime"].get<std::string>();
+                    if (body.contains("cardNumber") && body["cardNumber"].is_number_integer())
+                        r.cardNumber = body["cardNumber"].get<int>();
+                    if (body.contains("status") && body["status"].is_string())
+                        r.status = body["status"].get<std::string>();
+                    db.updateRunner(r);
+                    res.set_content(runnerToJson(r).dump(), "application/json");
+                } catch (const std::invalid_argument& e) {
+                    res.status = 400;
+                    res.set_content(makeError(400, e.what()).dump(), "application/json");
+                } catch (...) {
+                    res.status = 500;
+                    res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                }
+            });
+
+    svr.Delete(R"(/api/v1/runners/(\d+))",
+               [&db](const httplib::Request& req, httplib::Response& res) {
+                   int id = std::stoi(req.matches[1]);
+                   if (!db.getRunnerById(id)) {
+                       res.status = 404;
+                       res.set_content(makeError(404, "Not found").dump(), "application/json");
+                       return;
+                   }
+                   db.deleteRunner(id);
+                   res.status = 204;
+               });
 }
 
 namespace {
@@ -342,12 +457,51 @@ json teamToJson(const meos::domain::Team& t) {
 }  // namespace
 
 void registerTeamsRoutes(httplib::Server& svr, meos::db::Database& db) {
+    // GET /api/v1/teams — supports ?name=, ?clubId=, ?classId=, ?page=, ?pageSize=
     svr.Get("/api/v1/teams",
-            [&db](const httplib::Request&, httplib::Response& res) {
+            [&db](const httplib::Request& req, httplib::Response& res) {
                 auto teams = db.getAllTeams();
-                json arr = json::array();
-                for (const auto& t : teams) arr.push_back(teamToJson(t));
-                res.set_content(arr.dump(), "application/json");
+
+                std::string nameFilter  = req.get_param_value("name");
+                std::string clubFilter  = req.get_param_value("clubId");
+                std::string classFilter = req.get_param_value("classId");
+
+                std::vector<meos::domain::Team> filtered;
+                for (const auto& t : teams) {
+                    if (!nameFilter.empty() &&
+                        t.name.find(nameFilter) == std::string::npos) continue;
+                    if (!clubFilter.empty()) {
+                        int cid = std::stoi(clubFilter);
+                        if (!t.clubId || *t.clubId != cid) continue;
+                    }
+                    if (!classFilter.empty()) {
+                        int cid = std::stoi(classFilter);
+                        if (!t.classId || *t.classId != cid) continue;
+                    }
+                    filtered.push_back(t);
+                }
+
+                int total    = static_cast<int>(filtered.size());
+                int pageSize = 20;
+                int page     = 1;
+                if (!req.get_param_value("pageSize").empty())
+                    pageSize = std::max(1, std::stoi(req.get_param_value("pageSize")));
+                if (!req.get_param_value("page").empty())
+                    page = std::max(1, std::stoi(req.get_param_value("page")));
+
+                int start = (page - 1) * pageSize;
+                int end   = std::min(start + pageSize, total);
+
+                json data = json::array();
+                for (int i = start; i < end; ++i)
+                    data.push_back(teamToJson(filtered[i]));
+
+                json j;
+                j["data"]     = data;
+                j["total"]    = total;
+                j["page"]     = page;
+                j["pageSize"] = pageSize;
+                res.set_content(j.dump(), "application/json");
             });
 
     svr.Get(R"(/api/v1/teams/(\d+))",
@@ -363,6 +517,73 @@ void registerTeamsRoutes(httplib::Server& svr, meos::db::Database& db) {
                                     "application/json");
                 }
             });
+
+    svr.Post("/api/v1/teams",
+             [&db](const httplib::Request& req, httplib::Response& res) {
+                 try {
+                     auto body = json::parse(req.body);
+                     meos::domain::Team t;
+                     t.id = 0;
+                     t.name = requireString(body, "name");
+                     if (body.contains("clubId") && body["clubId"].is_number_integer())
+                         t.clubId = body["clubId"].get<int>();
+                     if (body.contains("classId") && body["classId"].is_number_integer())
+                         t.classId = body["classId"].get<int>();
+                     if (body.contains("members") && body["members"].is_array())
+                         t.members = body["members"].get<std::vector<int>>();
+                     t.id = db.insertTeam(t);
+                     res.status = 201;
+                     res.set_content(teamToJson(t).dump(), "application/json");
+                 } catch (const std::invalid_argument& e) {
+                     res.status = 400;
+                     res.set_content(makeError(400, e.what()).dump(), "application/json");
+                 } catch (...) {
+                     res.status = 500;
+                     res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                 }
+             });
+
+    svr.Put(R"(/api/v1/teams/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                try {
+                    int id = std::stoi(req.matches[1]);
+                    if (!db.getTeamById(id)) {
+                        res.status = 404;
+                        res.set_content(makeError(404, "Not found").dump(), "application/json");
+                        return;
+                    }
+                    auto body = json::parse(req.body);
+                    meos::domain::Team t;
+                    t.id = id;
+                    t.name = requireString(body, "name");
+                    if (body.contains("clubId") && body["clubId"].is_number_integer())
+                        t.clubId = body["clubId"].get<int>();
+                    if (body.contains("classId") && body["classId"].is_number_integer())
+                        t.classId = body["classId"].get<int>();
+                    if (body.contains("members") && body["members"].is_array())
+                        t.members = body["members"].get<std::vector<int>>();
+                    db.updateTeam(t);
+                    res.set_content(teamToJson(t).dump(), "application/json");
+                } catch (const std::invalid_argument& e) {
+                    res.status = 400;
+                    res.set_content(makeError(400, e.what()).dump(), "application/json");
+                } catch (...) {
+                    res.status = 500;
+                    res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                }
+            });
+
+    svr.Delete(R"(/api/v1/teams/(\d+))",
+               [&db](const httplib::Request& req, httplib::Response& res) {
+                   int id = std::stoi(req.matches[1]);
+                   if (!db.getTeamById(id)) {
+                       res.status = 404;
+                       res.set_content(makeError(404, "Not found").dump(), "application/json");
+                       return;
+                   }
+                   db.deleteTeam(id);
+                   res.status = 204;
+               });
 }
 
 void registerCompetitionsRoutes(httplib::Server& svr, meos::db::Database& db) {
@@ -384,6 +605,36 @@ void registerCompetitionsRoutes(httplib::Server& svr, meos::db::Database& db) {
                 j["location"] = c.location;
                 if (c.description) j["description"] = *c.description;
                 res.set_content(j.dump(), "application/json");
+            });
+
+    svr.Put("/api/v1/competitions",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                try {
+                    auto body = json::parse(req.body);
+                    meos::domain::Competition c;
+                    c.id = 1;
+                    c.name = requireString(body, "name");
+                    c.date = requireString(body, "date");
+                    c.organizer = requireString(body, "organizer");
+                    c.location = requireString(body, "location");
+                    if (body.contains("description") && body["description"].is_string())
+                        c.description = body["description"].get<std::string>();
+                    db.upsertCompetition(c);
+                    json j;
+                    j["id"] = c.id;
+                    j["name"] = c.name;
+                    j["date"] = c.date;
+                    j["organizer"] = c.organizer;
+                    j["location"] = c.location;
+                    if (c.description) j["description"] = *c.description;
+                    res.set_content(j.dump(), "application/json");
+                } catch (const std::invalid_argument& e) {
+                    res.status = 400;
+                    res.set_content(makeError(400, e.what()).dump(), "application/json");
+                } catch (...) {
+                    res.status = 500;
+                    res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                }
             });
 }
 

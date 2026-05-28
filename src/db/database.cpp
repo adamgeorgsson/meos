@@ -693,6 +693,23 @@ void Database::deleteTeam(int id) {
 
 // --- Competitions ---
 
+void Database::upsertCompetition(const domain::Competition& c) {
+  auto stmt = prepare(db_,
+    "INSERT OR REPLACE INTO competitions (id, name, date, organizer, location, description)"
+    " VALUES (?, ?, ?, ?, ?, ?)");
+  sqlite3_bind_int(stmt.get(), 1, c.id > 0 ? c.id : 1);
+  sqlite3_bind_text(stmt.get(), 2, c.name.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(stmt.get(), 3, c.date.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(stmt.get(), 4, c.organizer.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(stmt.get(), 5, c.location.c_str(), -1, SQLITE_TRANSIENT);
+  if (c.description)
+    sqlite3_bind_text(stmt.get(), 6, c.description->c_str(), -1, SQLITE_TRANSIENT);
+  else
+    sqlite3_bind_null(stmt.get(), 6);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE)
+    throw std::runtime_error("upsertCompetition failed");
+}
+
 std::vector<domain::Competition> Database::getAllCompetitions() {
   auto stmt = prepare(db_,
     "SELECT id, name, date, organizer, location, description FROM competitions");
