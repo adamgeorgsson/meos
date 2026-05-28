@@ -81,19 +81,25 @@ void registerControlsRoutes(httplib::Server& svr, meos::db::Database& db) {
             });
 }
 
+namespace {
+
+json courseToJson(const meos::domain::Course& c) {
+    json j;
+    j["id"] = c.id;
+    j["name"] = c.name;
+    if (c.length) j["length"] = *c.length;
+    j["controls"] = c.controls;
+    return j;
+}
+
+}  // namespace
+
 void registerCoursesRoutes(httplib::Server& svr, meos::db::Database& db) {
     svr.Get("/api/v1/courses",
             [&db](const httplib::Request&, httplib::Response& res) {
                 auto courses = db.getAllCourses();
                 json arr = json::array();
-                for (const auto& c : courses) {
-                    json j;
-                    j["id"] = c.id;
-                    j["name"] = c.name;
-                    if (c.length) j["length"] = *c.length;
-                    j["controls"] = c.controls;
-                    arr.push_back(j);
-                }
+                for (const auto& c : courses) arr.push_back(courseToJson(c));
                 res.set_content(arr.dump(), "application/json");
             });
 
@@ -106,29 +112,103 @@ void registerCoursesRoutes(httplib::Server& svr, meos::db::Database& db) {
                     res.set_content(makeError(404, "Not found").dump(),
                                     "application/json");
                 } else {
-                    json j;
-                    j["id"] = course->id;
-                    j["name"] = course->name;
-                    if (course->length) j["length"] = *course->length;
-                    j["controls"] = course->controls;
-                    res.set_content(j.dump(), "application/json");
+                    res.set_content(courseToJson(*course).dump(),
+                                    "application/json");
                 }
             });
+
+    svr.Post("/api/v1/courses",
+             [&db](const httplib::Request& req, httplib::Response& res) {
+                 try {
+                     auto body = json::parse(req.body);
+                     meos::domain::Course c;
+                     c.id = 0;
+                     c.name = requireString(body, "name");
+                     if (body.contains("length") && body["length"].is_number_integer())
+                         c.length = body["length"].get<int>();
+                     if (body.contains("controls") && body["controls"].is_array())
+                         c.controls = body["controls"].get<std::vector<int>>();
+                     c.id = db.insertCourse(c);
+                     res.status = 201;
+                     res.set_content(courseToJson(c).dump(), "application/json");
+                 } catch (const std::invalid_argument& e) {
+                     res.status = 400;
+                     res.set_content(makeError(400, e.what()).dump(), "application/json");
+                 } catch (...) {
+                     res.status = 500;
+                     res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                 }
+             });
+
+    svr.Put(R"(/api/v1/courses/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                try {
+                    int id = std::stoi(req.matches[1]);
+                    if (!db.getCourseById(id)) {
+                        res.status = 404;
+                        res.set_content(makeError(404, "Not found").dump(), "application/json");
+                        return;
+                    }
+                    auto body = json::parse(req.body);
+                    meos::domain::Course c;
+                    c.id = id;
+                    c.name = requireString(body, "name");
+                    if (body.contains("length") && body["length"].is_number_integer())
+                        c.length = body["length"].get<int>();
+                    if (body.contains("controls") && body["controls"].is_array())
+                        c.controls = body["controls"].get<std::vector<int>>();
+                    db.updateCourse(c);
+                    res.set_content(courseToJson(c).dump(), "application/json");
+                } catch (const std::invalid_argument& e) {
+                    res.status = 400;
+                    res.set_content(makeError(400, e.what()).dump(), "application/json");
+                } catch (...) {
+                    res.status = 500;
+                    res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                }
+            });
+
+    svr.Delete(R"(/api/v1/courses/(\d+))",
+               [&db](const httplib::Request& req, httplib::Response& res) {
+                   int id = std::stoi(req.matches[1]);
+                   if (!db.getCourseById(id)) {
+                       res.status = 404;
+                       res.set_content(makeError(404, "Not found").dump(), "application/json");
+                       return;
+                   }
+                   db.deleteCourse(id);
+                   res.status = 204;
+               });
 }
+
+namespace {
+
+json classToJson(const meos::domain::Class& c) {
+    json j;
+    j["id"] = c.id;
+    j["name"] = c.name;
+    if (c.courseId) j["courseId"] = *c.courseId;
+    if (c.startMethod) j["startMethod"] = *c.startMethod;
+    return j;
+}
+
+// Parse courseId from JSON: absent/null = nullopt, 0 = nullopt (clear), >0 = set.
+std::optional<int> parseCourseId(const json& body) {
+    if (!body.contains("courseId")) return std::nullopt;
+    if (body["courseId"].is_null()) return std::nullopt;
+    int v = body["courseId"].get<int>();
+    if (v == 0) return std::nullopt;  // 0 clears the course assignment
+    return v;
+}
+
+}  // namespace
 
 void registerClassesRoutes(httplib::Server& svr, meos::db::Database& db) {
     svr.Get("/api/v1/classes",
             [&db](const httplib::Request&, httplib::Response& res) {
                 auto classes = db.getAllClasses();
                 json arr = json::array();
-                for (const auto& c : classes) {
-                    json j;
-                    j["id"] = c.id;
-                    j["name"] = c.name;
-                    if (c.courseId) j["courseId"] = *c.courseId;
-                    if (c.startMethod) j["startMethod"] = *c.startMethod;
-                    arr.push_back(j);
-                }
+                for (const auto& c : classes) arr.push_back(classToJson(c));
                 res.set_content(arr.dump(), "application/json");
             });
 
@@ -141,14 +221,70 @@ void registerClassesRoutes(httplib::Server& svr, meos::db::Database& db) {
                     res.set_content(makeError(404, "Not found").dump(),
                                     "application/json");
                 } else {
-                    json j;
-                    j["id"] = cls->id;
-                    j["name"] = cls->name;
-                    if (cls->courseId) j["courseId"] = *cls->courseId;
-                    if (cls->startMethod) j["startMethod"] = *cls->startMethod;
-                    res.set_content(j.dump(), "application/json");
+                    res.set_content(classToJson(*cls).dump(), "application/json");
                 }
             });
+
+    svr.Post("/api/v1/classes",
+             [&db](const httplib::Request& req, httplib::Response& res) {
+                 try {
+                     auto body = json::parse(req.body);
+                     meos::domain::Class c;
+                     c.id = 0;
+                     c.name = requireString(body, "name");
+                     c.courseId = parseCourseId(body);
+                     if (body.contains("startMethod") && body["startMethod"].is_string())
+                         c.startMethod = body["startMethod"].get<std::string>();
+                     c.id = db.insertClass(c);
+                     res.status = 201;
+                     res.set_content(classToJson(c).dump(), "application/json");
+                 } catch (const std::invalid_argument& e) {
+                     res.status = 400;
+                     res.set_content(makeError(400, e.what()).dump(), "application/json");
+                 } catch (...) {
+                     res.status = 500;
+                     res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                 }
+             });
+
+    svr.Put(R"(/api/v1/classes/(\d+))",
+            [&db](const httplib::Request& req, httplib::Response& res) {
+                try {
+                    int id = std::stoi(req.matches[1]);
+                    if (!db.getClassById(id)) {
+                        res.status = 404;
+                        res.set_content(makeError(404, "Not found").dump(), "application/json");
+                        return;
+                    }
+                    auto body = json::parse(req.body);
+                    meos::domain::Class c;
+                    c.id = id;
+                    c.name = requireString(body, "name");
+                    c.courseId = parseCourseId(body);
+                    if (body.contains("startMethod") && body["startMethod"].is_string())
+                        c.startMethod = body["startMethod"].get<std::string>();
+                    db.updateClass(c);
+                    res.set_content(classToJson(c).dump(), "application/json");
+                } catch (const std::invalid_argument& e) {
+                    res.status = 400;
+                    res.set_content(makeError(400, e.what()).dump(), "application/json");
+                } catch (...) {
+                    res.status = 500;
+                    res.set_content(makeError(500, "Internal error").dump(), "application/json");
+                }
+            });
+
+    svr.Delete(R"(/api/v1/classes/(\d+))",
+               [&db](const httplib::Request& req, httplib::Response& res) {
+                   int id = std::stoi(req.matches[1]);
+                   if (!db.getClassById(id)) {
+                       res.status = 404;
+                       res.set_content(makeError(404, "Not found").dump(), "application/json");
+                       return;
+                   }
+                   db.deleteClass(id);
+                   res.status = 204;
+               });
 }
 
 namespace {

@@ -88,3 +88,97 @@ TEST_F(ClassesApiTest, GetClassById_NotFound_Returns404) {
     EXPECT_EQ(body["message"].get<std::string>(), "Not found");
     EXPECT_EQ(body["status"].get<int>(), 404);
 }
+
+TEST_F(ClassesApiTest, PostClass_CreatesAndReturns201) {
+    httplib::Client cli("127.0.0.1", TEST_PORT);
+    nlohmann::json req;
+    req["name"] = "D21";
+    req["courseId"] = 1;
+    req["startMethod"] = "individual";
+    auto res = cli.Post("/api/v1/classes", req.dump(), "application/json");
+    ASSERT_NE(res, nullptr);
+    EXPECT_EQ(res->status, 201);
+
+    auto body = nlohmann::json::parse(res->body);
+    EXPECT_TRUE(body["id"].get<int>() > 0);
+    EXPECT_EQ(body["name"].get<std::string>(), "D21");
+    EXPECT_EQ(body["courseId"].get<int>(), 1);
+    EXPECT_EQ(body["startMethod"].get<std::string>(), "individual");
+}
+
+TEST_F(ClassesApiTest, PostClass_MissingName_Returns400) {
+    httplib::Client cli("127.0.0.1", TEST_PORT);
+    nlohmann::json req;
+    req["courseId"] = 1;
+    auto res = cli.Post("/api/v1/classes", req.dump(), "application/json");
+    ASSERT_NE(res, nullptr);
+    EXPECT_EQ(res->status, 400);
+}
+
+TEST_F(ClassesApiTest, PutClass_UpdatesAndReturns200) {
+    httplib::Client cli("127.0.0.1", TEST_PORT);
+    nlohmann::json req;
+    req["name"] = "H21E Updated";
+    req["courseId"] = 1;
+    auto res = cli.Put("/api/v1/classes/1", req.dump(), "application/json");
+    ASSERT_NE(res, nullptr);
+    EXPECT_EQ(res->status, 200);
+
+    auto body = nlohmann::json::parse(res->body);
+    EXPECT_EQ(body["name"].get<std::string>(), "H21E Updated");
+    EXPECT_EQ(body["courseId"].get<int>(), 1);
+
+    // Verify persisted
+    auto get = cli.Get("/api/v1/classes/1");
+    ASSERT_NE(get, nullptr);
+    auto getBody = nlohmann::json::parse(get->body);
+    EXPECT_EQ(getBody["name"].get<std::string>(), "H21E Updated");
+}
+
+TEST_F(ClassesApiTest, PutClass_CourseIdZero_ClearsAssignment) {
+    httplib::Client cli("127.0.0.1", TEST_PORT);
+    nlohmann::json req;
+    req["name"] = "H21E";
+    req["courseId"] = 0;  // 0 should clear the course assignment
+    auto res = cli.Put("/api/v1/classes/1", req.dump(), "application/json");
+    ASSERT_NE(res, nullptr);
+    EXPECT_EQ(res->status, 200);
+
+    auto body = nlohmann::json::parse(res->body);
+    EXPECT_FALSE(body.contains("courseId")) << "courseId=0 should clear the assignment";
+}
+
+TEST_F(ClassesApiTest, PutClass_NotFound_Returns404) {
+    httplib::Client cli("127.0.0.1", TEST_PORT);
+    nlohmann::json req;
+    req["name"] = "Ghost";
+    auto res = cli.Put("/api/v1/classes/9999", req.dump(), "application/json");
+    ASSERT_NE(res, nullptr);
+    EXPECT_EQ(res->status, 404);
+}
+
+TEST_F(ClassesApiTest, DeleteClass_Returns204) {
+    // Create one to delete
+    httplib::Client cli("127.0.0.1", TEST_PORT);
+    nlohmann::json req;
+    req["name"] = "ToDelete";
+    auto post = cli.Post("/api/v1/classes", req.dump(), "application/json");
+    ASSERT_NE(post, nullptr);
+    int newId = nlohmann::json::parse(post->body)["id"].get<int>();
+
+    auto del = cli.Delete("/api/v1/classes/" + std::to_string(newId));
+    ASSERT_NE(del, nullptr);
+    EXPECT_EQ(del->status, 204);
+
+    // Verify gone
+    auto get = cli.Get("/api/v1/classes/" + std::to_string(newId));
+    ASSERT_NE(get, nullptr);
+    EXPECT_EQ(get->status, 404);
+}
+
+TEST_F(ClassesApiTest, DeleteClass_NotFound_Returns404) {
+    httplib::Client cli("127.0.0.1", TEST_PORT);
+    auto res = cli.Delete("/api/v1/classes/9999");
+    ASSERT_NE(res, nullptr);
+    EXPECT_EQ(res->status, 404);
+}

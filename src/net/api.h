@@ -12,10 +12,12 @@ void registerClubsRoutes(httplib::Server& svr, meos::db::Database& db);
 // Registers GET /api/v1/controls and GET /api/v1/controls/{id} on svr.
 void registerControlsRoutes(httplib::Server& svr, meos::db::Database& db);
 
-// Registers GET /api/v1/courses and GET /api/v1/courses/{id} on svr.
+// Registers full CRUD for /api/v1/courses and /api/v1/courses/{id}.
+// GET returns controlIds as a JSON array. POST/PUT accept {name, length?, controls[]}.
 void registerCoursesRoutes(httplib::Server& svr, meos::db::Database& db);
 
-// Registers GET /api/v1/classes and GET /api/v1/classes/{id} on svr.
+// Registers full CRUD for /api/v1/classes and /api/v1/classes/{id}.
+// courseId: 0 in PUT/POST clears the course assignment.
 void registerClassesRoutes(httplib::Server& svr, meos::db::Database& db);
 
 // Registers GET /api/v1/runners and GET /api/v1/runners/{id} on svr.

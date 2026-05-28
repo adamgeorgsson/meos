@@ -437,8 +437,8 @@
         "Tests pass"
       ],
       "priority": 27,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "GET/POST/PUT/DELETE for /api/v1/courses and /api/v1/classes. courseToJson/classToJson helpers. parseCourseId treats 0 as nullopt (clear). Existence check before PUT/DELETE gives accurate 404s. 13 new tests (6 courses + 7 classes). All 34 tests pass."
     },
     {
       "id": "US-005d",
