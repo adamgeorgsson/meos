@@ -582,8 +582,8 @@
         "Tests pass"
       ],
       "priority": 35,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "xmlparser.h/cpp and csvparser.h/cpp (core only) migrated to src/util/. gdioutput removed; uses meos::util::toUTF8/fromUTF8/widen. checkUTF handles fragments. inplaceDecodeXML is a static helper. csvparser defers importXXX to io/. 10 new unit tests pass (40 total)."
     },
     {
       "id": "US-013c",

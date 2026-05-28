@@ -159,3 +159,11 @@ target_link_libraries(util_string_test PRIVATE meos_util)
 # Util file ops + HLS + version functions unit test (US-013a2)
 meos_add_test(util_file_ops_test util_file_ops_test.cpp)
 target_link_libraries(util_file_ops_test PRIVATE meos_util)
+
+# Util XML parser unit test (US-013b)
+meos_add_test(util_xmlparser_test util_xmlparser_test.cpp)
+target_link_libraries(util_xmlparser_test PRIVATE meos_util)
+
+# Util CSV parser unit test (US-013b)
+meos_add_test(util_csvparser_test util_csvparser_test.cpp)
+target_link_libraries(util_csvparser_test PRIVATE meos_util)
