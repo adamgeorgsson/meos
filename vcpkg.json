@@ -6,6 +6,7 @@
     "gtest",
     "sqlite3",
     { "name": "cpp-httplib", "features": ["zlib"] },
-    "nlohmann-json"
+    "nlohmann-json",
+    "libharu"
   ]
 }

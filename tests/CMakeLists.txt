@@ -1,6 +1,7 @@
 find_package(GTest REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
+find_package(unofficial-libharu CONFIG REQUIRED)
 
 # Macro for standardized test registration
 macro(meos_add_test TEST_NAME)
@@ -193,3 +194,7 @@ target_link_libraries(io_csv_export_test PRIVATE meos_io meos_domain meos_util)
 # HTML template engine unit test (US-014c)
 meos_add_test(io_html_template_test io_html_template_test.cpp)
 target_link_libraries(io_html_template_test PRIVATE meos_io meos_util)
+
+# PDF writer unit test (US-014d)
+meos_add_test(io_pdf_writer_test io_pdf_writer_test.cpp)
+target_link_libraries(io_pdf_writer_test PRIVATE meos_io meos_util unofficial::libharu::hpdf)

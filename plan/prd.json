@@ -707,8 +707,8 @@
         "Tests pass"
       ],
       "priority": 42,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "PdfWriter class in src/io/ using libharu. PdfCell struct (text, width, bold, italic, rightAlign, centerAlign). writeToMemory via HPDF_SaveToStream/GetStreamSize/ResetStream/ReadFromStream. writeFile via HPDF_SaveToFile. Standard Type 1 fonts (Helvetica, Helvetica-Bold, Helvetica-Oblique) with nullptr encoding. Column-width distribution: explicit widths preserved, remaining divided among zero-width columns. Multi-page: new page when y - lineHeight < kMargin. 15 unit tests pass. 47 total tests pass."
     }
   ]
 }
