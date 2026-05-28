@@ -110,3 +110,7 @@ target_link_libraries(domain_oteam_relay_test PRIVATE meos_domain)
 # Domain oEvent collections + lifecycle test (US-003i1)
 meos_add_test(domain_oevent_test domain_oevent_test.cpp)
 target_link_libraries(domain_oevent_test PRIVATE meos_domain)
+
+# Domain oEvent draw + result integration test (US-003i2)
+meos_add_test(domain_oevent_integration_test domain_oevent_integration_test.cpp)
+target_link_libraries(domain_oevent_integration_test PRIVATE meos_domain)

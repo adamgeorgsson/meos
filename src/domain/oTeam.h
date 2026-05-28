@@ -194,6 +194,7 @@ public:
   friend class oClass;
   friend class oEvent;
   friend class RelayTestAccessor;
+  friend class TeamTestAccessor;
 
 private:
   mutable DataMap dataMap_;

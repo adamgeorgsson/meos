@@ -258,8 +258,66 @@ public:
                             bool markClassChanged, oFreePunch& punch);
 
   // -----------------------------------------------------------------------
+  // Result computation
+  // -----------------------------------------------------------------------
+
+  enum class ResultType {
+    ClassResult,
+    ClassResultDefault,
+    TotalResult,
+    TotalResultDefault,
+    CourseResult,
+    ClassCourseResult,
+    PreliminarySplitResults
+  };
+
+  /** Populate out with non-removed runners, optionally filtered to a set of class IDs. */
+  void getRunners(const std::set<int>& classes, std::vector<pRunner>& out) const;
+
+  /**
+   * Assign tPlace for each runner within their class group.
+   * ClassResult/ClassResultDefault: group by (classId, duplicateLeg, legEquClass),
+   *   sort by running time; StatusOK runners get sequential places 1..N.
+   * TotalResult/TotalResultDefault: group by classId, sort by getTotalRunningTime();
+   *   StatusOK total gets sequential places.
+   * Other types: no-op in this simplified implementation.
+   */
+  void calculateResults(const std::set<int>& classes, ResultType resultType,
+                        bool includePreliminary = false) const;
+
+  /**
+   * Assign tPlace for each team within their class.
+   * Sorts teams by getTotalRunningTime() where getTotalStatus() == StatusOK.
+   */
+  void calculateTeamResults(const std::set<int>& classIds, ResultType resultType) const;
+
+  // -----------------------------------------------------------------------
+  // Start list drawing
+  // -----------------------------------------------------------------------
+
+  enum class VacantPosition { Mixed, Last, First };
+
+  struct ClassDrawSpecification {
+    int classID    = -1;
+    int leg        = 0;
+    int firstStart = 0;   ///< tenths-of-second from midnight
+    int interval   = 600; ///< tenths-of-second between runners (default 60 s)
+    int vacances   = 0;
+
+    ClassDrawSpecification() = default;
+    ClassDrawSpecification(int cls, int l, int first, int inter, int vac = 0)
+      : classID(cls), leg(l), firstStart(first), interval(inter), vacances(vac) {}
+  };
+
+  /**
+   * Assign start times to runners in the specified classes.
+   * Runners are taken in their current list order (no shuffle).
+   * Each runner's tStartTime is set to firstStart + i * interval.
+   */
+  void drawStartList(const std::vector<ClassDrawSpecification>& spec);
+
+  // -----------------------------------------------------------------------
   // Miscellaneous stubs
   // -----------------------------------------------------------------------
   void reEvaluateAll(const std::vector<int>& /*classIds*/, bool /*sync*/) {}
-  void calculateTeamResults(const std::set<int>& /*classIds*/, int /*resultType*/) const {}
 };
