@@ -44,7 +44,6 @@ class GDIImplFontSet {
 
   wstring gdiName;
   mutable vector<double> avgWidthCache;
-
   double baseScale = 1.0;
   wstring baseFace;
   void buildFonts(double scale);

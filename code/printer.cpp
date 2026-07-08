@@ -423,7 +423,7 @@ bool gdioutput::doPrint(PrinterObject &po, PageInfo &pageInfo, pEvent oe, bool r
   // e.g. under Wine) keep MM_TEXT and do the logical->device scaling here.
   const bool limitSize = xsize > 100;
 
-  int PageXMax = limitSize ? max(512, MaxX) : MaxX;
+  int PageXMax=limitSize ? max(512, MaxX) : MaxX;
   int PageYMax = xsize > 0 ? (ysize*PageXMax)/xsize : PageXMax;
 
   double iso = 1.0;
@@ -451,7 +451,7 @@ bool gdioutput::doPrint(PrinterObject &po, PageInfo &pageInfo, pEvent oe, bool r
   pageInfo.topMargin = float(ds.MarginY * 2);
   pageInfo.scaleX = float(iso);
   pageInfo.scaleY = float(iso);
-
+  
   pageInfo.leftMargin = float(ds.MarginX);
   pageInfo.bottomMargin = float(ds.MarginY);
   pageInfo.pageY = float(ds.PageY);
@@ -477,7 +477,6 @@ bool gdioutput::doPrint(PrinterObject &po, PageInfo &pageInfo, pEvent oe, bool r
     }
 
     applyPrintScale(iso);
-
     for (size_t k = 0; k < toPrint.size(); k++) {
 
       int nError = StartPage(po.hDC);
