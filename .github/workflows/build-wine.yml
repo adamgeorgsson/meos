@@ -58,7 +58,7 @@ jobs:
           if (-not $exe) { $exe = Get-ChildItem code -Recurse -Filter MeOS.exe | Select-Object -First 1 }
           if (-not $exe) { throw "MeOS.exe not found under code\" }
           Write-Host "Using $($exe.FullName)"
-          Copy-Item $exe.FullName $dist
+          Copy-Item $exe.FullName (Join-Path $dist "meos.exe")
 
           # Bundled 32-bit third-party DLLs.
           Copy-Item code\dll\libharu.dll  $dist
