@@ -419,25 +419,27 @@ bool gdioutput::doPrint(PrinterObject &po, PageInfo &pageInfo, pEvent oe, bool r
   int xtot = GetDeviceCaps(po.hDC, HORZRES);
   int ytot = GetDeviceCaps(po.hDC, VERTRES);
 
-  SetMapMode(po.hDC, MM_ISOTROPIC);
-
+  // Instead of relying on MM_ISOTROPIC (unreliable on some printer drivers,
+  // e.g. under Wine) keep MM_TEXT and do the logical->device scaling here.
   const bool limitSize = xsize > 100;
 
-  int PageXMax=limitSize ? max(512, MaxX) : MaxX;
-  int PageYMax=(ysize*PageXMax)/xsize;
-  SetWindowExtEx(po.hDC, int(PageXMax*1.05), int(PageYMax*1.05), 0);
-  SetViewportExtEx(po.hDC, xtot, ytot, NULL);
-  // xPrint = ((mm / xsize) * physX - physOff) / xtot * PageXMax*1.05
-  // xPrint =  mm * (physX * PageXMax * 1.05) / (xsize*xtot) - physOff * (PageXMax * 1.05/xtot)
-  pageInfo.xMM2PrintC = double(physX * PageXMax * 1.05) / double(xsize*xtot);
-  pageInfo.xMM2PrintK = double(-physOffsetX) * (PageXMax * 1.05/xtot);
-  pageInfo.yMM2PrintC = double(physY * PageYMax * 1.05) / double(ysize*ytot);
-  pageInfo.yMM2PrintK = double(-physOffsetY) * (PageYMax * 1.05/ytot);
+  int PageXMax = limitSize ? max(512, MaxX) : MaxX;
+  int PageYMax = xsize > 0 ? (ysize*PageXMax)/xsize : PageXMax;
 
-  ds.PageX = PageXMax;
-  ds.PageY = PageYMax;
-  ds.MarginX = pageInfo.noPrintMargin ? (limitSize ? PageXMax/30: 5) : PageXMax/25;
-  ds.MarginY = pageInfo.noPrintMargin ? 5 : 20;
+  double iso = 1.0;
+  if (PageXMax > 0 && PageYMax > 0 && xtot > 0 && ytot > 0)
+    iso = min(double(xtot) / (PageXMax*1.05), double(ytot) / (PageYMax*1.05));
+
+  // xDevice = (mm / xsize) * physX - physOffsetX
+  pageInfo.xMM2PrintC = xsize > 0 ? double(physX) / double(xsize) : 0;
+  pageInfo.xMM2PrintK = double(-physOffsetX);
+  pageInfo.yMM2PrintC = ysize > 0 ? double(physY) / double(ysize) : 0;
+  pageInfo.yMM2PrintK = double(-physOffsetY);
+
+  ds.PageX = int(PageXMax * iso);
+  ds.PageY = int(PageYMax * iso);
+  ds.MarginX = int((pageInfo.noPrintMargin ? (limitSize ? PageXMax/30.0 : 5.0) : PageXMax/25.0) * iso);
+  ds.MarginY = int((pageInfo.noPrintMargin ? 5.0 : 20.0) * iso);
   ds.Scale=1;
   ds.LastPage=false;
 
@@ -447,12 +449,12 @@ bool gdioutput::doPrint(PrinterObject &po, PageInfo &pageInfo, pEvent oe, bool r
   OffsetX = 0;
 
   pageInfo.topMargin = float(ds.MarginY * 2);
-  pageInfo.scaleX = 1.0f;
-  pageInfo.scaleY = 1.0f;
-  
+  pageInfo.scaleX = float(iso);
+  pageInfo.scaleY = float(iso);
+
   pageInfo.leftMargin = float(ds.MarginX);
   pageInfo.bottomMargin = float(ds.MarginY);
-  pageInfo.pageY = float(PageYMax);
+  pageInfo.pageY = float(ds.PageY);
 
   vector<RenderedPage> pages;
   pageInfo.renderPages(TL, Rectangles, false, respectPageBreak, pages);
@@ -474,6 +476,8 @@ bool gdioutput::doPrint(PrinterObject &po, PageInfo &pageInfo, pEvent oe, bool r
       return false;
     }
 
+    applyPrintScale(iso);
+
     for (size_t k = 0; k < toPrint.size(); k++) {
 
       int nError = StartPage(po.hDC);
@@ -484,6 +488,7 @@ bool gdioutput::doPrint(PrinterObject &po, PageInfo &pageInfo, pEvent oe, bool r
         DeleteDC(po.hDC);
         po.hDC=0;
         po.freePrinter();
+        applyPrintScale(1.0);
         OffsetY = sOffsetY;
         OffsetX = sOffsetX;
         alert(L"StartPage error: " + getErrorMessage(nError));
@@ -495,6 +500,7 @@ bool gdioutput::doPrint(PrinterObject &po, PageInfo &pageInfo, pEvent oe, bool r
     }
 
     int nError = EndDoc(po.hDC);
+    applyPrintScale(1.0);
     OffsetY = sOffsetY;
     OffsetX = sOffsetX;
 

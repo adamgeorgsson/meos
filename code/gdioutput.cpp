@@ -724,12 +724,19 @@ void gdioutput::draw(HDC hDC, RECT& rc, RECT& drawArea) {
 }
 
 void gdioutput::renderRectangle(HDC hDC, RECT *clipRegion, const RectangleInfo &ri) {
+  // When printing, the border/line width is scaled to printer resolution so it
+  // stays visible; on screen printScale is 1.0 and the cheap DC_PEN is used.
+  HPEN scaledPen = nullptr;
   if (ri.drawBorder) {
-    SelectObject(hDC, GetStockObject(DC_PEN));
-    if (ri.borderColor == -1)
-      SetDCPenColor(hDC, RGB(40,40,60));
-    else
-      SetDCPenColor(hDC, ri.borderColor);
+    DWORD borderCol = ri.borderColor == -1 ? RGB(40,40,60) : ri.borderColor;
+    if (printScale > 1.0) {
+      scaledPen = CreatePen(PS_SOLID, max(1, int(printScale + 0.5)), borderCol);
+      SelectObject(hDC, scaledPen);
+    }
+    else {
+      SelectObject(hDC, GetStockObject(DC_PEN));
+      SetDCPenColor(hDC, borderCol);
+    }
   }
   else {
     SelectObject(hDC, GetStockObject(NULL_PEN));
@@ -751,6 +758,10 @@ void gdioutput::renderRectangle(HDC hDC, RECT *clipRegion, const RectangleInfo &
   }
   if (ri.color == colorTransparent) {
     SelectObject(hDC, GetStockObject(DC_BRUSH));
+  }
+  if (scaledPen) {
+    SelectObject(hDC, GetStockObject(DC_PEN));
+    DeleteObject(scaledPen);
   }
 }
 
@@ -4745,7 +4756,8 @@ void gdioutput::RenderString(TextInfo &ti, HDC hDC) {
       w = image.getWidth(id);
       h = image.getHeight(id);
       setWH = true;
-      image.drawImage(id, Image::ImageMethod::Default, hDC, rc.left, rc.top, w, h,
+      image.drawImage(id, Image::ImageMethod::Default, hDC, rc.left, rc.top,
+                      int(w * printScale), int(h * printScale),
                       ti.srcRect.left, ti.srcRect.top,
                       ti.srcRect.right - ti.srcRect.left,
                       ti.srcRect.bottom - ti.srcRect.top);
@@ -4762,7 +4774,8 @@ void gdioutput::RenderString(TextInfo &ti, HDC hDC) {
         if (imgId > 0) {
           w = ti.textRect.right - ti.textRect.left;
           h = ti.textRect.bottom - ti.textRect.top;
-          image.drawImage(imgId, Image::ImageMethod::Default, hDC, rc.left, rc.top, w, h, 
+          image.drawImage(imgId, Image::ImageMethod::Default, hDC, rc.left, rc.top,
+                          int(w * printScale), int(h * printScale),
                           ti.srcRect.left, ti.srcRect.top,
                           ti.srcRect.right - ti.srcRect.left,
                           ti.srcRect.bottom - ti.srcRect.top);
@@ -4975,6 +4988,14 @@ void gdioutput::resetLast() const {
   lastHighlight = false;
   lastColor = -1;
   lastFont.clear();
+}
+
+void gdioutput::applyPrintScale(double factor) {
+  printScale = factor;
+  for (auto &f : fonts)
+    f.second.applyScaleFactor(factor);
+  fontHeightCache.clear();
+  resetLast();
 }
 
 void gdioutput::getFontInfo(const TextInfo &ti, FontInfo &fi) const {
@@ -7257,11 +7278,24 @@ float GDIImplFontSet::baseSize(int format, float scale)  {
 
 void GDIImplFontSet::init(double scale, const wstring &font, const wstring &gdiName_)
 {
+  baseScale = scale;
+  baseFace = font;
+  gdiName = gdiName_;
+  buildFonts(scale);
+}
+
+void GDIImplFontSet::applyScaleFactor(double factor) {
+  buildFonts(baseScale * factor);
+}
+
+void GDIImplFontSet::buildFonts(double scale)
+{
+  const wstring &font = baseFace;
   if (font == L"Segoe UI")
     scale = scale * 1.1;
   int charSet = DEFAULT_CHARSET;
   deleteFonts();
-  gdiName = gdiName_;
+  avgWidthCache.clear();
 
   Huge=CreateFont(int(scale*34), 0, 0, 0, FW_BOLD, false,  false, false, charSet,
     OUT_TT_ONLY_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH|FF_ROMAN, font.c_str());

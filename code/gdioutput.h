@@ -213,9 +213,11 @@ protected:
   LRESULT ProcessMsgWrp(UINT iMessage, LPARAM lParam, WPARAM wParam);
   void getWindowText(HWND hWnd, wstring& text);
   double scale;
+  double printScale = 1.0;
   HFONT getGUIFont() const;
 
   void resetLast() const;
+  void applyPrintScale(double factor);
   mutable int lastFormet;
   mutable bool lastActive;
   mutable bool lastHighlight;

@@ -44,6 +44,10 @@ class GDIImplFontSet {
 
   wstring gdiName;
   mutable vector<double> avgWidthCache;
+
+  double baseScale = 1.0;
+  wstring baseFace;
+  void buildFonts(double scale);
 public:
   static float baseSize(int format, float scale);
   void getInfo(FontInfo &fi) const;
@@ -51,6 +55,7 @@ public:
   GDIImplFontSet();
   virtual ~GDIImplFontSet();
   void init(double scale, const wstring &font, const wstring &gdiName);
+  void applyScaleFactor(double factor);
   void selectFont(HDC hDC, int format) const;
   HFONT getGUIFont() const {return pfMedium;}
   HFONT getFont(int format) const;
