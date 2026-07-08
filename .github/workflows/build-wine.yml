@@ -1,0 +1,87 @@
+name: Build MeOS (legacy, Wine-compatible)
+
+# Builds the legacy MSBuild solution (code/MeOS.sln) as 32-bit, since only the
+# 32-bit build runs under Wine, and uploads an artifact containing MeOS.exe
+# together with every DLL needed to run it standalone:
+#   - libharu.dll / libmySQL.dll : bundled third-party libs (built with VS2013)
+#   - MSVCR120.dll / MSVCP120.dll : VS2013 (v120) runtime the bundled DLLs need
+#   - MSVCP140.dll / VCRUNTIME140.dll : VS2022 (v143) runtime MeOS.exe needs
+
+on:
+  push:
+    branches: [wine]
+    paths:
+      - 'code/**'
+      - '.github/workflows/build-wine.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Release]
+        platform: [x86]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build MeOS.sln
+        run: msbuild code\MeOS.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m /verbosity:minimal
+
+      - name: Install VC++ 2013 runtime (for bundled libharu/libmySQL)
+        run: choco install vcredist2013 --no-progress -y
+
+      - name: Stage artifact (exe + required DLLs)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dist = "dist"
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+
+          function Find-Dll($name, $dirs) {
+            foreach ($d in $dirs) {
+              $p = Join-Path $d $name
+              if (Test-Path $p) { return $p }
+            }
+            throw "$name not found in: $($dirs -join ', ')"
+          }
+
+          # MeOS.exe from the build output (Release folder).
+          $exe = Get-ChildItem code -Recurse -Filter MeOS.exe |
+                 Where-Object { $_.FullName -match '\\${{ matrix.configuration }}\\' } |
+                 Select-Object -First 1
+          if (-not $exe) { $exe = Get-ChildItem code -Recurse -Filter MeOS.exe | Select-Object -First 1 }
+          if (-not $exe) { throw "MeOS.exe not found under code\" }
+          Write-Host "Using $($exe.FullName)"
+          Copy-Item $exe.FullName $dist
+
+          # Bundled 32-bit third-party DLLs.
+          Copy-Item code\dll\libharu.dll  $dist
+          Copy-Item code\dll\libmySQL.dll $dist
+
+          # VS2013 (v120) x86 runtime for the bundled DLLs. On a 64-bit runner
+          # the 32-bit CRT lives in SysWOW64.
+          $sysDirs = @("$env:WINDIR\SysWOW64", "$env:WINDIR\System32")
+          Copy-Item (Find-Dll "MSVCR120.dll" $sysDirs) $dist
+          Copy-Item (Find-Dll "MSVCP120.dll" $sysDirs) $dist
+
+          # VS2022 (v143) x86 runtime for MeOS.exe itself.
+          $crt = (& vswhere -latest -find "VC\Redist\MSVC\*\x86\Microsoft.VC*.CRT") | Select-Object -Last 1
+          if (-not $crt) { throw "VC redist (x86) folder not found via vswhere" }
+          Copy-Item (Join-Path $crt "MSVCP140.dll")     $dist
+          Copy-Item (Join-Path $crt "VCRUNTIME140.dll") $dist
+
+          Write-Host "Artifact contents:"
+          Get-ChildItem $dist | Format-Table Name, Length
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: MeOS-${{ matrix.configuration }}-${{ matrix.platform }}
+          path: dist/**
+          if-no-files-found: error
