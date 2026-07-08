@@ -4819,6 +4819,9 @@ void gdioutput::RenderString(TextInfo &ti, HDC hDC) {
       }
     }
     else {
+      // The width limit is in layout units; scale it to device pixels when
+      // printing so the text is not clipped short (see doPrint).
+      int xlimit = printScale > 1.0 ? int(ti.xlimit * printScale) : ti.xlimit;
       int flags = DT_NOPREFIX;
       if (ti.format & textLimitEllipsis)
         flags = DT_END_ELLIPSIS;
@@ -4826,15 +4829,15 @@ void gdioutput::RenderString(TextInfo &ti, HDC hDC) {
       DrawText(hDC, ti.text.c_str(), ti.text.length(), &rc, DT_CALCRECT | flags);
       ti.realWidth = rc.right - rc.left;
       if (ti.format&textRight) {
-        rc.right = rc.left + ti.xlimit - (rc.bottom - rc.top) / 2;
+        rc.right = rc.left + xlimit - (rc.bottom - rc.top) / 2;
         DrawText(hDC, ti.text.c_str(), ti.text.length(), &rc, DT_RIGHT | flags);
       }
       else if (ti.format&textCenter) {
-        rc.right = rc.left + ti.xlimit - (rc.bottom - rc.top) / 2;
+        rc.right = rc.left + xlimit - (rc.bottom - rc.top) / 2;
         DrawText(hDC, ti.text.c_str(), ti.text.length(), &rc, DT_CENTER | flags);
       }
       else {
-        rc.right = rc.left + ti.xlimit;
+        rc.right = rc.left + xlimit;
         DrawText(hDC, ti.text.c_str(), -1, &rc, DT_LEFT | flags);
       }
       ti.textRect = rc;
@@ -4843,6 +4846,8 @@ void gdioutput::RenderString(TextInfo &ti, HDC hDC) {
   else {
     memset(&rc, 0, sizeof(rc));
     int width =  scaleLength( (breakLines&ti.format) ? ti.xlimit : 450 );
+    if (printScale > 1.0)
+      width = int(width * printScale);
     rc.right = width;
     int dx = format != 10 ? 0 : scaleLength(20);
     ti.realWidth = width + dx;
@@ -4967,15 +4972,16 @@ void gdioutput::RenderString(TextInfo &ti, const wstring &text, HDC hDC)
     }
   }
   else{
+    int xlimit = printScale > 1.0 ? int(ti.xlimit * printScale) : ti.xlimit;
     if (ti.format&textRight) {
       DrawText(hDC, text.c_str(), text.length(), &rc, DT_LEFT|DT_CALCRECT|DT_NOPREFIX);
-      rc.right = rc.left + ti.xlimit;
+      rc.right = rc.left + xlimit;
       ti.textRect = rc;
       DrawText(hDC, text.c_str(), text.length(), &rc, DT_RIGHT|DT_NOPREFIX);
     }
     else {
       DrawText(hDC, text.c_str(), text.length(), &rc, DT_LEFT|DT_CALCRECT|DT_NOPREFIX);
-      rc.right=rc.left+ti.xlimit;
+      rc.right=rc.left+xlimit;
       DrawText(hDC, text.c_str(), text.length(), &rc, DT_LEFT|DT_NOPREFIX);
       ti.textRect=rc;
     }
